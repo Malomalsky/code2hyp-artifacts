@@ -1,0 +1,29 @@
+[
+  {
+    "split_seed": 101,
+    "validation_records": 220,
+    "test_records": 550,
+    "validation_syntax_errors": 0,
+    "test_syntax_errors": 0,
+    "baseline_scale": 0.6425265459815723,
+    "feature_cache_entries": 770
+  },
+  {
+    "split_seed": 202,
+    "validation_records": 220,
+    "test_records": 550,
+    "validation_syntax_errors": 0,
+    "test_syntax_errors": 0,
+    "baseline_scale": 0.6297605627729537,
+    "feature_cache_entries": 1496
+  },
+  {
+    "split_seed": 303,
+    "validation_records": 220,
+    "test_records": 550,
+    "validation_syntax_errors": 0,
+    "test_syntax_errors": 0,
+    "baseline_scale": 0.6340702582396621,
+    "feature_cache_entries": 2184
+  }
+]

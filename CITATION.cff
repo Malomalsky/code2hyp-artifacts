@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use these artifacts, please cite the corresponding manuscript."
+title: "Code2Hyp: Hyperbolic AST-Path Representations for Structurally Faithful Code Embeddings"
+authors:
+  - family-names: "Kosyanenko"
+    given-names: "Ivan A."
+    orcid: "https://orcid.org/0009-0009-1804-9412"
+type: software
+repository-code: "https://github.com/Malomalsky/code2hyp-artifacts"
+date-released: "2026-06-20"
+keywords:
+  - source-code representation learning
+  - abstract syntax tree
+  - code2vec
+  - hyperbolic embeddings
+  - Poincare ball
+  - product geometry
+  - method-name prediction
+  - structural diagnostics

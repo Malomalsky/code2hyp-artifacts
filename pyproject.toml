@@ -1,0 +1,25 @@
+[project]
+name = "code2hyp-research"
+version = "0.1.0"
+description = "Isolated Code2Hyp research workspace for geometry-aware source-code models"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy>=1.26",
+]
+
+[project.scripts]
+code2hyp = "geometry_profile_research.code2hyp_cli:main"
+
+[project.optional-dependencies]
+ml = [
+  "torch>=2.3",
+]
+dev = [
+  "pytest>=8.0",
+]
+viz = [
+  "matplotlib>=3.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

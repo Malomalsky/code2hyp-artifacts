@@ -1,0 +1,57 @@
+{
+  "report_type": "code2hyp_torch_smoke",
+  "seed": 17,
+  "batch_size": 2,
+  "contexts_per_method": 3,
+  "label_vocab_size": 7,
+  "variants": {
+    "B1_euclidean": {
+      "parameter_count": 235,
+      "logits_shape": [
+        2,
+        7
+      ],
+      "representation_shape": [
+        2,
+        13
+      ],
+      "attention_shape": [
+        2,
+        3
+      ],
+      "curvature": 1.0,
+      "attention_row_sums": [
+        1.0,
+        1.0
+      ],
+      "structural_points_shape": null
+    },
+    "B3_product_trainable_curvature": {
+      "parameter_count": 236,
+      "logits_shape": [
+        2,
+        7
+      ],
+      "representation_shape": [
+        2,
+        13
+      ],
+      "attention_shape": [
+        2,
+        3
+      ],
+      "curvature": 1.0,
+      "attention_row_sums": [
+        1.0,
+        1.0000001192092896
+      ],
+      "structural_points_shape": [
+        2,
+        5
+      ]
+    }
+  },
+  "parameter_delta_B3_minus_B1": 1,
+  "relative_parameter_overhead_B3_vs_B1": 0.00425531914893617,
+  "interpretation": "B1 and B3 share logits and representation shapes; B3 adds only one trainable curvature parameter in this smoke configuration."
+}

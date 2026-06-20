@@ -1,0 +1,1794 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.val.c2s",
+    "train_records": 512,
+    "validation_records_loaded": 128,
+    "validation_records_after_known_target_filter": 53,
+    "target_subtoken_vocab_size": 608,
+    "token_vocab_size": 3,
+    "ast_node_vocab_size": 166,
+    "path_encoder": "gru",
+    "representation_transform": "identity",
+    "lexical_ablation": "structural_only"
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "rank",
+    "use_positive_weighting": true,
+    "max_positive_weight": 20.0,
+    "positive_weight_mean": 19.933841705322266,
+    "positive_weight_max": 20.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101,
+      202,
+      303
+    ],
+    "variant_filter": [
+      "B17_hyperbolic_path_mp_code2vec",
+      "B23_hyperbolic_path_attention_mp_code2vec",
+      "B24_hyperbolic_path_attention_mp_rank_annealed",
+      "B25_hyperbolic_path_depth_attention_mp_code2vec",
+      "B26_hyperbolic_path_depth_attention_mp_rank_annealed",
+      "B27_hyperbolic_path_attention_mp_monotone",
+      "B28_hyperbolic_path_attention_mp_tree_distance",
+      "B29_hyperbolic_path_dual_attention_mp_separated",
+      "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "B31_hyperbolic_path_dual_attention_mp_soft_rank"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B17_hyperbolic_path_mp_code2vec",
+      "model_seed": 101,
+      "parameter_count": 73920,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.07954545454545454,
+      "validation_recall": 0.07954545454545454,
+      "validation_f1": 0.07954545454545454,
+      "final_train_loss": 0.3429606817662716,
+      "final_train_f1": 0.14422740373805204,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7188101559877396,
+          "task_loss": 0.7188101559877396,
+          "structural_loss": 0.0,
+          "precision": 0.06576031038161416,
+          "recall": 0.06576031038161416,
+          "f1": 0.06576031038161416,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5474735163152218,
+          "task_loss": 0.5474735163152218,
+          "structural_loss": 0.0,
+          "precision": 0.14178344271807755,
+          "recall": 0.14178344271807755,
+          "f1": 0.14178344271807755,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3429606817662716,
+          "task_loss": 0.3429606817662716,
+          "structural_loss": 0.0,
+          "precision": 0.144227403738052,
+          "recall": 0.144227403738052,
+          "f1": 0.14422740373805204,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.15171311795711517,
+      "validation_structural_rank_loss": 0.2568841576576233,
+      "validation_structural_spearman": 0.04532305896282196,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B23_hyperbolic_path_attention_mp_code2vec",
+      "model_seed": 101,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.4201456196606159,
+      "final_train_f1": 0.13393506910336664,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7233786880970001,
+          "task_loss": 0.7233786880970001,
+          "structural_loss": 0.0,
+          "precision": 0.05113751123326168,
+          "recall": 0.05113751123326168,
+          "f1": 0.05113751123326168,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6072408780455589,
+          "task_loss": 0.6072408780455589,
+          "structural_loss": 0.0,
+          "precision": 0.13863223710227535,
+          "recall": 0.13863223710227535,
+          "f1": 0.13863223710227535,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4201456196606159,
+          "task_loss": 0.4201456196606159,
+          "structural_loss": 0.0,
+          "precision": 0.13393506910336664,
+          "recall": 0.13393506910336664,
+          "f1": 0.13393506910336664,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17513367533683777,
+      "validation_structural_rank_loss": 0.3539280891418457,
+      "validation_structural_spearman": -0.11112311482429504,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B24_hyperbolic_path_attention_mp_rank_annealed",
+      "model_seed": 101,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.46589065343141556,
+      "final_train_f1": 0.11813325157467156,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7265832498669624,
+          "task_loss": 0.7253165915608406,
+          "structural_loss": 0.0759999118745327,
+          "precision": 0.05504729105894204,
+          "recall": 0.05504729105894204,
+          "f1": 0.05504729105894204,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6272744610905647,
+          "task_loss": 0.6224279701709747,
+          "structural_loss": 0.14539463073015213,
+          "precision": 0.14150697702571796,
+          "recall": 0.14150697702571796,
+          "f1": 0.14150697702571796,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.46589065343141556,
+          "task_loss": 0.45349934697151184,
+          "structural_loss": 0.2478261087089777,
+          "precision": 0.11813325157467156,
+          "recall": 0.11813325157467156,
+          "f1": 0.11813325157467156,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.19397097826004028,
+      "validation_structural_rank_loss": 0.3267112374305725,
+      "validation_structural_spearman": -0.05842849612236023,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B25_hyperbolic_path_depth_attention_mp_code2vec",
+      "model_seed": 101,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.4200177490711212,
+      "final_train_f1": 0.13393506910336664,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7233750969171524,
+          "task_loss": 0.7233750969171524,
+          "structural_loss": 0.0,
+          "precision": 0.05113751123326168,
+          "recall": 0.05113751123326168,
+          "f1": 0.05113751123326168,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6071932092308998,
+          "task_loss": 0.6071932092308998,
+          "structural_loss": 0.0,
+          "precision": 0.13863223710227535,
+          "recall": 0.13863223710227535,
+          "f1": 0.13863223710227535,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4200177490711212,
+          "task_loss": 0.4200177490711212,
+          "structural_loss": 0.0,
+          "precision": 0.13393506910336664,
+          "recall": 0.13393506910336664,
+          "f1": 0.13393506910336664,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17188365757465363,
+      "validation_structural_rank_loss": 0.37460699677467346,
+      "validation_structural_spearman": -0.09672709554433823,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B26_hyperbolic_path_depth_attention_mp_rank_annealed",
+      "model_seed": 101,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.4654226414859295,
+      "final_train_f1": 0.11742302430194429,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7265771180391312,
+          "task_loss": 0.7253122255206108,
+          "structural_loss": 0.07589343003928661,
+          "precision": 0.05504729105894204,
+          "recall": 0.05504729105894204,
+          "f1": 0.05504729105894204,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6271850690245628,
+          "task_loss": 0.6223585978150368,
+          "structural_loss": 0.1447937786579132,
+          "precision": 0.14150697702571796,
+          "recall": 0.14150697702571796,
+          "f1": 0.14150697702571796,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4654226414859295,
+          "task_loss": 0.4531448148190975,
+          "structural_loss": 0.2455565184354782,
+          "precision": 0.11742302430194429,
+          "recall": 0.11742302430194429,
+          "f1": 0.11742302430194429,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1895856112241745,
+      "validation_structural_rank_loss": 0.3362516760826111,
+      "validation_structural_spearman": -0.04303522780537605,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B17_hyperbolic_path_mp_code2vec",
+      "model_seed": 202,
+      "parameter_count": 73920,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.3446400500833988,
+      "final_train_f1": 0.13469339263690303,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7215381190180779,
+          "task_loss": 0.7215381190180779,
+          "structural_loss": 0.0,
+          "precision": 0.02812635692526323,
+          "recall": 0.02812635692526323,
+          "f1": 0.02812635692526323,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5546763613820076,
+          "task_loss": 0.5546763613820076,
+          "structural_loss": 0.0,
+          "precision": 0.0807080470269051,
+          "recall": 0.0807080470269051,
+          "f1": 0.0807080470269051,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3446400500833988,
+          "task_loss": 0.3446400500833988,
+          "structural_loss": 0.0,
+          "precision": 0.13469339263690303,
+          "recall": 0.13469339263690303,
+          "f1": 0.13469339263690303,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.16945843398571014,
+      "validation_structural_rank_loss": 0.25318199396133423,
+      "validation_structural_spearman": -0.09113959223031998,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B23_hyperbolic_path_attention_mp_code2vec",
+      "model_seed": 202,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.045454545454545456,
+      "validation_recall": 0.045454545454545456,
+      "validation_f1": 0.045454545454545456,
+      "final_train_loss": 0.426472794264555,
+      "final_train_f1": 0.12162598445934963,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7252504304051399,
+          "task_loss": 0.7252504304051399,
+          "structural_loss": 0.0,
+          "precision": 0.05038704495017761,
+          "recall": 0.05038704495017761,
+          "f1": 0.05038704495017761,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.613135002553463,
+          "task_loss": 0.613135002553463,
+          "structural_loss": 0.0,
+          "precision": 0.07987014254597385,
+          "recall": 0.07987014254597385,
+          "f1": 0.07987014254597385,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.426472794264555,
+          "task_loss": 0.426472794264555,
+          "structural_loss": 0.0,
+          "precision": 0.12162598445934963,
+          "recall": 0.12162598445934963,
+          "f1": 0.12162598445934963,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17393510043621063,
+      "validation_structural_rank_loss": 0.2389662265777588,
+      "validation_structural_spearman": -0.10715124756097794,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B24_hyperbolic_path_attention_mp_rank_annealed",
+      "model_seed": 202,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.47147440910339355,
+      "final_train_f1": 0.11956955829726525,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7279371544718742,
+          "task_loss": 0.7266165763139725,
+          "structural_loss": 0.07923464570194483,
+          "precision": 0.04897716629478997,
+          "recall": 0.04897716629478997,
+          "f1": 0.04897716629478997,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6315291970968246,
+          "task_loss": 0.626803994178772,
+          "structural_loss": 0.14175573643296957,
+          "precision": 0.07927931644656588,
+          "recall": 0.07927931644656588,
+          "f1": 0.0792793164465659,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.47147440910339355,
+          "task_loss": 0.459221463650465,
+          "structural_loss": 0.2450590180233121,
+          "precision": 0.11956955829726525,
+          "recall": 0.11956955829726525,
+          "f1": 0.11956955829726525,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.2176513373851776,
+      "validation_structural_rank_loss": 0.255910187959671,
+      "validation_structural_spearman": -0.12269651144742966,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B25_hyperbolic_path_depth_attention_mp_code2vec",
+      "model_seed": 202,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.045454545454545456,
+      "validation_recall": 0.045454545454545456,
+      "validation_f1": 0.045454545454545456,
+      "final_train_loss": 0.42656975984573364,
+      "final_train_f1": 0.12226373956139044,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7252484709024429,
+          "task_loss": 0.7252484709024429,
+          "structural_loss": 0.0,
+          "precision": 0.05038704495017761,
+          "recall": 0.05038704495017761,
+          "f1": 0.05038704495017761,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6131336614489555,
+          "task_loss": 0.6131336614489555,
+          "structural_loss": 0.0,
+          "precision": 0.07987014254597385,
+          "recall": 0.07987014254597385,
+          "f1": 0.07987014254597385,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42656975984573364,
+          "task_loss": 0.42656975984573364,
+          "structural_loss": 0.0,
+          "precision": 0.12226373956139044,
+          "recall": 0.12226373956139044,
+          "f1": 0.12226373956139044,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17203161120414734,
+      "validation_structural_rank_loss": 0.2570860683917999,
+      "validation_structural_spearman": -0.09374553710222244,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B26_hyperbolic_path_depth_attention_mp_rank_annealed",
+      "model_seed": 202,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.4709382802248001,
+      "final_train_f1": 0.12021388819417246,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.727926716208458,
+          "task_loss": 0.7266004905104637,
+          "structural_loss": 0.07957403268665075,
+          "precision": 0.04897716629478997,
+          "recall": 0.04897716629478997,
+          "f1": 0.04897716629478997,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6312924847006798,
+          "task_loss": 0.6266023516654968,
+          "structural_loss": 0.14070403203368187,
+          "precision": 0.07997144351156751,
+          "recall": 0.07997144351156751,
+          "f1": 0.07997144351156751,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4709382802248001,
+          "task_loss": 0.4586823359131813,
+          "structural_loss": 0.2451187977567315,
+          "precision": 0.12021388819417246,
+          "recall": 0.12021388819417246,
+          "f1": 0.12021388819417246,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.2161245346069336,
+      "validation_structural_rank_loss": 0.2644796073436737,
+      "validation_structural_spearman": -0.11231957376003265,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B17_hyperbolic_path_mp_code2vec",
+      "model_seed": 303,
+      "parameter_count": 73920,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.34623273834586143,
+      "final_train_f1": 0.126180428569881,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7226284146308899,
+          "task_loss": 0.7226284146308899,
+          "structural_loss": 0.0,
+          "precision": 0.029249055816219897,
+          "recall": 0.029249055816219897,
+          "f1": 0.029249055816219897,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5662895999848843,
+          "task_loss": 0.5662895999848843,
+          "structural_loss": 0.0,
+          "precision": 0.09612724548440635,
+          "recall": 0.09612724548440635,
+          "f1": 0.09612724548440633,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.34623273834586143,
+          "task_loss": 0.34623273834586143,
+          "structural_loss": 0.0,
+          "precision": 0.126180428569881,
+          "recall": 0.126180428569881,
+          "f1": 0.126180428569881,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17510256171226501,
+      "validation_structural_rank_loss": 0.7648628354072571,
+      "validation_structural_spearman": -0.10069210082292557,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B23_hyperbolic_path_attention_mp_code2vec",
+      "model_seed": 303,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.424698106944561,
+      "final_train_f1": 0.1323326330689603,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7242660596966743,
+          "task_loss": 0.7242660596966743,
+          "structural_loss": 0.0,
+          "precision": 0.0673445865492501,
+          "recall": 0.0673445865492501,
+          "f1": 0.0673445865492501,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.61131751537323,
+          "task_loss": 0.61131751537323,
+          "structural_loss": 0.0,
+          "precision": 0.14360761124429242,
+          "recall": 0.14360761124429242,
+          "f1": 0.14360761124429242,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.424698106944561,
+          "task_loss": 0.424698106944561,
+          "structural_loss": 0.0,
+          "precision": 0.1323326330689603,
+          "recall": 0.1323326330689603,
+          "f1": 0.1323326330689603,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.1758013665676117,
+      "validation_structural_rank_loss": 0.3357144296169281,
+      "validation_structural_spearman": -0.14609816670417786,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B24_hyperbolic_path_attention_mp_rank_annealed",
+      "model_seed": 303,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.47345756366848946,
+      "final_train_f1": 0.1497566111093578,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7275073528289795,
+          "task_loss": 0.7261460199952126,
+          "structural_loss": 0.08167980192229152,
+          "precision": 0.06011931140183345,
+          "recall": 0.06011931140183345,
+          "f1": 0.06011931140183345,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6314618736505508,
+          "task_loss": 0.627964973449707,
+          "structural_loss": 0.10490713641047478,
+          "precision": 0.14781207177751027,
+          "recall": 0.14781207177751027,
+          "f1": 0.14781207177751027,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.47345756366848946,
+          "task_loss": 0.4602481983602047,
+          "structural_loss": 0.26418732665479183,
+          "precision": 0.1497566111093578,
+          "recall": 0.1497566111093578,
+          "f1": 0.1497566111093578,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.20048289000988007,
+      "validation_structural_rank_loss": 0.28951045870780945,
+      "validation_structural_spearman": -0.08569256216287613,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B25_hyperbolic_path_depth_attention_mp_code2vec",
+      "model_seed": 303,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.42450739070773125,
+      "final_train_f1": 0.1323326330689603,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.724257618188858,
+          "task_loss": 0.724257618188858,
+          "structural_loss": 0.0,
+          "precision": 0.06801662956000279,
+          "recall": 0.06801662956000279,
+          "f1": 0.06801662956000279,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6112081632018089,
+          "task_loss": 0.6112081632018089,
+          "structural_loss": 0.0,
+          "precision": 0.14360761124429242,
+          "recall": 0.14360761124429242,
+          "f1": 0.14360761124429242,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42450739070773125,
+          "task_loss": 0.42450739070773125,
+          "structural_loss": 0.0,
+          "precision": 0.1323326330689603,
+          "recall": 0.1323326330689603,
+          "f1": 0.1323326330689603,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.17174072563648224,
+      "validation_structural_rank_loss": 0.3361705243587494,
+      "validation_structural_spearman": -0.12513409554958344,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B26_hyperbolic_path_depth_attention_mp_rank_annealed",
+      "model_seed": 303,
+      "parameter_count": 73953,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.4729791134595871,
+      "final_train_f1": 0.15040427950314017,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7274995371699333,
+          "task_loss": 0.726139485836029,
+          "structural_loss": 0.08160260505974293,
+          "precision": 0.06011931140183345,
+          "recall": 0.06011931140183345,
+          "f1": 0.06011931140183345,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6313157379627228,
+          "task_loss": 0.6278557628393173,
+          "structural_loss": 0.10379906836897135,
+          "precision": 0.14781207177751027,
+          "recall": 0.14781207177751027,
+          "f1": 0.14781207177751027,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4729791134595871,
+          "task_loss": 0.4598604626953602,
+          "structural_loss": 0.26237307861447334,
+          "precision": 0.15040427950314017,
+          "recall": 0.15040427950314017,
+          "f1": 0.15040427950314017,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1955929398536682,
+      "validation_structural_rank_loss": 0.2801571786403656,
+      "validation_structural_spearman": -0.0639621838927269,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B27_hyperbolic_path_attention_mp_monotone",
+      "model_seed": 101,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.4205772764980793,
+      "final_train_f1": 0.13462951354781108,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7234104797244072,
+          "task_loss": 0.7233986556529999,
+          "structural_loss": 0.0007096204644767568,
+          "precision": 0.05113751123326168,
+          "recall": 0.05113751123326168,
+          "f1": 0.05113751123326168,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6074009910225868,
+          "task_loss": 0.6073457598686218,
+          "structural_loss": 0.0016573425818933174,
+          "precision": 0.13868804067370394,
+          "recall": 0.13868804067370394,
+          "f1": 0.1386880406737039,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4205772764980793,
+          "task_loss": 0.42031077295541763,
+          "structural_loss": 0.005330028856405988,
+          "precision": 0.13462951354781108,
+          "recall": 0.13462951354781108,
+          "f1": 0.13462951354781108,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.17575912177562714,
+      "validation_structural_rank_loss": 0.3640589714050293,
+      "validation_structural_spearman": -0.1120988056063652,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_monotone",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B27_hyperbolic_path_attention_mp_monotone",
+      "model_seed": 202,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.045454545454545456,
+      "validation_recall": 0.045454545454545456,
+      "validation_f1": 0.045454545454545456,
+      "final_train_loss": 0.4269879646599293,
+      "final_train_f1": 0.12226373956139044,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7252674773335457,
+          "task_loss": 0.7252546399831772,
+          "structural_loss": 0.0007699724155827425,
+          "precision": 0.05038704495017761,
+          "recall": 0.05038704495017761,
+          "f1": 0.05038704495017761,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6131756827235222,
+          "task_loss": 0.61313346773386,
+          "structural_loss": 0.001266541425138712,
+          "precision": 0.08049203309323753,
+          "recall": 0.08049203309323753,
+          "f1": 0.08049203309323753,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4269879646599293,
+          "task_loss": 0.42678066343069077,
+          "structural_loss": 0.004146071965806186,
+          "precision": 0.12226373956139044,
+          "recall": 0.12226373956139044,
+          "f1": 0.12226373956139044,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1751565933227539,
+      "validation_structural_rank_loss": 0.2374357134103775,
+      "validation_structural_spearman": -0.11379089951515198,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_monotone",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B27_hyperbolic_path_attention_mp_monotone",
+      "model_seed": 303,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.42483630031347275,
+      "final_train_f1": 0.1323326330689603,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7242774218320847,
+          "task_loss": 0.7242701202630997,
+          "structural_loss": 0.00043788928451249376,
+          "precision": 0.0673445865492501,
+          "recall": 0.0673445865492501,
+          "f1": 0.0673445865492501,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6113793775439262,
+          "task_loss": 0.6113453432917595,
+          "structural_loss": 0.001021172181935981,
+          "precision": 0.14360761124429242,
+          "recall": 0.14360761124429242,
+          "f1": 0.14360761124429242,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42483630031347275,
+          "task_loss": 0.42470720410346985,
+          "structural_loss": 0.00258187044528313,
+          "precision": 0.1323326330689603,
+          "recall": 0.1323326330689603,
+          "f1": 0.1323326330689603,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.17558471858501434,
+      "validation_structural_rank_loss": 0.33571720123291016,
+      "validation_structural_spearman": -0.14607398211956024,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_monotone",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B28_hyperbolic_path_attention_mp_tree_distance",
+      "model_seed": 101,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.42060012370347977,
+      "final_train_f1": 0.13393506910336664,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7235090285539627,
+          "task_loss": 0.723381981253624,
+          "structural_loss": 0.007623025216162205,
+          "precision": 0.05113751123326168,
+          "recall": 0.05113751123326168,
+          "f1": 0.05113751123326168,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6075115501880646,
+          "task_loss": 0.6072480827569962,
+          "structural_loss": 0.007904030790086836,
+          "precision": 0.13863223710227535,
+          "recall": 0.13863223710227535,
+          "f1": 0.13863223710227535,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42060012370347977,
+          "task_loss": 0.42016422003507614,
+          "structural_loss": 0.008717999793589115,
+          "precision": 0.13393506910336664,
+          "recall": 0.13393506910336664,
+          "f1": 0.13393506910336664,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.17518490552902222,
+      "validation_structural_rank_loss": 0.355939120054245,
+      "validation_structural_spearman": -0.11159630119800568,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_tree_distance",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B28_hyperbolic_path_attention_mp_tree_distance",
+      "model_seed": 202,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.045454545454545456,
+      "validation_recall": 0.045454545454545456,
+      "validation_f1": 0.045454545454545456,
+      "final_train_loss": 0.4266854263842106,
+      "final_train_f1": 0.12226373956139044,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7253633886575699,
+          "task_loss": 0.7252381891012192,
+          "structural_loss": 0.007512621872592717,
+          "precision": 0.05038704495017761,
+          "recall": 0.05038704495017761,
+          "f1": 0.05038704495017761,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6133118346333504,
+          "task_loss": 0.6130577698349953,
+          "structural_loss": 0.007622136967256665,
+          "precision": 0.07987014254597385,
+          "recall": 0.07987014254597385,
+          "f1": 0.07987014254597385,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4266854263842106,
+          "task_loss": 0.4262651242315769,
+          "structural_loss": 0.008406058885157108,
+          "precision": 0.12226373956139044,
+          "recall": 0.12226373956139044,
+          "f1": 0.12226373956139044,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1735304892063141,
+      "validation_structural_rank_loss": 0.24069847166538239,
+      "validation_structural_spearman": -0.10662894695997238,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_tree_distance",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B28_hyperbolic_path_attention_mp_tree_distance",
+      "model_seed": 303,
+      "parameter_count": 73952,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.42516114190220833,
+      "final_train_f1": 0.1323326330689603,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7243926003575325,
+          "task_loss": 0.7242676392197609,
+          "structural_loss": 0.007497678627260029,
+          "precision": 0.0673445865492501,
+          "recall": 0.0673445865492501,
+          "f1": 0.0673445865492501,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6115922778844833,
+          "task_loss": 0.6113337054848671,
+          "structural_loss": 0.007757255749311298,
+          "precision": 0.14360761124429242,
+          "recall": 0.14360761124429242,
+          "f1": 0.14360761124429242,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42516114190220833,
+          "task_loss": 0.42472999170422554,
+          "structural_loss": 0.008623095462098718,
+          "precision": 0.1323326330689603,
+          "recall": 0.1323326330689603,
+          "f1": 0.1323326330689603,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.17592434585094452,
+      "validation_structural_rank_loss": 0.3373119831085205,
+      "validation_structural_spearman": -0.14693351089954376,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_attention_tree_distance",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B29_hyperbolic_path_dual_attention_mp_separated",
+      "model_seed": 101,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.23863636363636365,
+      "validation_recall": 0.23863636363636365,
+      "validation_f1": 0.23863636363636365,
+      "final_train_loss": 0.36148156970739365,
+      "final_train_f1": 0.1383119165633946,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7173902094364166,
+          "task_loss": 0.7173902094364166,
+          "structural_loss": 0.0,
+          "precision": 0.03328460966143897,
+          "recall": 0.03328460966143897,
+          "f1": 0.033284609661438966,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5534312836825848,
+          "task_loss": 0.5534312836825848,
+          "structural_loss": 0.0,
+          "precision": 0.1132927807132827,
+          "recall": 0.1132927807132827,
+          "f1": 0.11329278071328269,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.36148156970739365,
+          "task_loss": 0.36148156970739365,
+          "structural_loss": 0.0,
+          "precision": 0.1383119165633946,
+          "recall": 0.1383119165633946,
+          "f1": 0.1383119165633946,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.13263840973377228,
+      "validation_structural_rank_loss": 0.45431190729141235,
+      "validation_structural_spearman": 0.1859521120786667,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B29_hyperbolic_path_dual_attention_mp_separated",
+      "model_seed": 202,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.36286767572164536,
+      "final_train_f1": 0.158565082395775,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7188072353601456,
+          "task_loss": 0.7188072353601456,
+          "structural_loss": 0.0,
+          "precision": 0.0463998534339096,
+          "recall": 0.0463998534339096,
+          "f1": 0.0463998534339096,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5607963725924492,
+          "task_loss": 0.5607963725924492,
+          "structural_loss": 0.0,
+          "precision": 0.14043478832602974,
+          "recall": 0.14043478832602974,
+          "f1": 0.14043478832602976,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.36286767572164536,
+          "task_loss": 0.36286767572164536,
+          "structural_loss": 0.0,
+          "precision": 0.158565082395775,
+          "recall": 0.158565082395775,
+          "f1": 0.158565082395775,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.14268448948860168,
+      "validation_structural_rank_loss": 0.2912781536579132,
+      "validation_structural_spearman": 0.06405593454837799,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B29_hyperbolic_path_dual_attention_mp_separated",
+      "model_seed": 303,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.3604441285133362,
+      "final_train_f1": 0.1401796351431723,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7187492027878761,
+          "task_loss": 0.7187492027878761,
+          "structural_loss": 0.0,
+          "precision": 0.03120739901425781,
+          "recall": 0.03120739901425781,
+          "f1": 0.03120739901425781,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5519263111054897,
+          "task_loss": 0.5519263111054897,
+          "structural_loss": 0.0,
+          "precision": 0.08341132217881544,
+          "recall": 0.08341132217881544,
+          "f1": 0.08341132217881544,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3604441285133362,
+          "task_loss": 0.3604441285133362,
+          "structural_loss": 0.0,
+          "precision": 0.1401796351431723,
+          "recall": 0.1401796351431723,
+          "f1": 0.1401796351431723,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.13362397253513336,
+      "validation_structural_rank_loss": 0.29091784358024597,
+      "validation_structural_spearman": 0.10139356553554535,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 101,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.40750037133693695,
+      "final_train_f1": 0.12690198889027857,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7233099266886711,
+          "task_loss": 0.72163175791502,
+          "structural_loss": 0.10068980371579528,
+          "precision": 0.03529997632529979,
+          "recall": 0.03529997632529979,
+          "f1": 0.03529997632529979,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5924136564135551,
+          "task_loss": 0.5834150835871696,
+          "structural_loss": 0.269957029260695,
+          "precision": 0.1125115307132827,
+          "recall": 0.1125115307132827,
+          "f1": 0.1125115307132827,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.40750037133693695,
+          "task_loss": 0.3808899521827698,
+          "structural_loss": 0.5322084315121174,
+          "precision": 0.12690198889027857,
+          "recall": 0.12690198889027857,
+          "f1": 0.12690198889027857,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.12277843803167343,
+      "validation_structural_rank_loss": 0.21094408631324768,
+      "validation_structural_spearman": 0.1416817307472229,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 202,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.42235830426216125,
+      "final_train_f1": 0.15835035153244675,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7241098880767822,
+          "task_loss": 0.722225546836853,
+          "structural_loss": 0.11306029558181763,
+          "precision": 0.04018722280931473,
+          "recall": 0.04018722280931473,
+          "f1": 0.04018722280931473,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6021809279918671,
+          "task_loss": 0.5938450694084167,
+          "structural_loss": 0.25007542688399553,
+          "precision": 0.13519694340888144,
+          "recall": 0.13519694340888144,
+          "f1": 0.13519694340888147,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.42235830426216125,
+          "task_loss": 0.40326984971761703,
+          "structural_loss": 0.38176910020411015,
+          "precision": 0.15835035153244675,
+          "recall": 0.15835035153244675,
+          "f1": 0.15835035153244675,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.13684536516666412,
+      "validation_structural_rank_loss": 0.36677005887031555,
+      "validation_structural_spearman": 0.0159857589751482,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 303,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.41374507546424866,
+      "final_train_f1": 0.1207760003778679,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7244585230946541,
+          "task_loss": 0.7229024097323418,
+          "structural_loss": 0.09336665808223188,
+          "precision": 0.03930812524885742,
+          "recall": 0.03930812524885742,
+          "f1": 0.03930812524885742,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5914892554283142,
+          "task_loss": 0.5829335264861584,
+          "structural_loss": 0.25667155906558037,
+          "precision": 0.07926706392159509,
+          "recall": 0.07926706392159509,
+          "f1": 0.07926706392159509,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.41374507546424866,
+          "task_loss": 0.3908618502318859,
+          "structural_loss": 0.45766447857022285,
+          "precision": 0.1207760003778679,
+          "recall": 0.1207760003778679,
+          "f1": 0.1207760003778679,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.12683776021003723,
+      "validation_structural_rank_loss": 0.20116133987903595,
+      "validation_structural_spearman": 0.11546016484498978,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 101,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.22727272727272727,
+      "validation_recall": 0.22727272727272727,
+      "validation_f1": 0.22727272727272727,
+      "final_train_loss": 0.3734228312969208,
+      "final_train_f1": 0.13077373828087765,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7192986458539963,
+          "task_loss": 0.7188433557748795,
+          "structural_loss": 0.027317432453855872,
+          "precision": 0.03517839451116017,
+          "recall": 0.03517839451116017,
+          "f1": 0.03517839451116017,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5636523813009262,
+          "task_loss": 0.5605362020432949,
+          "structural_loss": 0.09348548296838999,
+          "precision": 0.11319929780729979,
+          "recall": 0.11319929780729979,
+          "f1": 0.11319929780729979,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3734228312969208,
+          "task_loss": 0.36449409276247025,
+          "structural_loss": 0.17857480701059103,
+          "precision": 0.13077373828087765,
+          "recall": 0.13077373828087765,
+          "f1": 0.13077373828087765,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1351015567779541,
+      "validation_structural_rank_loss": 0.6784590482711792,
+      "validation_structural_spearman": 0.14178258180618286,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 202,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.056818181818181816,
+      "validation_recall": 0.056818181818181816,
+      "validation_f1": 0.056818181818181816,
+      "final_train_loss": 0.3792123906314373,
+      "final_train_f1": 0.15928762574837615,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7202949225902557,
+          "task_loss": 0.7197543829679489,
+          "structural_loss": 0.03243269491940737,
+          "precision": 0.04578060520382736,
+          "recall": 0.04578060520382736,
+          "f1": 0.04578060520382736,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5728951320052147,
+          "task_loss": 0.5693669617176056,
+          "structural_loss": 0.10584522597491741,
+          "precision": 0.14113326242875918,
+          "recall": 0.14113326242875918,
+          "f1": 0.14113326242875918,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3792123906314373,
+          "task_loss": 0.36937975883483887,
+          "structural_loss": 0.19665262941271067,
+          "precision": 0.15928762574837615,
+          "recall": 0.15928762574837615,
+          "f1": 0.15928762574837615,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.14273911714553833,
+      "validation_structural_rank_loss": 0.3798670172691345,
+      "validation_structural_spearman": 0.02146024815738201,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 303,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.19318181818181818,
+      "validation_recall": 0.19318181818181818,
+      "validation_f1": 0.19318181818181818,
+      "final_train_loss": 0.37116188555955887,
+      "final_train_f1": 0.12004382609451751,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7202355936169624,
+          "task_loss": 0.7198056727647781,
+          "structural_loss": 0.0257949389051646,
+          "precision": 0.03387847406342654,
+          "recall": 0.03387847406342654,
+          "f1": 0.03387847406342654,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.561284713447094,
+          "task_loss": 0.5576730333268642,
+          "structural_loss": 0.10835045203566551,
+          "precision": 0.08489014887713597,
+          "recall": 0.08489014887713597,
+          "f1": 0.08489014887713597,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.37116188555955887,
+          "task_loss": 0.3632667064666748,
+          "structural_loss": 0.1579034896567464,
+          "precision": 0.12004382609451751,
+          "recall": 0.12004382609451751,
+          "f1": 0.12004382609451751,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.13640575110912323,
+      "validation_structural_rank_loss": 0.39134740829467773,
+      "validation_structural_spearman": 0.11222013086080551,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

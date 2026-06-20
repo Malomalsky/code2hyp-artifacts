@@ -1,0 +1,129 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.val.c2s",
+    "train_records": 16,
+    "validation_records_loaded": 8,
+    "validation_records_after_known_target_filter": 1,
+    "target_subtoken_vocab_size": 41,
+    "token_vocab_size": 109,
+    "ast_node_vocab_size": 62,
+    "path_encoder": "gru",
+    "representation_transform": "identity",
+    "lexical_ablation": "original"
+  },
+  "training": {
+    "epochs": 1,
+    "batch_size": 8,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "distance",
+    "use_positive_weighting": true,
+    "max_positive_weight": 20.0,
+    "positive_weight_mean": 14.349594116210938,
+    "positive_weight_max": 15.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101
+    ],
+    "variant_filter": [
+      "B4_hyperbolic_code2vec",
+      "B20_hyperbolic_path_mp_rank_delayed"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B4_hyperbolic_code2vec",
+      "model_seed": 101,
+      "parameter_count": 15881,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.0,
+      "validation_recall": 0.0,
+      "validation_f1": 0.0,
+      "final_train_loss": 1.2950215935707092,
+      "final_train_f1": 0.06477732793522267,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 1.2950215935707092,
+          "task_loss": 1.2950215935707092,
+          "structural_loss": 0.0,
+          "precision": 0.06477732793522267,
+          "recall": 0.06477732793522267,
+          "f1": 0.06477732793522267,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.11609219759702682,
+      "validation_structural_rank_loss": 0.0,
+      "validation_structural_spearman": 0.8660253882408142,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B20_hyperbolic_path_mp_rank_delayed",
+      "model_seed": 101,
+      "parameter_count": 18985,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.0,
+      "validation_recall": 0.0,
+      "validation_f1": 0.0,
+      "final_train_loss": 1.298323154449463,
+      "final_train_f1": 0.09109311740890688,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 1.298323154449463,
+          "task_loss": 1.292864203453064,
+          "structural_loss": 0.10917878895998001,
+          "precision": 0.09109311740890688,
+          "recall": 0.09109311740890688,
+          "f1": 0.09109311740890688,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05
+        }
+      ],
+      "validation_structural_loss": 0.10108785331249237,
+      "validation_structural_rank_loss": 0.0,
+      "validation_structural_spearman": 0.8660253882408142,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "delayed_linear",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

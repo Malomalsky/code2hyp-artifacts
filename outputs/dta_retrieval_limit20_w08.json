@@ -1,0 +1,85 @@
+{
+  "dataset": {
+    "path": "data/dta_zenodo_7799972/extracted",
+    "limit_per_task": 20
+  },
+  "records": {
+    "loaded": 220,
+    "valid": 220,
+    "syntax_errors": 0,
+    "task_count": 11
+  },
+  "methods": {
+    "M2_markov_jsd": {
+      "queries": 220,
+      "top1_accuracy": 0.9181818181818182,
+      "mrr": 0.9472450309547084,
+      "map": 0.6997282905587795,
+      "recall@1": 0.04832535885167464,
+      "recall@3": 0.13971291866028707,
+      "recall@5": 0.22535885167464112,
+      "recall@10": 0.4064593301435407
+    },
+    "M3_geometry_only": {
+      "queries": 220,
+      "top1_accuracy": 0.6090909090909091,
+      "mrr": 0.7159545493032641,
+      "map": 0.38673743346430256,
+      "recall@1": 0.03205741626794258,
+      "recall@3": 0.08397129186602871,
+      "recall@5": 0.13373205741626792,
+      "recall@10": 0.22966507177033493
+    },
+    "M4_markov_geometry": {
+      "queries": 220,
+      "top1_accuracy": 0.9318181818181818,
+      "mrr": 0.9572320768662232,
+      "map": 0.7414512745795231,
+      "recall@1": 0.04904306220095694,
+      "recall@3": 0.1430622009569378,
+      "recall@5": 0.23349282296650717,
+      "recall@10": 0.4303827751196172
+    }
+  },
+  "paired_tests_M4_minus_M2": {
+    "top1_accuracy": {
+      "mean_delta": 0.013636363636363636,
+      "bootstrap_ci95": [
+        -0.01818181818181818,
+        0.045454545454545456
+      ],
+      "permutation_p_one_sided": 0.29114177164567084
+    },
+    "mrr": {
+      "mean_delta": 0.009987045911514832,
+      "bootstrap_ci95": [
+        -0.010593762169293247,
+        0.03130017722464615
+      ],
+      "permutation_p_one_sided": 0.17176564687062587
+    },
+    "map": {
+      "mean_delta": 0.041722984020743446,
+      "bootstrap_ci95": [
+        0.03186768321759602,
+        0.051739441486096306
+      ],
+      "permutation_p_one_sided": 0.0001999600079984003
+    },
+    "recall@10": {
+      "mean_delta": 0.02392344497607655,
+      "bootstrap_ci95": [
+        0.014593301435406698,
+        0.03301435406698564
+      ],
+      "permutation_p_one_sided": 0.0001999600079984003
+    }
+  },
+  "parameters": {
+    "combined_markov_weight": 0.8,
+    "combined_geometry_weight": 0.19999999999999996,
+    "markov_distance": "Jensen-Shannon divergence over flattened AST transition probabilities",
+    "geometry_distance": "Euclidean distance over z-scored AST geometry profile features"
+  },
+  "errors": []
+}

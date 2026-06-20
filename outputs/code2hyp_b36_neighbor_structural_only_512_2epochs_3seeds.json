@@ -1,0 +1,216 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.val.c2s",
+    "train_records": 512,
+    "validation_records_loaded": 128,
+    "validation_records_after_known_target_filter": 53,
+    "target_subtoken_vocab_size": 608,
+    "token_vocab_size": 3,
+    "ast_node_vocab_size": 166,
+    "path_encoder": "gru",
+    "representation_transform": "identity",
+    "lexical_ablation": "structural_only"
+  },
+  "training": {
+    "epochs": 2,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "distance",
+    "use_positive_weighting": true,
+    "max_positive_weight": 7.0,
+    "positive_weight_mean": 6.993319988250732,
+    "positive_weight_max": 7.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101,
+      202,
+      303
+    ],
+    "variant_filter": [
+      "B36_code2hyp_product_frechet_neighbor"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B36_code2hyp_product_frechet_neighbor",
+      "model_seed": 101,
+      "parameter_count": 70820,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.23863636363636365,
+      "validation_recall": 0.23863636363636365,
+      "validation_f1": 0.23863636363636365,
+      "final_train_loss": 0.6679200902581215,
+      "final_train_f1": 0.10297643965545432,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.6878095343708992,
+          "task_loss": 0.6878095343708992,
+          "structural_loss": 0.0,
+          "precision": 0.05345542011452383,
+          "recall": 0.05345542011452383,
+          "f1": 0.05345542011452383,
+          "curvature": 0.9943035021424294,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6679200902581215,
+          "task_loss": 0.5763350911438465,
+          "structural_loss": 1.831700086593628,
+          "precision": 0.10297643965545432,
+          "recall": 0.10297643965545432,
+          "f1": 0.10297643965545432,
+          "curvature": 0.981130950152874,
+          "structural_loss_weight": 0.05
+        }
+      ],
+      "validation_structural_loss": 0.18538306653499603,
+      "validation_structural_rank_loss": 0.5002012252807617,
+      "validation_structural_spearman": 0.20827755331993103,
+      "validation_structural_neighbor_overlap_at_1": 0.2704995274543762,
+      "validation_structural_neighbor_overlap_at_3": 0.35092681646347046,
+      "validation_structural_neighbor_recall_at_1": 0.2704995274543762,
+      "validation_structural_neighbor_recall_at_3": 0.35092681646347046,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "delayed_linear",
+      "structural_regularizer": "neighbor_distribution",
+      "curvature": 0.9734972715377808,
+      "factorized_metric_weights": [
+        0.9999996423721313,
+        0.97585529088974,
+        0.9999966025352478
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B36_code2hyp_product_frechet_neighbor",
+      "model_seed": 202,
+      "parameter_count": 70820,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.25,
+      "validation_recall": 0.25,
+      "validation_f1": 0.25,
+      "final_train_loss": 0.6599612906575203,
+      "final_train_f1": 0.09153897815034599,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.6864927411079407,
+          "task_loss": 0.6864927411079407,
+          "structural_loss": 0.0,
+          "precision": 0.015025538822982094,
+          "recall": 0.015025538822982094,
+          "f1": 0.015025538822982094,
+          "curvature": 0.9943026229739189,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6599612906575203,
+          "task_loss": 0.5689448304474354,
+          "structural_loss": 1.820329263806343,
+          "precision": 0.09153897815034599,
+          "recall": 0.09153897815034599,
+          "f1": 0.09153897815034599,
+          "curvature": 0.9812466725707054,
+          "structural_loss_weight": 0.05
+        }
+      ],
+      "validation_structural_loss": 0.18389618396759033,
+      "validation_structural_rank_loss": 0.5520732998847961,
+      "validation_structural_spearman": 0.19165106117725372,
+      "validation_structural_neighbor_overlap_at_1": 0.2497643679380417,
+      "validation_structural_neighbor_overlap_at_3": 0.35124096274375916,
+      "validation_structural_neighbor_recall_at_1": 0.2497643679380417,
+      "validation_structural_neighbor_recall_at_3": 0.35124096274375916,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "delayed_linear",
+      "structural_regularizer": "neighbor_distribution",
+      "curvature": 0.9737443327903748,
+      "factorized_metric_weights": [
+        1.0000239610671997,
+        0.9791983366012573,
+        1.00003182888031
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B36_code2hyp_product_frechet_neighbor",
+      "model_seed": 303,
+      "parameter_count": 70820,
+      "initial_validation_f1": 0.022727272727272728,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.6637694388628006,
+      "final_train_f1": 0.08983961636795824,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.6872686147689819,
+          "task_loss": 0.6872686147689819,
+          "structural_loss": 0.0,
+          "precision": 0.05004057196243354,
+          "recall": 0.05004057196243354,
+          "f1": 0.05004057196243354,
+          "curvature": 0.9976458847522736,
+          "structural_loss_weight": 0.0
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6637694388628006,
+          "task_loss": 0.5736367180943489,
+          "structural_loss": 1.8026543706655502,
+          "precision": 0.08983961636795824,
+          "recall": 0.08983961636795824,
+          "f1": 0.08983961636795824,
+          "curvature": 0.9850970655679703,
+          "structural_loss_weight": 0.05
+        }
+      ],
+      "validation_structural_loss": 0.18321378529071808,
+      "validation_structural_rank_loss": 0.7493600845336914,
+      "validation_structural_spearman": 0.2563984990119934,
+      "validation_structural_neighbor_overlap_at_1": 0.2761545777320862,
+      "validation_structural_neighbor_overlap_at_3": 0.36852025985717773,
+      "validation_structural_neighbor_recall_at_1": 0.2761545777320862,
+      "validation_structural_neighbor_recall_at_3": 0.36852025985717773,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "delayed_linear",
+      "structural_regularizer": "neighbor_distribution",
+      "curvature": 0.9778014421463013,
+      "factorized_metric_weights": [
+        1.0000338554382324,
+        0.9767082929611206,
+        1.0000134706497192
+      ],
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

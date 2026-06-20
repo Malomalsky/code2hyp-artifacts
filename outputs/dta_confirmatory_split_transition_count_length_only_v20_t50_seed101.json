@@ -1,0 +1,214 @@
+{
+  "protocol": {
+    "status": "confirmatory_split_after_exploratory_design",
+    "selection_rule": "choose markov_weight maximizing validation MAP; break ties by Recall@10, then larger Markov weight",
+    "test_rule": "apply selected weight to disjoint test split; do not retune on test",
+    "scaling_rule": "fit z-score scaler and distance median scales on validation only"
+  },
+  "dataset": {
+    "path": "data/dta_zenodo_7799972/extracted",
+    "validation_per_task": 20,
+    "test_per_task": 50,
+    "split_seed": 101
+  },
+  "parameters": {
+    "baseline_kind": "transition_count",
+    "feature_set_name": "length_only",
+    "candidate_weights": [
+      1.0,
+      0.99,
+      0.98,
+      0.97,
+      0.95,
+      0.9,
+      0.85,
+      0.8
+    ],
+    "selected_markov_weight": 0.9,
+    "selected_geometry_weight": 0.09999999999999998,
+    "validation_baseline_scale": 0.6425265459815723,
+    "validation_feature_scale": 1.2327295995760985
+  },
+  "records": {
+    "validation": 220,
+    "test": 550,
+    "validation_syntax_errors": 0,
+    "test_syntax_errors": 0,
+    "task_count_validation": 11,
+    "task_count_test": 11
+  },
+  "validation_results": [
+    {
+      "markov_weight": 1.0,
+      "geometry_weight": 0.0,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9409090909090909,
+        "mrr": 0.954319395881896,
+        "map": 0.7380156656284905,
+        "recall@1": 0.049521531100478466,
+        "recall@3": 0.14449760765550237,
+        "recall@5": 0.2358851674641148,
+        "recall@10": 0.43755980861244015
+      }
+    },
+    {
+      "markov_weight": 0.99,
+      "geometry_weight": 0.010000000000000009,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9454545454545454,
+        "mrr": 0.9570250235875235,
+        "map": 0.7429157113531791,
+        "recall@1": 0.04976076555023923,
+        "recall@3": 0.1449760765550239,
+        "recall@5": 0.23779904306220093,
+        "recall@10": 0.4389952153110047
+      }
+    },
+    {
+      "markov_weight": 0.98,
+      "geometry_weight": 0.020000000000000018,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9454545454545454,
+        "mrr": 0.9577516630725187,
+        "map": 0.7471809702199428,
+        "recall@1": 0.04976076555023923,
+        "recall@3": 0.14473684210526316,
+        "recall@5": 0.23851674641148324,
+        "recall@10": 0.44306220095693777
+      }
+    },
+    {
+      "markov_weight": 0.97,
+      "geometry_weight": 0.030000000000000027,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.95,
+        "mrr": 0.9602315070925618,
+        "map": 0.7508569823123133,
+        "recall@1": 0.05,
+        "recall@3": 0.14545454545454545,
+        "recall@5": 0.23923444976076552,
+        "recall@10": 0.44593301435406696
+      }
+    },
+    {
+      "markov_weight": 0.95,
+      "geometry_weight": 0.050000000000000044,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.95,
+        "mrr": 0.9594419075061709,
+        "map": 0.7565606679388235,
+        "recall@1": 0.05,
+        "recall@3": 0.1452153110047847,
+        "recall@5": 0.2394736842105263,
+        "recall@10": 0.44832535885167457
+      }
+    },
+    {
+      "markov_weight": 0.9,
+      "geometry_weight": 0.09999999999999998,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9409090909090909,
+        "mrr": 0.9550528773762469,
+        "map": 0.7602746099048128,
+        "recall@1": 0.049521531100478466,
+        "recall@3": 0.1452153110047847,
+        "recall@5": 0.23827751196172248,
+        "recall@10": 0.4473684210526316
+      }
+    },
+    {
+      "markov_weight": 0.85,
+      "geometry_weight": 0.15000000000000002,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9454545454545454,
+        "mrr": 0.9566081225172135,
+        "map": 0.7490877595182143,
+        "recall@1": 0.04976076555023923,
+        "recall@3": 0.1442583732057416,
+        "recall@5": 0.23564593301435405,
+        "recall@10": 0.4392344497607655
+      }
+    },
+    {
+      "markov_weight": 0.8,
+      "geometry_weight": 0.19999999999999996,
+      "metrics": {
+        "queries": 220,
+        "top1_accuracy": 0.9409090909090909,
+        "mrr": 0.9529012527876165,
+        "map": 0.7280393335656349,
+        "recall@1": 0.049521531100478466,
+        "recall@3": 0.14258373205741626,
+        "recall@5": 0.2311004784688995,
+        "recall@10": 0.43014354066985644
+      }
+    }
+  ],
+  "test_results": {
+    "baseline": {
+      "queries": 550,
+      "top1_accuracy": 0.9854545454545455,
+      "mrr": 0.9901771246117396,
+      "map": 0.7462905494453936,
+      "recall@1": 0.020111317254174393,
+      "recall@3": 0.05951762523191094,
+      "recall@5": 0.09703153988868275,
+      "recall@10": 0.18871985157699445
+    },
+    "candidate": {
+      "queries": 550,
+      "top1_accuracy": 0.9890909090909091,
+      "mrr": 0.9927543202226746,
+      "map": 0.7743225412992161,
+      "recall@1": 0.020185528756957328,
+      "recall@3": 0.05966604823747681,
+      "recall@5": 0.09821892393320965,
+      "recall@10": 0.19157699443413728
+    },
+    "paired_tests_candidate_minus_baseline": {
+      "top1_accuracy": {
+        "mean_delta": 0.0036363636363636364,
+        "bootstrap_ci95": [
+          -0.005454545454545455,
+          0.012727272727272728
+        ],
+        "permutation_p_one_sided": 0.3379324135172965
+      },
+      "mrr": {
+        "mean_delta": 0.0025771956109350365,
+        "bootstrap_ci95": [
+          -0.00211977408603466,
+          0.007728710762450189
+        ],
+        "permutation_p_one_sided": 0.14117176564687062
+      },
+      "map": {
+        "mean_delta": 0.028031991853822453,
+        "bootstrap_ci95": [
+          0.021064159565638674,
+          0.03506999422883251
+        ],
+        "permutation_p_one_sided": 0.0001999600079984003
+      },
+      "recall@10": {
+        "mean_delta": 0.002857142857142857,
+        "bootstrap_ci95": [
+          0.0013729128014842295,
+          0.0044526901669758815
+        ],
+        "permutation_p_one_sided": 0.0001999600079984003
+      }
+    }
+  },
+  "errors": {
+    "validation": [],
+    "test": []
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "dataset": {
+    "path": "data/dta_zenodo_7799972/extracted",
+    "limit_per_task": 50,
+    "sample_seed": 13
+  },
+  "records": {
+    "valid": 550,
+    "syntax_errors": 0,
+    "task_count": 11
+  },
+  "parameters": {
+    "markov_weight": 0.9,
+    "feature_weight": 0.09999999999999998,
+    "baseline_kind": "transition_count"
+  },
+  "methods": {
+    "M2_transition_count_jsd": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.9836363636363636,
+        "mrr": 0.9874057584644096,
+        "map": 0.7418147799057162,
+        "recall@1": 0.02007421150278293,
+        "recall@3": 0.05907235621521336,
+        "recall@5": 0.09692022263450835,
+        "recall@10": 0.1886456400742115
+      },
+      "paired_tests_M_minus_M2": null
+    },
+    "M4_markov_size_depth": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.9872727272727273,
+        "mrr": 0.9902683982683983,
+        "map": 0.7536506153446386,
+        "recall@1": 0.020148423005565862,
+        "recall@3": 0.05899814471243042,
+        "recall@5": 0.09721706864564007,
+        "recall@10": 0.19001855287569572
+      },
+      "paired_tests_M_minus_M2": {
+        "top1_accuracy": {
+          "mean_delta": 0.0036363636363636364,
+          "bootstrap_ci95": [
+            0.0,
+            0.00909090909090909
+          ],
+          "permutation_p_one_sided": 0.2471505698860228
+        },
+        "mrr": {
+          "mean_delta": 0.0028626398039887776,
+          "bootstrap_ci95": [
+            0.00019597313732211082,
+            0.0066516865343844815
+          ],
+          "permutation_p_one_sided": 0.044191161767646474
+        },
+        "map": {
+          "mean_delta": 0.011835835438922313,
+          "bootstrap_ci95": [
+            0.008399789355148598,
+            0.01524414159943916
+          ],
+          "permutation_p_one_sided": 0.0001999600079984003
+        },
+        "recall@10": {
+          "mean_delta": 0.0013729128014842306,
+          "bootstrap_ci95": [
+            0.0003339517625231911,
+            0.002486085343228201
+          ],
+          "permutation_p_one_sided": 0.0057988402319536095
+        }
+      }
+    },
+    "M4_markov_branching": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.9836363636363636,
+        "mrr": 0.9888354978354978,
+        "map": 0.7317128288238052,
+        "recall@1": 0.02007421150278293,
+        "recall@3": 0.058961038961038964,
+        "recall@5": 0.09692022263450835,
+        "recall@10": 0.1886456400742115
+      },
+      "paired_tests_M_minus_M2": {
+        "top1_accuracy": {
+          "mean_delta": 0.0,
+          "bootstrap_ci95": [
+            0.0,
+            0.0
+          ],
+          "permutation_p_one_sided": 1.0
+        },
+        "mrr": {
+          "mean_delta": 0.0014297393710883447,
+          "bootstrap_ci95": [
+            0.0003195592286501378,
+            0.0029775171065493647
+          ],
+          "permutation_p_one_sided": 0.007198560287942412
+        },
+        "map": {
+          "mean_delta": -0.010101951081911044,
+          "bootstrap_ci95": [
+            -0.013862006703946245,
+            -0.006430591904292824
+          ],
+          "permutation_p_one_sided": 1.0
+        },
+        "recall@10": {
+          "mean_delta": 2.460153293203472e-19,
+          "bootstrap_ci95": [
+            -0.0008534322820037103,
+            0.0008163265306122451
+          ],
+          "permutation_p_one_sided": 0.46610677864427114
+        }
+      }
+    },
+    "M4_markov_metric_distortion": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.98,
+        "mrr": 0.9864904455813547,
+        "map": 0.7418574031521271,
+        "recall@1": 0.02,
+        "recall@3": 0.058478664192949906,
+        "recall@5": 0.09628942486085344,
+        "recall@10": 0.18771799628942487
+      },
+      "paired_tests_M_minus_M2": {
+        "top1_accuracy": {
+          "mean_delta": -0.0036363636363636364,
+          "bootstrap_ci95": [
+            -0.01090909090909091,
+            0.0036363636363636364
+          ],
+          "permutation_p_one_sided": 1.0
+        },
+        "mrr": {
+          "mean_delta": -0.0009153128830548184,
+          "bootstrap_ci95": [
+            -0.004945821854912763,
+            0.003296602387511479
+          ],
+          "permutation_p_one_sided": 1.0
+        },
+        "map": {
+          "mean_delta": 4.262324641096882e-05,
+          "bootstrap_ci95": [
+            -0.004649204275537415,
+            0.0047883401218640756
+          ],
+          "permutation_p_one_sided": 0.48210357928414316
+        },
+        "recall@10": {
+          "mean_delta": -0.0009276437847866419,
+          "bootstrap_ci95": [
+            -0.002189239332096475,
+            0.0002968460111317255
+          ],
+          "permutation_p_one_sided": 1.0
+        }
+      }
+    },
+    "M4_markov_shape": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.9836363636363636,
+        "mrr": 0.9886462022825658,
+        "map": 0.7474026404820511,
+        "recall@1": 0.02007421150278293,
+        "recall@3": 0.05914656771799629,
+        "recall@5": 0.09747680890538034,
+        "recall@10": 0.190278293135436
+      },
+      "paired_tests_M_minus_M2": {
+        "top1_accuracy": {
+          "mean_delta": 0.0,
+          "bootstrap_ci95": [
+            -0.005454545454545455,
+            0.005454545454545455
+          ],
+          "permutation_p_one_sided": 1.0
+        },
+        "mrr": {
+          "mean_delta": 0.0012404438181564282,
+          "bootstrap_ci95": [
+            -0.001688311688311688,
+            0.004701298701298702
+          ],
+          "permutation_p_one_sided": 0.236752649470106
+        },
+        "map": {
+          "mean_delta": 0.005587860576334789,
+          "bootstrap_ci95": [
+            0.002836534900774885,
+            0.008243076669742201
+          ],
+          "permutation_p_one_sided": 0.0003999200159968006
+        },
+        "recall@10": {
+          "mean_delta": 0.0016326530612244903,
+          "bootstrap_ci95": [
+            0.0007421150278293142,
+            0.0025602968460111323
+          ],
+          "permutation_p_one_sided": 0.0001999600079984003
+        }
+      }
+    },
+    "M4_markov_all": {
+      "metrics": {
+        "queries": 550,
+        "top1_accuracy": 0.9854545454545455,
+        "mrr": 0.9894349862258954,
+        "map": 0.7509844745098473,
+        "recall@1": 0.020111317254174393,
+        "recall@3": 0.05914656771799629,
+        "recall@5": 0.0971799628942486,
+        "recall@10": 0.18979591836734694
+      },
+      "paired_tests_M_minus_M2": {
+        "top1_accuracy": {
+          "mean_delta": 0.0018181818181818182,
+          "bootstrap_ci95": [
+            -0.0036363636363636364,
+            0.00909090909090909
+          ],
+          "permutation_p_one_sided": 0.4977004599080184
+        },
+        "mrr": {
+          "mean_delta": 0.0020292277614858264,
+          "bootstrap_ci95": [
+            -0.0014090909090909089,
+            0.006090909090909091
+          ],
+          "permutation_p_one_sided": 0.14197160567886422
+        },
+        "map": {
+          "mean_delta": 0.009169694604131034,
+          "bootstrap_ci95": [
+            0.00652079099860191,
+            0.011773323413011525
+          ],
+          "permutation_p_one_sided": 0.0001999600079984003
+        },
+        "recall@10": {
+          "mean_delta": 0.001150278293135436,
+          "bootstrap_ci95": [
+            0.00033395176252319105,
+            0.002003710575139147
+          ],
+          "permutation_p_one_sided": 0.003999200159968006
+        }
+      }
+    }
+  },
+  "errors": []
+}

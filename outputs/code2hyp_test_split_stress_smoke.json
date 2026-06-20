@@ -1,0 +1,149 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.test.c2s",
+    "train_records": 64,
+    "validation_records_loaded": 32,
+    "validation_records_after_known_target_filter": 6,
+    "target_subtoken_vocab_size": 135,
+    "token_vocab_size": 458,
+    "ast_node_vocab_size": 113,
+    "path_encoder": "mean",
+    "representation_transform": "identity",
+    "lexical_ablation": "original"
+  },
+  "training": {
+    "epochs": 1,
+    "batch_size": 16,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "distance",
+    "use_positive_weighting": true,
+    "max_positive_weight": 20.0,
+    "positive_weight_mean": 19.636802673339844,
+    "positive_weight_max": 20.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101
+    ],
+    "variant_filter": [
+      "B39_code2vec_context_transform_baseline",
+      "B36_code2hyp_product_frechet_neighbor"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B39_code2vec_context_transform_baseline",
+      "model_seed": 101,
+      "parameter_count": 40775,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.1,
+      "validation_recall": 0.1,
+      "validation_f1": 0.10000000000000002,
+      "final_train_loss": 0.9502709358930588,
+      "final_train_f1": 0.05555105598494315,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.9502709358930588,
+          "task_loss": 0.9502709358930588,
+          "structural_loss": 0.0,
+          "precision": 0.05555105598494315,
+          "recall": 0.05555105598494315,
+          "f1": 0.05555105598494315,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.0
+        }
+      ],
+      "validation_structural_loss": 0.15246270596981049,
+      "validation_structural_normalized_stress": 0.390464723110199,
+      "validation_structural_rank_loss": 0.0483362190425396,
+      "validation_structural_spearman": 0.0018674122402444482,
+      "validation_structural_neighbor_overlap_at_1": 0.37837839126586914,
+      "validation_structural_neighbor_overlap_at_3": 0.6216216087341309,
+      "validation_structural_neighbor_recall_at_1": 0.37837839126586914,
+      "validation_structural_neighbor_recall_at_3": 0.6216216087341309,
+      "structural_loss_weight": 0.0,
+      "structural_loss_schedule": "constant",
+      "structural_regularizer": "distance",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "product_attention_bias_weight": 0.0,
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B36_code2hyp_product_frechet_neighbor",
+      "model_seed": 101,
+      "parameter_count": 31467,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.0,
+      "validation_recall": 0.0,
+      "validation_f1": 0.0,
+      "final_train_loss": 1.00949826836586,
+      "final_train_f1": 0.029193856929081625,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 1.00949826836586,
+          "task_loss": 0.9513217508792877,
+          "structural_loss": 1.163530707359314,
+          "precision": 0.029193856929081625,
+          "recall": 0.029193856929081625,
+          "f1": 0.029193856929081625,
+          "curvature": 1.0028162002563477,
+          "structural_loss_weight": 0.05
+        }
+      ],
+      "validation_structural_loss": 0.14976894855499268,
+      "validation_structural_normalized_stress": 0.3869999349117279,
+      "validation_structural_rank_loss": 0.08008088171482086,
+      "validation_structural_spearman": 0.19060619175434113,
+      "validation_structural_neighbor_overlap_at_1": 0.7837837934494019,
+      "validation_structural_neighbor_overlap_at_3": 0.6936937570571899,
+      "validation_structural_neighbor_recall_at_1": 0.7837837934494019,
+      "validation_structural_neighbor_recall_at_3": 0.6936937570571899,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "delayed_linear",
+      "structural_regularizer": "neighbor_distribution",
+      "curvature": 1.0075018405914307,
+      "factorized_metric_weights": [
+        1.0005731582641602,
+        1.0062199831008911,
+        0.9934695363044739
+      ],
+      "product_attention_bias_weight": 0.0,
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "evaluation": {
+    "split": "test",
+    "path": "data/code2seq_java_small/java-small/java-small.test.c2s",
+    "claim_boundary": "Use eval_split=val for model selection. Use eval_split=test only after variants and hyperparameters are fixed."
+  },
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

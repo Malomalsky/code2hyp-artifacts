@@ -1,0 +1,40 @@
+{
+  "input": {
+    "path_count": 5,
+    "paths": [
+      "docs/readme.md",
+      "src/services/auth/token.py",
+      "src/utils/io.py",
+      "src/utils/path.py",
+      "tests/test_io.py"
+    ],
+    "beta": 0.45,
+    "gamma": 0.0,
+    "curvature": 1.0
+  },
+  "profile": {
+    "node_count": 12,
+    "edge_count": 11,
+    "path_count": 5,
+    "max_depth": 4,
+    "hyperbolicity": {
+      "delta": 0.0,
+      "delta_norm": 0.0,
+      "diameter": 6,
+      "quadruples": 495
+    },
+    "euclidean": {
+      "alpha": 4.214541900237905,
+      "median_relative_error": 0.2032179350352047,
+      "stress": 0.4133523210498431,
+      "pairs": 66
+    },
+    "hyperbolic": {
+      "alpha": 1.699958067710666,
+      "median_relative_error": 0.09884875569077627,
+      "stress": 0.35897591743405916,
+      "pairs": 66
+    },
+    "geometry_advantage": 0.13154977206291554
+  }
+}

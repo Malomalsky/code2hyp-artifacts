@@ -1,0 +1,25 @@
+article_use,baseline_kind,dataset_path,experiment_file,experiment_type,feature_set,geometry_weight,limit_per_task,markov_weight,records,role,sample_seed,seeds,test_per_task,validation_per_task
+pipeline sanity check,,data/dta_zenodo_7799972/extracted,dta_ast_pilot_limit3.json,ast_geometry_pilot,,,3,,33,smoke_test,,,,
+feature-set control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_feature_sweep_transition_count_v20_t50_seed101.json,confirmatory_feature_sweep,,,,,550,confirmatory,101,,50,20
+feature-set control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_feature_sweep_transition_count_v20_t50_seed202.json,confirmatory_feature_sweep,,,,,550,confirmatory,202,,50,20
+feature-set control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_feature_sweep_transition_count_v20_t50_seed303.json,confirmatory_feature_sweep,,,,,550,confirmatory,303,,50,20
+residual feature control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_residual_sweep_transition_count_v20_t50_seed101.json,confirmatory_residual_sweep,,,,,550,confirmatory,101,,50,20
+residual feature control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_residual_sweep_transition_count_v20_t50_seed202.json,confirmatory_residual_sweep,,,,,550,confirmatory,202,,50,20
+residual feature control,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_residual_sweep_transition_count_v20_t50_seed303.json,confirmatory_residual_sweep,,,,,550,confirmatory,303,,50,20
+primary evidence,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_split_transition_count_all_v20_t50_seed101.json,confirmatory_split,all,0.09999999999999998,,0.9,550,confirmatory,101,,50,20
+primary evidence,transition_count,data/dta_zenodo_7799972/extracted,dta_confirmatory_split_transition_count_length_only_v20_t50_seed101.json,confirmatory_split,length_only,0.09999999999999998,,0.9,550,confirmatory,101,,50,20
+ablation / method design,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_feature_ablation_limit20_seed13_w085.json,method_comparison,,0.15000000000000002,20,0.85,220,exploratory,13,,,
+ablation / method design,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_feature_ablation_limit50_seed13_w085.json,method_comparison,,0.15000000000000002,50,0.85,550,exploratory,13,,,
+ablation / method design,transition_count,data/dta_zenodo_7799972/extracted,dta_feature_ablation_transition_count_limit50_seed13_w085.json,method_comparison,,0.15000000000000002,50,0.85,550,exploratory,13,,,
+ablation / method design,transition_count,data/dta_zenodo_7799972/extracted,dta_feature_ablation_transition_count_limit50_seed13_w090.json,method_comparison,,0.09999999999999998,50,0.9,550,exploratory,13,,,
+ablation / method design,transition_count,data/dta_zenodo_7799972/extracted,dta_feature_ablation_transition_count_limit50_seed13_w090_length_control.json,method_comparison,,0.09999999999999998,50,0.9,550,exploratory,13,,,
+baseline selection,multiple,data/dta_zenodo_7799972/extracted,dta_markov_baselines_limit50_seed13.json,markov_baseline_audit,,,50,,550,exploratory,13,,,
+robustness check,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_multiseed_ablation_limit20_w085.json,multiseed_ablation,,0.15000000000000002,20,0.85,660,exploratory,,"13,29,43",,
+robustness check,transition_count,data/dta_zenodo_7799972/extracted,dta_multiseed_ablation_transition_count_limit20_w090.json,multiseed_ablation,,0.09999999999999998,20,0.9,660,exploratory,,"13,29,43",,
+ablation / method design,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_retrieval_limit10_w08.json,method_comparison,,0.19999999999999996,10,0.8,110,exploratory,,,,
+ablation / method design,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_retrieval_limit20_w08.json,method_comparison,,0.19999999999999996,20,0.8,220,exploratory,,,,
+hyperparameter selection,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_weight_sweep_limit10.json,weight_sweep,,,10,,110,exploratory,,,,
+hyperparameter selection,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_weight_sweep_limit20.json,weight_sweep,,,20,,220,exploratory,,,,
+hyperparameter selection,flat_markov_jsd,data/dta_zenodo_7799972/extracted,dta_weight_sweep_limit20_seed13.json,weight_sweep,,,20,,220,exploratory,13,,,
+hyperparameter selection,transition_count,data/dta_zenodo_7799972/extracted,dta_weight_sweep_transition_count_limit50_seed13.json,weight_sweep,,,50,,550,exploratory,13,,,
+auxiliary sanity check,,"{'path_count': 5, 'paths': ['docs/readme.md', 'src/services/auth/token.py', 'src/utils/io.py', 'src/utils/path.py', 'tests/test_io.py'], 'beta': 0.45, 'gamma': 0.0, 'curvature': 1.0}",file_tree_pilot_sample.json,file_tree_smoke_test,,,,,,smoke_test,,,,

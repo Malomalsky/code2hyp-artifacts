@@ -1,0 +1,229 @@
+{
+  "experiment": "code2hyp_curvature_sweep",
+  "curvatures": [
+    0.1,
+    0.3,
+    1.0,
+    3.0
+  ],
+  "output_dir": "outputs/code2hyp_curvature_sweep_1k_seed101",
+  "runs": [
+    {
+      "curvature": 0.1,
+      "output_path": "outputs/code2hyp_curvature_sweep_1k_seed101/curvature_c0p1.json",
+      "summaries": [
+        {
+          "variant": "B1_euclidean",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.8141186237335205,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.20205922424793243,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.33128052949905396,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B2_product_fixed_curvature",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7416387796401978,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.5192400813102722,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.324200838804245,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B3_product",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7472008466720581,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.4983063340187073,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.3246743679046631,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B5_euclidean_struct_loss",
+          "n": 1,
+          "validation_f1_mean": 0.1589958158995816,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7461530566215515,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.35876646637916565,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.30245259404182434,
+          "validation_structural_spearman_std": 0.0
+        }
+      ]
+    },
+    {
+      "curvature": 0.3,
+      "output_path": "outputs/code2hyp_curvature_sweep_1k_seed101/curvature_c0p3.json",
+      "summaries": [
+        {
+          "variant": "B1_euclidean",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.8141186237335205,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.20205922424793243,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.33128052949905396,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B2_product_fixed_curvature",
+          "n": 1,
+          "validation_f1_mean": 0.16736401673640167,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.5371123552322388,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.8515636324882507,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.27430084347724915,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B3_product",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.5586501955986023,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.8133644461631775,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.2819181978702545,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B5_euclidean_struct_loss",
+          "n": 1,
+          "validation_f1_mean": 0.1589958158995816,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7461530566215515,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.35876646637916565,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.30245259404182434,
+          "validation_structural_spearman_std": 0.0
+        }
+      ]
+    },
+    {
+      "curvature": 1.0,
+      "output_path": "outputs/code2hyp_curvature_sweep_1k_seed101/curvature_c1.json",
+      "summaries": [
+        {
+          "variant": "B1_euclidean",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.8141186237335205,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.20205922424793243,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.33128052949905396,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B2_product_fixed_curvature",
+          "n": 1,
+          "validation_f1_mean": 0.16736401673640167,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.14102375507354736,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.34899523854255676,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": 0.148698091506958,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B3_product",
+          "n": 1,
+          "validation_f1_mean": 0.16736401673640167,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.14154647290706635,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.37282440066337585,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": 0.1368892341852188,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B5_euclidean_struct_loss",
+          "n": 1,
+          "validation_f1_mean": 0.1589958158995816,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7461530566215515,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.35876646637916565,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.30245259404182434,
+          "validation_structural_spearman_std": 0.0
+        }
+      ]
+    },
+    {
+      "curvature": 3.0,
+      "output_path": "outputs/code2hyp_curvature_sweep_1k_seed101/curvature_c3.json",
+      "summaries": [
+        {
+          "variant": "B1_euclidean",
+          "n": 1,
+          "validation_f1_mean": 0.16317991631799164,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.8141186237335205,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.20205922424793243,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.33128052949905396,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B2_product_fixed_curvature",
+          "n": 1,
+          "validation_f1_mean": 0.12552301255230125,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.12064515799283981,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.3925462067127228,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": 0.259528249502182,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B3_product",
+          "n": 1,
+          "validation_f1_mean": 0.12552301255230125,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.12017043679952621,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.3953173756599426,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": 0.26912152767181396,
+          "validation_structural_spearman_std": 0.0
+        },
+        {
+          "variant": "B5_euclidean_struct_loss",
+          "n": 1,
+          "validation_f1_mean": 0.1589958158995816,
+          "validation_f1_std": 0.0,
+          "validation_structural_loss_mean": 0.7461530566215515,
+          "validation_structural_loss_std": 0.0,
+          "validation_structural_rank_loss_mean": 0.35876646637916565,
+          "validation_structural_rank_loss_std": 0.0,
+          "validation_structural_spearman_mean": -0.30245259404182434,
+          "validation_structural_spearman_std": 0.0
+        }
+      ]
+    }
+  ],
+  "claim_boundary": "This sweep is an exploratory sensitivity analysis. It can show whether fixed curvature scale matters, but confirmatory claims require a preregistered split and paired uncertainty estimates."
+}

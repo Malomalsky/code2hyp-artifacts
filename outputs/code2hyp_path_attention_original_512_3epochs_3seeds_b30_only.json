@@ -1,0 +1,234 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.val.c2s",
+    "train_records": 512,
+    "validation_records_loaded": 128,
+    "validation_records_after_known_target_filter": 53,
+    "target_subtoken_vocab_size": 608,
+    "token_vocab_size": 3314,
+    "ast_node_vocab_size": 166,
+    "path_encoder": "gru",
+    "representation_transform": "identity",
+    "lexical_ablation": "original"
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "rank",
+    "use_positive_weighting": true,
+    "max_positive_weight": 20.0,
+    "positive_weight_mean": 19.933841705322266,
+    "positive_weight_max": 20.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101,
+      202,
+      303
+    ],
+    "variant_filter": [
+      "B30_hyperbolic_path_dual_attention_mp_rank_separated"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 101,
+      "parameter_count": 182016,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.10227272727272728,
+      "validation_recall": 0.10227272727272728,
+      "validation_f1": 0.10227272727272728,
+      "final_train_loss": 0.49990858137607574,
+      "final_train_f1": 0.1071177988069186,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7362712696194649,
+          "task_loss": 0.7340806871652603,
+          "structural_loss": 0.1314351437613368,
+          "precision": 0.04243588766339859,
+          "recall": 0.04243588766339859,
+          "f1": 0.04243588766339859,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6567365080118179,
+          "task_loss": 0.6437996178865433,
+          "structural_loss": 0.3881067521870136,
+          "precision": 0.0970366062516786,
+          "recall": 0.0970366062516786,
+          "f1": 0.0970366062516786,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.49990858137607574,
+          "task_loss": 0.4785119853913784,
+          "structural_loss": 0.4279320426285267,
+          "precision": 0.1071177988069186,
+          "recall": 0.1071177988069186,
+          "f1": 0.1071177988069186,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.12645217776298523,
+      "validation_structural_rank_loss": 0.16454778611660004,
+      "validation_structural_spearman": 0.12818637490272522,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 202,
+      "parameter_count": 182016,
+      "initial_validation_f1": 0.011363636363636364,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.5015287548303604,
+      "final_train_f1": 0.14081201568852267,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7375880554318428,
+          "task_loss": 0.7350346967577934,
+          "structural_loss": 0.15320182126015425,
+          "precision": 0.011326988926496804,
+          "recall": 0.011326988926496804,
+          "f1": 0.011326988926496804,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6607780680060387,
+          "task_loss": 0.6504876613616943,
+          "structural_loss": 0.3087124936282635,
+          "precision": 0.11018244485659381,
+          "recall": 0.11018244485659381,
+          "f1": 0.11018244485659381,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.5015287548303604,
+          "task_loss": 0.48282525315880775,
+          "structural_loss": 0.3740701209753752,
+          "precision": 0.14081201568852267,
+          "recall": 0.14081201568852267,
+          "f1": 0.14081201568852267,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1267668604850769,
+      "validation_structural_rank_loss": 0.34368768334388733,
+      "validation_structural_spearman": 0.1736273169517517,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B30_hyperbolic_path_dual_attention_mp_rank_separated",
+      "model_seed": 303,
+      "parameter_count": 182016,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.07954545454545454,
+      "validation_recall": 0.07954545454545454,
+      "validation_f1": 0.07954545454545454,
+      "final_train_loss": 0.4712461642920971,
+      "final_train_f1": 0.13606875509525465,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7354599758982658,
+          "task_loss": 0.7337414100766182,
+          "structural_loss": 0.10311351111158729,
+          "precision": 0.02986307872278912,
+          "recall": 0.02986307872278912,
+          "f1": 0.02986307872278912,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.6465689539909363,
+          "task_loss": 0.6352280303835869,
+          "structural_loss": 0.34022765420377254,
+          "precision": 0.13032047319618845,
+          "recall": 0.13032047319618845,
+          "f1": 0.13032047319618845,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.4712461642920971,
+          "task_loss": 0.4480779133737087,
+          "structural_loss": 0.4633651450276375,
+          "precision": 0.13606875509525465,
+          "recall": 0.13606875509525465,
+          "f1": 0.13606875509525465,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.12536390125751495,
+      "validation_structural_rank_loss": 0.35926011204719543,
+      "validation_structural_spearman": 0.18053209781646729,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

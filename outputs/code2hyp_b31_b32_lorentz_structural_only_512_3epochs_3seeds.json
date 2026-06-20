@@ -1,0 +1,409 @@
+{
+  "experiment": "real_code2hyp_multilabel_pilot",
+  "interpretation_status": "real_data_pilot_not_final_claim",
+  "dataset": {
+    "train_path": "data/code2seq_java_small/java-small/java-small.train.c2s",
+    "validation_path": "data/code2seq_java_small/java-small/java-small.val.c2s",
+    "train_records": 512,
+    "validation_records_loaded": 128,
+    "validation_records_after_known_target_filter": 53,
+    "target_subtoken_vocab_size": 608,
+    "token_vocab_size": 3,
+    "ast_node_vocab_size": 166,
+    "path_encoder": "gru",
+    "representation_transform": "identity",
+    "lexical_ablation": "structural_only"
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "structural_loss_weight_for_B5": 0.05,
+    "structural_regularizer_for_B5": "rank",
+    "use_positive_weighting": true,
+    "max_positive_weight": 20.0,
+    "positive_weight_mean": 19.933841705322266,
+    "positive_weight_max": 20.0,
+    "curvature": 1.0,
+    "model_seeds": [
+      101,
+      202,
+      303
+    ],
+    "variant_filter": [
+      "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "B32_lorentz_path_dual_attention_mp_soft_rank"
+    ],
+    "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count"
+  },
+  "runs": [
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 101,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.22727272727272727,
+      "validation_recall": 0.22727272727272727,
+      "validation_f1": 0.22727272727272727,
+      "final_train_loss": 0.3734228350222111,
+      "final_train_f1": 0.13077373828087765,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7192986533045769,
+          "task_loss": 0.71884336322546,
+          "structural_loss": 0.027317432453855872,
+          "precision": 0.03517839451116017,
+          "recall": 0.03517839451116017,
+          "f1": 0.03517839451116017,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5636523924767971,
+          "task_loss": 0.5605362132191658,
+          "structural_loss": 0.09348548296838999,
+          "precision": 0.11319929780729979,
+          "recall": 0.11319929780729979,
+          "f1": 0.11319929780729979,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3734228350222111,
+          "task_loss": 0.36449409648776054,
+          "structural_loss": 0.17857480701059103,
+          "precision": 0.13077373828087765,
+          "recall": 0.13077373828087765,
+          "f1": 0.13077373828087765,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.1351015567779541,
+      "validation_structural_rank_loss": 0.6784590482711792,
+      "validation_structural_spearman": 0.14178258180618286,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B32_lorentz_path_dual_attention_mp_soft_rank",
+      "model_seed": 101,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.3127886652946472,
+      "final_train_f1": 0.13417463756572476,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7163653448224068,
+          "task_loss": 0.7160878926515579,
+          "structural_loss": 0.01664665387943387,
+          "precision": 0.033143461657675025,
+          "recall": 0.033143461657675025,
+          "f1": 0.033143461657675025,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5248649418354034,
+          "task_loss": 0.5236794725060463,
+          "structural_loss": 0.035564173478633165,
+          "precision": 0.11140213663513862,
+          "recall": 0.11140213663513862,
+          "f1": 0.11140213663513862,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3127886652946472,
+          "task_loss": 0.31011636555194855,
+          "structural_loss": 0.05344602675177157,
+          "precision": 0.13417463756572476,
+          "recall": 0.13417463756572476,
+          "f1": 0.13417463756572476,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.4915197789669037,
+      "validation_structural_rank_loss": 0.09495195001363754,
+      "validation_structural_spearman": 0.21189889311790466,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 202,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.056818181818181816,
+      "validation_recall": 0.056818181818181816,
+      "validation_f1": 0.056818181818181816,
+      "final_train_loss": 0.3792123943567276,
+      "final_train_f1": 0.15928762574837615,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7202949225902557,
+          "task_loss": 0.7197543829679489,
+          "structural_loss": 0.03243269491940737,
+          "precision": 0.04578060520382736,
+          "recall": 0.04578060520382736,
+          "f1": 0.04578060520382736,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5728951543569565,
+          "task_loss": 0.5693669840693474,
+          "structural_loss": 0.10584522597491741,
+          "precision": 0.14113326242875918,
+          "recall": 0.14113326242875918,
+          "f1": 0.14113326242875918,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3792123943567276,
+          "task_loss": 0.36937976256012917,
+          "structural_loss": 0.19665262941271067,
+          "precision": 0.15928762574837615,
+          "recall": 0.15928762574837615,
+          "f1": 0.15928762574837615,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.14273911714553833,
+      "validation_structural_rank_loss": 0.3798670172691345,
+      "validation_structural_spearman": 0.02146024815738201,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B32_lorentz_path_dual_attention_mp_soft_rank",
+      "model_seed": 202,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.14772727272727273,
+      "validation_recall": 0.14772727272727273,
+      "validation_f1": 0.14772727272727273,
+      "final_train_loss": 0.3180774487555027,
+      "final_train_f1": 0.15977676689409726,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.717017151415348,
+          "task_loss": 0.7166987359523773,
+          "structural_loss": 0.019105109269730747,
+          "precision": 0.050397687584134744,
+          "recall": 0.050397687584134744,
+          "f1": 0.050397687584134744,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5344512574374676,
+          "task_loss": 0.5329159051179886,
+          "structural_loss": 0.046060571214184165,
+          "precision": 0.1416291084680785,
+          "recall": 0.1416291084680785,
+          "f1": 0.1416291084680785,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3180774487555027,
+          "task_loss": 0.31383413821458817,
+          "structural_loss": 0.08486612909473479,
+          "precision": 0.15977676689409726,
+          "recall": 0.15977676689409726,
+          "f1": 0.15977676689409726,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.4281243085861206,
+      "validation_structural_rank_loss": 0.04371113330125809,
+      "validation_structural_spearman": 0.16009767353534698,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B31_hyperbolic_path_dual_attention_mp_soft_rank",
+      "model_seed": 303,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.19318181818181818,
+      "validation_recall": 0.19318181818181818,
+      "validation_f1": 0.19318181818181818,
+      "final_train_loss": 0.37116188928484917,
+      "final_train_f1": 0.12004382609451751,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7202355861663818,
+          "task_loss": 0.7198056653141975,
+          "structural_loss": 0.0257949389051646,
+          "precision": 0.03387847406342654,
+          "recall": 0.03387847406342654,
+          "f1": 0.03387847406342654,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.5612847208976746,
+          "task_loss": 0.5576730407774448,
+          "structural_loss": 0.10835045203566551,
+          "precision": 0.08489014887713597,
+          "recall": 0.08489014887713597,
+          "f1": 0.08489014887713597,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.37116188928484917,
+          "task_loss": 0.3632667101919651,
+          "structural_loss": 0.1579034896567464,
+          "precision": 0.12004382609451751,
+          "recall": 0.12004382609451751,
+          "f1": 0.12004382609451751,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.13640575110912323,
+      "validation_structural_rank_loss": 0.39134740829467773,
+      "validation_structural_spearman": 0.11222013086080551,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    },
+    {
+      "variant": "B32_lorentz_path_dual_attention_mp_soft_rank",
+      "model_seed": 303,
+      "parameter_count": 76064,
+      "initial_validation_f1": 0.0,
+      "validation_precision": 0.17045454545454544,
+      "validation_recall": 0.17045454545454544,
+      "validation_f1": 0.17045454545454544,
+      "final_train_loss": 0.3128647394478321,
+      "final_train_f1": 0.14200807124540255,
+      "history": [
+        {
+          "epoch": 1.0,
+          "loss": 0.7169500812888145,
+          "task_loss": 0.7166854962706566,
+          "structural_loss": 0.01587561029009521,
+          "precision": 0.030520585827444623,
+          "recall": 0.030520585827444623,
+          "f1": 0.030520585827444626,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.016666666666666666
+        },
+        {
+          "epoch": 2.0,
+          "loss": 0.521752767264843,
+          "task_loss": 0.5205678828060627,
+          "structural_loss": 0.03554658894427121,
+          "precision": 0.07959978869963277,
+          "recall": 0.07959978869963277,
+          "f1": 0.07959978869963277,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.03333333333333333
+        },
+        {
+          "epoch": 3.0,
+          "loss": 0.3128647394478321,
+          "task_loss": 0.30941466614603996,
+          "structural_loss": 0.0690015135332942,
+          "precision": 0.14200807124540255,
+          "recall": 0.14200807124540255,
+          "f1": 0.14200807124540255,
+          "curvature": 1.0,
+          "structural_loss_weight": 0.05000000000000001
+        }
+      ],
+      "validation_structural_loss": 0.4316096901893616,
+      "validation_structural_rank_loss": 0.06315694749355316,
+      "validation_structural_spearman": 0.18494127690792084,
+      "structural_loss_weight": 0.05,
+      "structural_loss_schedule": "linear",
+      "structural_regularizer": "path_dual_attention_separation_soft_rank",
+      "curvature": 1.0,
+      "factorized_metric_weights": [
+        1.0,
+        1.0
+      ],
+      "factorized_channel_mixer_rank": 0
+    }
+  ],
+  "claim_boundary": "This is a real-data pilot on code2vec/code2seq preprocessed files. It is suitable for debugging the scientific pipeline, but final article claims require the preregistered full split and statistical analysis.",
+  "archive_status": {
+    "path": "data/code2seq_java_small/java-small-preprocessed.tar.gz",
+    "exists": true,
+    "bytes": 479663374,
+    "size_matches": true
+  },
+  "inventory": {
+    "root": "data/code2seq_java_small",
+    "split_paths": {
+      "train": "data/code2seq_java_small/java-small/java-small.train.c2s",
+      "val": "data/code2seq_java_small/java-small/java-small.val.c2s",
+      "test": "data/code2seq_java_small/java-small/java-small.test.c2s"
+    },
+    "split_line_counts": {
+      "train": 691974,
+      "val": 23844,
+      "test": 57088
+    }
+  }
+}

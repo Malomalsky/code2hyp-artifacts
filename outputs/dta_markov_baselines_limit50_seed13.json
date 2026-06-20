@@ -1,0 +1,75 @@
+{
+  "dataset": {
+    "path": "data/dta_zenodo_7799972/extracted",
+    "limit_per_task": 50,
+    "sample_seed": 13
+  },
+  "records": {
+    "valid": 550,
+    "syntax_errors": 0,
+    "task_count": 11
+  },
+  "methods": {
+    "flat_markov_jsd_divergence": {
+      "queries": 550,
+      "top1_accuracy": 0.96,
+      "mrr": 0.9704915974509276,
+      "map": 0.6596291897266658,
+      "recall@1": 0.019591836734693877,
+      "recall@3": 0.05714285714285714,
+      "recall@5": 0.0940630797773655,
+      "recall@10": 0.1793692022263451
+    },
+    "flat_markov_jsd_distance": {
+      "queries": 550,
+      "top1_accuracy": 0.96,
+      "mrr": 0.9704915974509276,
+      "map": 0.6596291580245139,
+      "recall@1": 0.019591836734693877,
+      "recall@3": 0.05714285714285714,
+      "recall@5": 0.0940630797773655,
+      "recall@10": 0.1793692022263451
+    },
+    "transition_count_jsd_divergence": {
+      "queries": 550,
+      "top1_accuracy": 0.9836363636363636,
+      "mrr": 0.9874057584644096,
+      "map": 0.7418147799057162,
+      "recall@1": 0.02007421150278293,
+      "recall@3": 0.05907235621521336,
+      "recall@5": 0.09692022263450835,
+      "recall@10": 0.1886456400742115
+    },
+    "transition_count_jsd_distance": {
+      "queries": 550,
+      "top1_accuracy": 0.9836363636363636,
+      "mrr": 0.9874057584644096,
+      "map": 0.7418147799057162,
+      "recall@1": 0.02007421150278293,
+      "recall@3": 0.05907235621521336,
+      "recall@5": 0.09692022263450835,
+      "recall@10": 0.1886456400742115
+    },
+    "rowwise_markov_jsd": {
+      "queries": 550,
+      "top1_accuracy": 0.9636363636363636,
+      "mrr": 0.973072064631275,
+      "map": 0.6447291747207219,
+      "recall@1": 0.019666048237476808,
+      "recall@3": 0.05725417439703154,
+      "recall@5": 0.09398886827458255,
+      "recall@10": 0.179443413729128
+    },
+    "ast_histogram_euclidean": {
+      "queries": 550,
+      "top1_accuracy": 0.9,
+      "mrr": 0.931225720584417,
+      "map": 0.5000511050478471,
+      "recall@1": 0.01836734693877551,
+      "recall@3": 0.05346938775510204,
+      "recall@5": 0.08641929499072357,
+      "recall@10": 0.16211502782931356
+    }
+  },
+  "errors": []
+}
