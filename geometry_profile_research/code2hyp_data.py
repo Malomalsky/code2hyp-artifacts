@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal
@@ -189,6 +190,30 @@ def load_code2vec_records(path: str | Path, limit: int | None = None) -> list[Ra
     return records
 
 
+def sample_code2vec_records(path: str | Path, limit: int, seed: int) -> list[RawCode2VecRecord]:
+    """Reservoir-sample preprocessed code2vec/code2seq records from a split file.
+
+    Early pilots used the first `limit` records. Confirmatory runs should avoid
+    that ordering assumption, while still keeping memory usage bounded.
+    """
+    if limit < 0:
+        raise ValueError("limit must be non-negative")
+    if limit == 0:
+        return []
+
+    rng = random.Random(seed)
+    reservoir: list[RawCode2VecRecord] = []
+    with Path(path).open("r", encoding="utf-8") as handle:
+        for index, record in enumerate(iter_code2vec_records(handle)):
+            if index < limit:
+                reservoir.append(record)
+                continue
+            replacement_index = rng.randint(0, index)
+            if replacement_index < limit:
+                reservoir[replacement_index] = record
+    return reservoir
+
+
 def split_label_subtokens(label: str) -> tuple[str, ...]:
     subtokens = tuple(subtoken for subtoken in label.split("|") if subtoken)
     return subtokens or (label,)
@@ -234,6 +259,39 @@ def filter_records_by_known_label_subtokens(
         for record in records
         if all(target_vocab.contains(subtoken) for subtoken in split_label_subtokens(record.label))
     ]
+
+
+def label_subtoken_coverage(
+    records: Iterable[RawCode2VecRecord],
+    target_vocab: Vocabulary,
+) -> dict[str, int | float]:
+    """Measure how much of an evaluation split is representable by the train target vocabulary.
+
+    The model predicts only train-vocabulary target subtokens. Reporting this
+    coverage makes the closed-vocabulary evaluation boundary explicit instead
+    of hiding discarded validation/test records after filtering.
+    """
+    record_count = 0
+    known_record_count = 0
+    subtoken_count = 0
+    known_subtoken_count = 0
+    for record in records:
+        record_count += 1
+        subtokens = split_label_subtokens(record.label)
+        known_in_record = sum(1 for subtoken in subtokens if target_vocab.contains(subtoken))
+        subtoken_count += len(subtokens)
+        known_subtoken_count += known_in_record
+        if known_in_record == len(subtokens):
+            known_record_count += 1
+
+    return {
+        "records": record_count,
+        "known_records": known_record_count,
+        "record_coverage": known_record_count / record_count if record_count else 0.0,
+        "subtokens": subtoken_count,
+        "known_subtokens": known_subtoken_count,
+        "subtoken_coverage": known_subtoken_count / subtoken_count if subtoken_count else 0.0,
+    }
 
 
 def _attach_tree_features(batch: Code2HypBatch) -> Code2HypBatch:

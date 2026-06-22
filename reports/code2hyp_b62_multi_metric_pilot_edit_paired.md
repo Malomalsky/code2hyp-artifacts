@@ -1,0 +1,7 @@
+| Left | Right | Metric | n | Mean delta | 95% bootstrap CI | sign-test p | Direction | Evidence status |
+|---|---|---|---:|---:|---:|---:|---|---|
+| B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet | B60_code2hyp_context_transform_branch_sequence_product_bias_frechet | validation_structural_edit_spearman | 3 | +0.2470 | [+0.2266, +0.2621] | 0.2500 | +/3 -/0 0/0 | exploratory_low_power |
+| B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet | B63_code2hyp_context_transform_product_bias_multi_metric_frechet | validation_structural_edit_spearman | 3 | +0.1909 | [+0.1688, +0.2186] | 0.2500 | +/3 -/0 0/0 | exploratory_low_power |
+| B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet | B64_code2vec_context_transform_multi_metric_control | validation_structural_edit_spearman | 3 | +0.1306 | [+0.0906, +0.1700] | 0.2500 | +/3 -/0 0/0 | exploratory_low_power |
+| B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet | B65_code2vec_context_transform_l1_multi_metric_control | validation_structural_edit_spearman | 3 | +0.1374 | [+0.0978, +0.1760] | 0.2500 | +/3 -/0 0/0 | exploratory_low_power |
+| B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet | B44_code2hyp_context_transform_product_bias_frechet | validation_structural_edit_spearman | 3 | +0.2137 | [+0.1939, +0.2381] | 0.2500 | +/3 -/0 0/0 | exploratory_low_power |

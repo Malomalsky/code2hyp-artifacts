@@ -21,11 +21,17 @@ def test_variant_catalog_exposes_recommended_research_variants() -> None:
     assert catalog["B37_code2hyp_code2vec_attention_frechet"].status == "candidate"
     assert catalog["B38_code2hyp_code2vec_attention_neighbor"].status == "candidate"
     assert catalog["B39_code2vec_context_transform_baseline"].status == "baseline"
+    assert catalog["B46_code2vec_context_transform_neighbor_control"].status == "diagnostic"
+    assert catalog["B47_code2vec_context_transform_distance_control"].status == "diagnostic"
+    assert catalog["B50_code2vec_context_transform_l1_baseline"].status == "diagnostic"
+    assert catalog["B51_code2vec_context_transform_l1_distance_control"].status == "diagnostic"
     assert catalog["B40_code2hyp_context_transform_frechet"].status == "candidate"
     assert catalog["B41_code2hyp_context_transform_neighbor"].status == "candidate"
     assert catalog["B42_code2hyp_product_context_transform_frechet"].status == "candidate"
     assert catalog["B43_code2hyp_product_context_transform_neighbor"].status == "candidate"
     assert catalog["B44_code2hyp_context_transform_product_bias_frechet"].status == "candidate"
+    assert catalog["B48_code2hyp_context_transform_product_bias_no_struct"].status == "diagnostic"
+    assert catalog["B49_code2hyp_context_transform_product_bias_near_euclidean"].status == "diagnostic"
     assert catalog["B45_code2hyp_context_transform_product_bias_neighbor"].status == "candidate"
     assert "balanced" in catalog["B4_hyperbolic_code2vec"].profiles
     assert "path_attention" in catalog["B31_hyperbolic_path_dual_attention_mp_soft_rank"].profiles
@@ -36,11 +42,17 @@ def test_variant_catalog_exposes_recommended_research_variants() -> None:
     assert "code2vec_replacement" in catalog["B37_code2hyp_code2vec_attention_frechet"].profiles
     assert "code2vec_replacement" in catalog["B38_code2hyp_code2vec_attention_neighbor"].profiles
     assert "code2vec_replacement" in catalog["B39_code2vec_context_transform_baseline"].profiles
+    assert "code2vec_replacement" in catalog["B46_code2vec_context_transform_neighbor_control"].profiles
+    assert "code2vec_replacement" in catalog["B47_code2vec_context_transform_distance_control"].profiles
+    assert "code2vec_replacement" in catalog["B50_code2vec_context_transform_l1_baseline"].profiles
+    assert "code2vec_replacement" in catalog["B51_code2vec_context_transform_l1_distance_control"].profiles
     assert "code2vec_replacement" in catalog["B40_code2hyp_context_transform_frechet"].profiles
     assert "code2vec_replacement" in catalog["B41_code2hyp_context_transform_neighbor"].profiles
     assert "code2vec_replacement" in catalog["B42_code2hyp_product_context_transform_frechet"].profiles
     assert "code2vec_replacement" in catalog["B43_code2hyp_product_context_transform_neighbor"].profiles
     assert "code2vec_replacement" in catalog["B44_code2hyp_context_transform_product_bias_frechet"].profiles
+    assert "code2vec_replacement" in catalog["B48_code2hyp_context_transform_product_bias_no_struct"].profiles
+    assert "code2vec_replacement" in catalog["B49_code2hyp_context_transform_product_bias_near_euclidean"].profiles
     assert "code2vec_replacement" in catalog["B45_code2hyp_context_transform_product_bias_neighbor"].profiles
 
 
@@ -69,11 +81,17 @@ def test_parse_variant_selection_uses_profile_and_explicit_variants() -> None:
         "B37_code2hyp_code2vec_attention_frechet",
         "B38_code2hyp_code2vec_attention_neighbor",
         "B39_code2vec_context_transform_baseline",
+        "B46_code2vec_context_transform_neighbor_control",
+        "B47_code2vec_context_transform_distance_control",
+        "B50_code2vec_context_transform_l1_baseline",
+        "B51_code2vec_context_transform_l1_distance_control",
         "B40_code2hyp_context_transform_frechet",
         "B41_code2hyp_context_transform_neighbor",
         "B42_code2hyp_product_context_transform_frechet",
         "B43_code2hyp_product_context_transform_neighbor",
         "B44_code2hyp_context_transform_product_bias_frechet",
+        "B48_code2hyp_context_transform_product_bias_no_struct",
+        "B49_code2hyp_context_transform_product_bias_near_euclidean",
         "B45_code2hyp_context_transform_product_bias_neighbor",
     )
 
@@ -114,6 +132,25 @@ def test_b39_b40_b41_specs_model_true_code2vec_context_transform_family() -> Non
     assert specs["B39_code2vec_context_transform_baseline"]["torch_variant"] == "code2vec_context_transform"
     assert specs["B39_code2vec_context_transform_baseline"]["trainable_curvature"] is False
     assert specs["B39_code2vec_context_transform_baseline"]["structural_loss_weight"] == 0.0
+    assert specs["B46_code2vec_context_transform_neighbor_control"]["torch_variant"] == "code2vec_context_transform"
+    assert specs["B46_code2vec_context_transform_neighbor_control"]["trainable_curvature"] is False
+    assert specs["B46_code2vec_context_transform_neighbor_control"]["structural_regularizer"] == (
+        "neighbor_distribution"
+    )
+    assert specs["B46_code2vec_context_transform_neighbor_control"]["structural_loss_schedule"] == "delayed_linear"
+    assert specs["B47_code2vec_context_transform_distance_control"]["torch_variant"] == "code2vec_context_transform"
+    assert specs["B47_code2vec_context_transform_distance_control"]["trainable_curvature"] is False
+    assert specs["B47_code2vec_context_transform_distance_control"]["structural_regularizer"] == "distance"
+    assert specs["B47_code2vec_context_transform_distance_control"]["structural_loss_schedule"] == "delayed_linear"
+    assert specs["B50_code2vec_context_transform_l1_baseline"]["torch_variant"] == "code2vec_context_transform_l1"
+    assert specs["B50_code2vec_context_transform_l1_baseline"]["trainable_curvature"] is False
+    assert specs["B50_code2vec_context_transform_l1_baseline"]["structural_loss_weight"] == 0.0
+    assert specs["B51_code2vec_context_transform_l1_distance_control"]["torch_variant"] == (
+        "code2vec_context_transform_l1"
+    )
+    assert specs["B51_code2vec_context_transform_l1_distance_control"]["trainable_curvature"] is False
+    assert specs["B51_code2vec_context_transform_l1_distance_control"]["structural_regularizer"] == "distance"
+    assert specs["B51_code2vec_context_transform_l1_distance_control"]["structural_loss_schedule"] == "delayed_linear"
     assert specs["B40_code2hyp_context_transform_frechet"]["torch_variant"] == "code2hyp_context_transform_frechet"
     assert specs["B40_code2hyp_context_transform_frechet"]["trainable_curvature"] is True
     assert specs["B40_code2hyp_context_transform_frechet"]["structural_loss_schedule"] == "delayed_linear"
@@ -151,6 +188,18 @@ def test_b44_b45_specs_add_product_metric_bias_to_code2vec_attention() -> None:
     assert specs["B44_code2hyp_context_transform_product_bias_frechet"]["structural_loss_schedule"] == (
         "delayed_linear"
     )
+    assert specs["B44_code2hyp_context_transform_product_bias_frechet"]["structural_regularizer"] == "distance"
+    assert specs["B48_code2hyp_context_transform_product_bias_no_struct"]["torch_variant"] == (
+        "code2hyp_context_transform_product_bias_frechet"
+    )
+    assert specs["B48_code2hyp_context_transform_product_bias_no_struct"]["trainable_curvature"] is True
+    assert specs["B48_code2hyp_context_transform_product_bias_no_struct"]["structural_loss_weight"] == 0.0
+    assert specs["B49_code2hyp_context_transform_product_bias_near_euclidean"]["torch_variant"] == (
+        "code2hyp_context_transform_product_bias_frechet"
+    )
+    assert specs["B49_code2hyp_context_transform_product_bias_near_euclidean"]["trainable_curvature"] is False
+    assert specs["B49_code2hyp_context_transform_product_bias_near_euclidean"]["curvature"] == 1e-4
+    assert specs["B49_code2hyp_context_transform_product_bias_near_euclidean"]["structural_regularizer"] == "distance"
     assert specs["B45_code2hyp_context_transform_product_bias_neighbor"]["torch_variant"] == (
         "code2hyp_context_transform_product_bias_frechet"
     )
@@ -190,11 +239,17 @@ def test_format_variant_catalog_is_human_readable() -> None:
     assert "B37_code2hyp_code2vec_attention_frechet" in text
     assert "B38_code2hyp_code2vec_attention_neighbor" in text
     assert "B39_code2vec_context_transform_baseline" in text
+    assert "B46_code2vec_context_transform_neighbor_control" in text
+    assert "B47_code2vec_context_transform_distance_control" in text
+    assert "B50_code2vec_context_transform_l1_baseline" in text
+    assert "B51_code2vec_context_transform_l1_distance_control" in text
     assert "B40_code2hyp_context_transform_frechet" in text
     assert "B41_code2hyp_context_transform_neighbor" in text
     assert "B42_code2hyp_product_context_transform_frechet" in text
     assert "B43_code2hyp_product_context_transform_neighbor" in text
     assert "B44_code2hyp_context_transform_product_bias_frechet" in text
+    assert "B48_code2hyp_context_transform_product_bias_no_struct" in text
+    assert "B49_code2hyp_context_transform_product_bias_near_euclidean" in text
     assert "B45_code2hyp_context_transform_product_bias_neighbor" in text
 
 

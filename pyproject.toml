@@ -19,6 +19,8 @@ dev = [
 ]
 viz = [
   "matplotlib>=3.8",
+  "seaborn>=0.13",
+  "pillow>=10",
 ]
 
 [tool.pytest.ini_options]

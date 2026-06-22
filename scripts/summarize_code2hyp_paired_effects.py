@@ -12,37 +12,13 @@ from geometry_profile_research.code2hyp_reporting import paired_metric_compariso
 
 
 DEFAULT_RIGHT_VARIANTS = (
-    "B1_euclidean",
-    "B3_product",
-    "B8_hyperbolic_frechet_code2vec",
-    "B17_hyperbolic_path_mp_code2vec",
-    "B18_hyperbolic_path_mp_struct_rank",
-    "B19_hyperbolic_path_mp_rank_annealed",
-    "B20_hyperbolic_path_mp_rank_delayed",
-    "B21_hyperbolic_path_mp_rank_cosine",
-    "B22_hyperbolic_path_mp_rank_warmup_decay",
-    "B23_hyperbolic_path_attention_mp_code2vec",
-    "B24_hyperbolic_path_attention_mp_rank_annealed",
-    "B25_hyperbolic_path_depth_attention_mp_code2vec",
-    "B26_hyperbolic_path_depth_attention_mp_rank_annealed",
-    "B27_hyperbolic_path_attention_mp_monotone",
-    "B28_hyperbolic_path_attention_mp_tree_distance",
-    "B29_hyperbolic_path_dual_attention_mp_separated",
-    "B30_hyperbolic_path_dual_attention_mp_rank_separated",
-    "B31_hyperbolic_path_dual_attention_mp_soft_rank",
-    "B32_lorentz_path_dual_attention_mp_soft_rank",
-    "B34_hyperbolic_path_dual_attention_mp_adaptive_rank",
-    "B9_lorentz_code2vec",
-    "B15_lorentz_product_code2vec",
-    "B10_factorized_product_code2vec",
-    "B11_factorized_product_struct_rank",
-    "B12_factorized_product_learned_metric_rank",
-    "B16_factorized_product_three_metric_rank",
-    "B13_factorized_product_channel_mixer_rank",
-    "B7_hyperbolic_attention_only",
-    "B6_euclidean_metric_code2vec",
-    "B14_bounded_euclidean_metric_code2vec",
-    "B_tree_euclidean_lca_bias",
+    "B47_code2vec_context_transform_distance_control",
+    "B50_code2vec_context_transform_l1_baseline",
+    "B51_code2vec_context_transform_l1_distance_control",
+    "B48_code2hyp_context_transform_product_bias_no_struct",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean",
+    "B36_code2hyp_product_frechet_neighbor",
+    "B39_code2vec_context_transform_baseline",
 )
 
 
@@ -80,7 +56,7 @@ def build_paired_effects_markdown(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Summarize paired Code2Hyp variant effects from a pilot JSON.")
     parser.add_argument("input", type=Path)
-    parser.add_argument("--left-variant", default="B4_hyperbolic_code2vec")
+    parser.add_argument("--left-variant", default="B44_code2hyp_context_transform_product_bias_frechet")
     parser.add_argument("--right-variants", default=",".join(DEFAULT_RIGHT_VARIANTS))
     parser.add_argument("--metric-key", default="validation_f1")
     parser.add_argument("--output", type=Path)

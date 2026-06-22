@@ -138,6 +138,10 @@ class Code2HypExperimentTests(unittest.TestCase):
         self.assertEqual(result["interpretation_status"], "real_data_pilot_not_final_claim")
         self.assertEqual(result["dataset"]["train_records"], 4)
         self.assertEqual(result["dataset"]["validation_records_after_known_target_filter"], 2)
+        self.assertAlmostEqual(result["dataset"]["validation_known_target_record_coverage"], 2 / 3)
+        self.assertEqual(result["dataset"]["validation_target_subtokens_loaded"], 7)
+        self.assertEqual(result["dataset"]["validation_known_target_subtokens"], 5)
+        self.assertAlmostEqual(result["dataset"]["validation_known_target_subtoken_coverage"], 5 / 7)
         self.assertEqual(result["dataset"]["lexical_ablation"], "structural_only")
         self.assertTrue(result["training"]["use_positive_weighting"])
         self.assertEqual(result["training"]["max_positive_weight"], 7.0)
@@ -192,6 +196,11 @@ class Code2HypExperimentTests(unittest.TestCase):
             self.assertIn("validation_structural_normalized_stress", run)
             self.assertIn("validation_structural_rank_loss", run)
             self.assertIn("validation_structural_spearman", run)
+            self.assertIn("validation_structural_edit_spearman", run)
+            self.assertIn("validation_structural_edit_normalized_stress", run)
+            self.assertIn("validation_structural_jaccard_spearman", run)
+            self.assertIn("validation_structural_jaccard_normalized_stress", run)
+            self.assertIn("validation_structural_diagnostic_records", run)
             self.assertIn("validation_structural_neighbor_overlap_at_1", run)
             self.assertIn("validation_structural_neighbor_overlap_at_3", run)
             self.assertIn("validation_structural_neighbor_recall_at_1", run)
@@ -201,6 +210,13 @@ class Code2HypExperimentTests(unittest.TestCase):
             self.assertGreaterEqual(run["validation_structural_rank_loss"], 0.0)
             self.assertGreaterEqual(run["validation_structural_spearman"], -1.0)
             self.assertLessEqual(run["validation_structural_spearman"], 1.0)
+            self.assertGreaterEqual(run["validation_structural_edit_spearman"], -1.0)
+            self.assertLessEqual(run["validation_structural_edit_spearman"], 1.0)
+            self.assertGreaterEqual(run["validation_structural_edit_normalized_stress"], 0.0)
+            self.assertGreaterEqual(run["validation_structural_jaccard_spearman"], -1.0)
+            self.assertLessEqual(run["validation_structural_jaccard_spearman"], 1.0)
+            self.assertGreaterEqual(run["validation_structural_jaccard_normalized_stress"], 0.0)
+            self.assertGreater(run["validation_structural_diagnostic_records"], 0)
             self.assertGreaterEqual(run["validation_structural_neighbor_overlap_at_1"], 0.0)
             self.assertLessEqual(run["validation_structural_neighbor_overlap_at_1"], 1.0)
             self.assertGreaterEqual(run["validation_structural_neighbor_overlap_at_3"], 0.0)
@@ -417,7 +433,7 @@ class Code2HypExperimentTests(unittest.TestCase):
         b20_run = result["runs"][1]
         self.assertEqual([round(row["structural_loss_weight"], 4) for row in b20_run["history"]], [0.0, 0.05])
 
-    def test_real_code2hyp_pilot_reports_product_attention_bias_weight_for_b44(self) -> None:
+    def test_real_code2hyp_pilot_reports_product_attention_bias_controls_for_b44_and_b48(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             train_path = root / "train.c2v"
@@ -457,14 +473,29 @@ class Code2HypExperimentTests(unittest.TestCase):
                     use_positive_weighting=True,
                     max_positive_weight=7.0,
                     model_seeds=(7,),
-                    variant_filter=("B44_code2hyp_context_transform_product_bias_frechet",),
+                    variant_filter=(
+                        "B44_code2hyp_context_transform_product_bias_frechet",
+                        "B48_code2hyp_context_transform_product_bias_no_struct",
+                        "B49_code2hyp_context_transform_product_bias_near_euclidean",
+                    ),
                 ),
             )
 
-        run = result["runs"][0]
-        self.assertEqual(run["variant"], "B44_code2hyp_context_transform_product_bias_frechet")
-        self.assertIn("product_attention_bias_weight", run)
-        self.assertGreater(run["product_attention_bias_weight"], 0.0)
+        b44_run = result["runs"][0]
+        b48_run = result["runs"][1]
+        b49_run = result["runs"][2]
+        self.assertEqual(b44_run["variant"], "B44_code2hyp_context_transform_product_bias_frechet")
+        self.assertEqual(b44_run["structural_regularizer"], "distance")
+        self.assertIn("product_attention_bias_weight", b44_run)
+        self.assertGreater(b44_run["product_attention_bias_weight"], 0.0)
+        self.assertEqual(b48_run["variant"], "B48_code2hyp_context_transform_product_bias_no_struct")
+        self.assertEqual(b48_run["structural_loss_weight"], 0.0)
+        self.assertIn("product_attention_bias_weight", b48_run)
+        self.assertGreater(b48_run["product_attention_bias_weight"], 0.0)
+        self.assertEqual(b49_run["variant"], "B49_code2hyp_context_transform_product_bias_near_euclidean")
+        self.assertFalse(b49_run["curvature_override"] is None)
+        self.assertAlmostEqual(b49_run["configured_curvature"], 1e-4)
+        self.assertAlmostEqual(b49_run["curvature"], 1e-4)
 
     def test_real_code2hyp_pilot_can_run_schedule_sweep_variants(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

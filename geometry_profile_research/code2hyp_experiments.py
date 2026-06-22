@@ -11,13 +11,19 @@ from .code2hyp_data import (
     apply_lexical_ablation,
     encode_records_to_multilabel_batch,
     filter_records_by_known_label_subtokens,
+    label_subtoken_coverage,
     load_code2vec_records,
+    sample_code2vec_records,
 )
 from .code2hyp_synthetic import SyntheticCode2HypConfig, make_synthetic_code2hyp_dataset
 from .code2hyp_torch import (
     Code2HypTorchConfig,
     Code2HypTorchModel,
+    batch_poincare_frechet_diagnostics,
+    batch_poincare_radius_utilization,
+    batch_structural_distance_level_summary,
     batch_structural_distance_regularizer,
+    batch_structural_neighbor_exact_overlap_at_k,
     batch_structural_neighbor_overlap_at_k,
     batch_structural_normalized_stress,
     batch_structural_rank_regularizer,
@@ -29,6 +35,7 @@ from .code2hyp_training import (
     evaluate_multilabel_metrics,
     fit_multilabel_supervised,
     fit_supervised,
+    slice_batch,
 )
 
 
@@ -69,16 +76,23 @@ class RealCode2HypPilotConfig:
     max_positive_weight: float = 20.0
     model_seeds: tuple[int, ...] = (101, 202, 303)
     variant_filter: tuple[str, ...] | None = None
+    sample_seed: int | None = None
+    structural_eval_limit: int | None = 512
+    structural_eval_seed: int = 314159
 
 
-def _model_config(base: Code2HypTorchConfig, trainable_curvature: bool) -> Code2HypTorchConfig:
+def _model_config(
+    base: Code2HypTorchConfig,
+    trainable_curvature: bool,
+    curvature_override: float | None = None,
+) -> Code2HypTorchConfig:
     return Code2HypTorchConfig(
         token_vocab_size=base.token_vocab_size,
         ast_node_vocab_size=base.ast_node_vocab_size,
         label_vocab_size=base.label_vocab_size,
         token_dim=base.token_dim,
         structural_dim=base.structural_dim,
-        curvature=base.curvature,
+        curvature=base.curvature if curvature_override is None else curvature_override,
         trainable_curvature=trainable_curvature,
         path_encoder=base.path_encoder,
         representation_transform=base.representation_transform,
@@ -102,10 +116,15 @@ def _run_multilabel_variant(
     pos_weight: torch.Tensor | None,
     structural_loss_schedule: str = "constant",
     structural_regularizer: str | None = None,
+    curvature_override: float | None = None,
 ) -> dict[str, Any]:
     torch.manual_seed(model_seed)
     model = Code2HypTorchModel(
-        _model_config(base_config, trainable_curvature=trainable_curvature),
+        _model_config(
+            base_config,
+            trainable_curvature=trainable_curvature,
+            curvature_override=curvature_override,
+        ),
         variant=torch_variant,  # type: ignore[arg-type]
     )
     initial_metrics = evaluate_multilabel_metrics(
@@ -137,25 +156,96 @@ def _run_multilabel_variant(
         validation_dataset.target_sizes,
         batch_size=config.batch_size,
     )
+    validation_fixed_top3_metrics = evaluate_multilabel_metrics(
+        model,
+        validation_dataset.batch,
+        validation_dataset.labels,
+        validation_dataset.target_sizes,
+        batch_size=config.batch_size,
+        selection="fixed_topk",
+        fixed_k=3,
+    )
+    validation_threshold05_metrics = evaluate_multilabel_metrics(
+        model,
+        validation_dataset.batch,
+        validation_dataset.labels,
+        validation_dataset.target_sizes,
+        batch_size=config.batch_size,
+        selection="threshold",
+        threshold=0.0,
+    )
+    diagnostic_batch = validation_dataset.batch
+    structural_diagnostic_records = int(validation_dataset.labels.shape[0])
+    if config.structural_eval_limit is not None:
+        if config.structural_eval_limit <= 0:
+            raise ValueError("structural_eval_limit must be positive or None")
+        if structural_diagnostic_records > config.structural_eval_limit:
+            generator = torch.Generator(device=validation_dataset.labels.device).manual_seed(config.structural_eval_seed)
+            indices = torch.randperm(
+                structural_diagnostic_records,
+                generator=generator,
+                device=validation_dataset.labels.device,
+            )[: config.structural_eval_limit]
+            diagnostic_batch = slice_batch(validation_dataset.batch, indices)
+            structural_diagnostic_records = int(indices.numel())
     with torch.no_grad():
-        output = model(validation_dataset.batch)
-        validation_structural_loss = batch_structural_distance_regularizer(output, validation_dataset.batch)
+        output = model(diagnostic_batch)
+        validation_structural_loss = batch_structural_distance_regularizer(output, diagnostic_batch)
         validation_structural_normalized_stress = batch_structural_normalized_stress(
             output,
-            validation_dataset.batch,
+            diagnostic_batch,
         )
-        validation_structural_rank_loss = batch_structural_rank_regularizer(output, validation_dataset.batch)
-        validation_structural_spearman = batch_structural_spearman_correlation(output, validation_dataset.batch)
+        validation_structural_rank_loss = batch_structural_rank_regularizer(output, diagnostic_batch)
+        validation_structural_spearman = batch_structural_spearman_correlation(output, diagnostic_batch)
+        validation_structural_edit_spearman = batch_structural_spearman_correlation(
+            output,
+            diagnostic_batch,
+            target_distance="edit",
+        )
+        validation_structural_edit_normalized_stress = batch_structural_normalized_stress(
+            output,
+            diagnostic_batch,
+            target_distance="edit",
+        )
+        validation_structural_jaccard_spearman = batch_structural_spearman_correlation(
+            output,
+            diagnostic_batch,
+            target_distance="jaccard_bigrams",
+        )
+        validation_structural_jaccard_normalized_stress = batch_structural_normalized_stress(
+            output,
+            diagnostic_batch,
+            target_distance="jaccard_bigrams",
+        )
         validation_structural_neighbor_overlap_at_1 = batch_structural_neighbor_overlap_at_k(
             output,
-            validation_dataset.batch,
+            diagnostic_batch,
             k=1,
         )
         validation_structural_neighbor_overlap_at_3 = batch_structural_neighbor_overlap_at_k(
             output,
-            validation_dataset.batch,
+            diagnostic_batch,
             k=3,
         )
+        validation_structural_neighbor_exact_overlap_at_1 = batch_structural_neighbor_exact_overlap_at_k(
+            output,
+            diagnostic_batch,
+            k=1,
+        )
+        validation_structural_neighbor_exact_overlap_at_3 = batch_structural_neighbor_exact_overlap_at_k(
+            output,
+            diagnostic_batch,
+            k=3,
+        )
+        validation_structural_prefix_distance_level_summary = batch_structural_distance_level_summary(
+            output,
+            diagnostic_batch,
+            target_distance="prefix_tree",
+        )
+        validation_poincare_frechet_diagnostics = batch_poincare_frechet_diagnostics(output)
+        validation_poincare_radius_utilization = batch_poincare_radius_utilization(output, diagnostic_batch)
+    frechet_diagnostics = validation_poincare_frechet_diagnostics or {}
+    radius_utilization = validation_poincare_radius_utilization or {}
     return {
         "variant": variant_name,
         "model_seed": model_seed,
@@ -164,6 +254,24 @@ def _run_multilabel_variant(
         "validation_precision": validation_metrics["precision"],
         "validation_recall": validation_metrics["recall"],
         "validation_f1": validation_metrics["f1"],
+        "validation_oracle_topk_precision": validation_metrics["precision"],
+        "validation_oracle_topk_recall": validation_metrics["recall"],
+        "validation_oracle_topk_f1": validation_metrics["f1"],
+        "validation_oracle_topk_predicted_positive_count_mean": validation_metrics[
+            "predicted_positive_count_mean"
+        ],
+        "validation_fixed_top3_precision": validation_fixed_top3_metrics["precision"],
+        "validation_fixed_top3_recall": validation_fixed_top3_metrics["recall"],
+        "validation_fixed_top3_f1": validation_fixed_top3_metrics["f1"],
+        "validation_fixed_top3_predicted_positive_count_mean": validation_fixed_top3_metrics[
+            "predicted_positive_count_mean"
+        ],
+        "validation_threshold05_precision": validation_threshold05_metrics["precision"],
+        "validation_threshold05_recall": validation_threshold05_metrics["recall"],
+        "validation_threshold05_f1": validation_threshold05_metrics["f1"],
+        "validation_threshold05_predicted_positive_count_mean": validation_threshold05_metrics[
+            "predicted_positive_count_mean"
+        ],
         "final_train_loss": history[-1]["loss"],
         "final_train_f1": history[-1]["f1"],
         "history": history,
@@ -171,13 +279,63 @@ def _run_multilabel_variant(
         "validation_structural_normalized_stress": float(validation_structural_normalized_stress.detach()),
         "validation_structural_rank_loss": float(validation_structural_rank_loss.detach()),
         "validation_structural_spearman": float(validation_structural_spearman.detach()),
+        "validation_structural_edit_spearman": float(validation_structural_edit_spearman.detach()),
+        "validation_structural_edit_normalized_stress": float(validation_structural_edit_normalized_stress.detach()),
+        "validation_structural_jaccard_spearman": float(validation_structural_jaccard_spearman.detach()),
+        "validation_structural_jaccard_normalized_stress": float(
+            validation_structural_jaccard_normalized_stress.detach()
+        ),
+        "validation_structural_diagnostic_records": structural_diagnostic_records,
         "validation_structural_neighbor_overlap_at_1": float(validation_structural_neighbor_overlap_at_1.detach()),
         "validation_structural_neighbor_overlap_at_3": float(validation_structural_neighbor_overlap_at_3.detach()),
+        "validation_structural_neighbor_exact_overlap_at_1": float(
+            validation_structural_neighbor_exact_overlap_at_1.detach()
+        ),
+        "validation_structural_neighbor_exact_overlap_at_3": float(
+            validation_structural_neighbor_exact_overlap_at_3.detach()
+        ),
         "validation_structural_neighbor_recall_at_1": float(validation_structural_neighbor_overlap_at_1.detach()),
         "validation_structural_neighbor_recall_at_3": float(validation_structural_neighbor_overlap_at_3.detach()),
+        "validation_structural_prefix_distance_level_summary": validation_structural_prefix_distance_level_summary,
+        "validation_poincare_frechet_residual_mean": (
+            float(frechet_diagnostics["residual_mean"].detach()) if "residual_mean" in frechet_diagnostics else None
+        ),
+        "validation_poincare_frechet_residual_max": (
+            float(frechet_diagnostics["residual_max"].detach()) if "residual_max" in frechet_diagnostics else None
+        ),
+        "validation_poincare_frechet_objective_mean": (
+            float(frechet_diagnostics["objective_mean"].detach()) if "objective_mean" in frechet_diagnostics else None
+        ),
+        "validation_poincare_context_radius_ratio_mean": (
+            float(radius_utilization["context_radius_ratio_mean"].detach())
+            if "context_radius_ratio_mean" in radius_utilization
+            else None
+        ),
+        "validation_poincare_context_radius_ratio_max": (
+            float(radius_utilization["context_radius_ratio_max"].detach())
+            if "context_radius_ratio_max" in radius_utilization
+            else None
+        ),
+        "validation_poincare_context_near_boundary_rate": (
+            float(radius_utilization["context_near_boundary_rate"].detach())
+            if "context_near_boundary_rate" in radius_utilization
+            else None
+        ),
+        "validation_poincare_aggregate_radius_ratio_mean": (
+            float(radius_utilization["aggregate_radius_ratio_mean"].detach())
+            if "aggregate_radius_ratio_mean" in radius_utilization
+            else None
+        ),
+        "validation_poincare_aggregate_radius_ratio_max": (
+            float(radius_utilization["aggregate_radius_ratio_max"].detach())
+            if "aggregate_radius_ratio_max" in radius_utilization
+            else None
+        ),
         "structural_loss_weight": structural_loss_weight,
         "structural_loss_schedule": structural_loss_schedule,
         "structural_regularizer": effective_structural_regularizer,
+        "configured_curvature": base_config.curvature if curvature_override is None else curvature_override,
+        "curvature_override": curvature_override,
         "curvature": float(output.curvature.detach()),
         "factorized_metric_weights": [
             float(weight.detach()) for weight in model.factorized_metric_weights()
@@ -385,6 +543,46 @@ def _real_variant_specs(config: RealCode2HypPilotConfig) -> dict[str, dict[str, 
             "trainable_curvature": False,
             "structural_loss_weight": 0.0,
         },
+        "B46_code2vec_context_transform_neighbor_control": {
+            "torch_variant": "code2vec_context_transform",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "neighbor_distribution",
+        },
+        "B47_code2vec_context_transform_distance_control": {
+            "torch_variant": "code2vec_context_transform",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B64_code2vec_context_transform_multi_metric_control": {
+            "torch_variant": "code2vec_context_transform",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B50_code2vec_context_transform_l1_baseline": {
+            "torch_variant": "code2vec_context_transform_l1",
+            "trainable_curvature": False,
+            "structural_loss_weight": 0.0,
+        },
+        "B51_code2vec_context_transform_l1_distance_control": {
+            "torch_variant": "code2vec_context_transform_l1",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B65_code2vec_context_transform_l1_multi_metric_control": {
+            "torch_variant": "code2vec_context_transform_l1",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
         "B40_code2hyp_context_transform_frechet": {
             "torch_variant": "code2hyp_context_transform_frechet",
             "trainable_curvature": True,
@@ -416,6 +614,94 @@ def _real_variant_specs(config: RealCode2HypPilotConfig) -> dict[str, dict[str, 
             "trainable_curvature": True,
             "structural_loss_weight": config.structural_loss_weight,
             "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B63_code2hyp_context_transform_product_bias_multi_metric_frechet": {
+            "torch_variant": "code2hyp_context_transform_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B52_code2hyp_branch_product_context_transform_frechet": {
+            "torch_variant": "code2hyp_branch_product_context_transform_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B53_code2hyp_branch_product_context_transform_no_struct": {
+            "torch_variant": "code2hyp_branch_product_context_transform_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
+        },
+        "B54_code2hyp_context_transform_branch_product_bias_frechet": {
+            "torch_variant": "code2hyp_context_transform_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B55_code2hyp_context_transform_branch_product_bias_no_struct": {
+            "torch_variant": "code2hyp_context_transform_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
+        },
+        "B56_code2hyp_context_transform_latent_lca_branch_product_bias_frechet": {
+            "torch_variant": "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B57_code2hyp_context_transform_latent_lca_branch_product_bias_no_struct": {
+            "torch_variant": "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
+        },
+        "B58_code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet": {
+            "torch_variant": "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B59_code2hyp_context_transform_latent_lca_prior_branch_product_bias_no_struct": {
+            "torch_variant": "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
+        },
+        "B60_code2hyp_context_transform_branch_sequence_product_bias_frechet": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B61_code2hyp_context_transform_branch_sequence_product_bias_no_struct": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
+        },
+        "B49_code2hyp_context_transform_product_bias_near_euclidean": {
+            "torch_variant": "code2hyp_context_transform_product_bias_frechet",
+            "trainable_curvature": False,
+            "curvature": 1e-4,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance",
+        },
+        "B48_code2hyp_context_transform_product_bias_no_struct": {
+            "torch_variant": "code2hyp_context_transform_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": 0.0,
         },
         "B45_code2hyp_context_transform_product_bias_neighbor": {
             "torch_variant": "code2hyp_context_transform_product_bias_frechet",
@@ -472,6 +758,7 @@ def _build_real_pilot_result(
     pos_weight: torch.Tensor | None,
     runs: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    target_coverage = label_subtoken_coverage(raw_validation_records, train_dataset.target_vocab)
     return {
         "experiment": "real_code2hyp_multilabel_pilot",
         "interpretation_status": "real_data_pilot_not_final_claim",
@@ -481,6 +768,10 @@ def _build_real_pilot_result(
             "train_records": len(train_records),
             "validation_records_loaded": len(raw_validation_records),
             "validation_records_after_known_target_filter": len(validation_records),
+            "validation_known_target_record_coverage": target_coverage["record_coverage"],
+            "validation_target_subtokens_loaded": target_coverage["subtokens"],
+            "validation_known_target_subtokens": target_coverage["known_subtokens"],
+            "validation_known_target_subtoken_coverage": target_coverage["subtoken_coverage"],
             "target_subtoken_vocab_size": len(train_dataset.target_vocab),
             "token_vocab_size": len(train_dataset.token_vocab),
             "ast_node_vocab_size": len(train_dataset.ast_node_vocab),
@@ -502,6 +793,13 @@ def _build_real_pilot_result(
             "model_seeds": list(config.model_seeds),
             "variant_filter": list(config.variant_filter) if config.variant_filter is not None else None,
             "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count",
+            "additional_prediction_metrics": (
+                "fixed_top3 and threshold@0.5 are reported as non-oracle diagnostics; "
+                "oracle_topk remains for continuity with earlier controlled results."
+            ),
+            "sample_seed": config.sample_seed,
+            "structural_eval_limit": config.structural_eval_limit,
+            "structural_eval_seed": config.structural_eval_seed,
         },
         "runs": runs,
         "claim_boundary": (
@@ -1270,12 +1568,22 @@ def run_real_code2hyp_pilot(
     validation_path: str | Path,
     config: RealCode2HypPilotConfig,
 ) -> dict[str, Any]:
+    train_loader = (
+        sample_code2vec_records(train_path, limit=config.train_limit, seed=config.sample_seed)
+        if config.sample_seed is not None
+        else load_code2vec_records(train_path, limit=config.train_limit)
+    )
+    validation_loader = (
+        sample_code2vec_records(validation_path, limit=config.val_limit, seed=config.sample_seed + 1)
+        if config.sample_seed is not None
+        else load_code2vec_records(validation_path, limit=config.val_limit)
+    )
     train_records = apply_lexical_ablation(
-        load_code2vec_records(train_path, limit=config.train_limit),
+        train_loader,
         config.lexical_ablation,  # type: ignore[arg-type]
     )
     raw_validation_records = apply_lexical_ablation(
-        load_code2vec_records(validation_path, limit=config.val_limit),
+        validation_loader,
         config.lexical_ablation,  # type: ignore[arg-type]
     )
     train_dataset = encode_records_to_multilabel_batch(
@@ -1336,6 +1644,7 @@ def run_real_code2hyp_pilot(
                         pos_weight=pos_weight,
                         structural_loss_schedule=spec.get("structural_loss_schedule", "constant"),
                         structural_regularizer=spec.get("structural_regularizer"),
+                        curvature_override=spec.get("curvature"),
                     )
                 )
         return _build_real_pilot_result(
@@ -1877,44 +2186,17 @@ def run_real_code2hyp_pilot(
             )
         )
 
-    return {
-        "experiment": "real_code2hyp_multilabel_pilot",
-        "interpretation_status": "real_data_pilot_not_final_claim",
-        "dataset": {
-            "train_path": str(train_path),
-            "validation_path": str(validation_path),
-            "train_records": len(train_records),
-            "validation_records_loaded": len(raw_validation_records),
-            "validation_records_after_known_target_filter": len(validation_records),
-            "target_subtoken_vocab_size": len(train_dataset.target_vocab),
-            "token_vocab_size": len(train_dataset.token_vocab),
-            "ast_node_vocab_size": len(train_dataset.ast_node_vocab),
-            "path_encoder": config.path_encoder,
-            "representation_transform": config.representation_transform,
-            "lexical_ablation": config.lexical_ablation,
-        },
-        "training": {
-            "epochs": config.epochs,
-            "batch_size": config.batch_size,
-            "learning_rate": config.learning_rate,
-            "structural_loss_weight_for_B5": config.structural_loss_weight,
-            "structural_regularizer_for_B5": config.structural_regularizer,
-            "use_positive_weighting": config.use_positive_weighting,
-            "max_positive_weight": config.max_positive_weight,
-            "positive_weight_mean": float(pos_weight.mean()) if pos_weight is not None else None,
-            "positive_weight_max": float(pos_weight.max()) if pos_weight is not None else None,
-            "curvature": config.curvature,
-            "model_seeds": list(config.model_seeds),
-            "metric": "target-subtoken micro precision/recall/F1 with top-k = true target subtoken count",
-        },
-        "runs": runs,
-        "claim_boundary": (
-            "This is a real-data pilot on code2vec/code2seq preprocessed files. "
-            "It is suitable for debugging the scientific pipeline, but final "
-            "article claims require the preregistered full split and statistical "
-            "analysis."
-        ),
-    }
+    return _build_real_pilot_result(
+        train_path,
+        validation_path,
+        train_records,
+        raw_validation_records,
+        validation_records,
+        train_dataset,
+        config,
+        pos_weight,
+        runs,
+    )
 
 
 def write_synthetic_comparison(path: str | Path, config: SyntheticComparisonConfig) -> dict[str, Any]:

@@ -28,8 +28,23 @@ CODE2SEQ_JAVA_SMALL_BASELINES = (
 VARIANT_LABELS = {
     "B36_code2hyp_product_frechet_neighbor": "Code2Hyp B36 product-Frechet + neighbor",
     "B39_code2vec_context_transform_baseline": "B39 matched code2vec-style baseline",
+    "B46_code2vec_context_transform_neighbor_control": "B46 Euclidean context-transform + neighbor",
+    "B47_code2vec_context_transform_distance_control": "B47 Euclidean context-transform + distance loss",
+    "B50_code2vec_context_transform_l1_baseline": "B50 L1 structural-distance baseline",
+    "B51_code2vec_context_transform_l1_distance_control": "B51 L1 structural-distance + distance loss",
+    "B48_code2hyp_context_transform_product_bias_no_struct": "B48 hyperbolic product-bias without structural loss",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean": "B49 same code path, near-Euclidean curvature",
     "B40_code2hyp_context_transform_frechet": "Code2Hyp B40 context-transform + Frechet",
     "B44_code2hyp_context_transform_product_bias_frechet": "Code2Hyp B44 structural-bias attention",
+    "B60_code2hyp_context_transform_branch_sequence_product_bias_frechet": "B60 branch-sequence product manifold",
+    "B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet": (
+        "B62 branch-sequence product manifold + multi-metric loss"
+    ),
+    "B63_code2hyp_context_transform_product_bias_multi_metric_frechet": (
+        "B63 product-bias manifold + multi-metric loss"
+    ),
+    "B64_code2vec_context_transform_multi_metric_control": "B64 Euclidean context-transform + multi-metric loss",
+    "B65_code2vec_context_transform_l1_multi_metric_control": "B65 L1 context-transform + multi-metric loss",
 }
 
 
@@ -109,9 +124,11 @@ def build_paper_benchmark_markdown(result: dict[str, Any]) -> str:
             "",
             (
                 "| Variant | Precision | Recall | F1 | Structural Spearman | "
-                "Normalized stress | Overlap@3 | Curvature | rho | n seeds |"
+                "Edit Spearman | Jaccard Spearman | Normalized stress | Edit stress | Jaccard stress | "
+                "Overlap@3 | Exact Overlap@3 | Karcher residual | "
+                "Radius max | Near-boundary rate | Curvature | rho | n seeds |"
             ),
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for variant in sorted(grouped):
@@ -121,13 +138,23 @@ def build_paper_benchmark_markdown(result: dict[str, Any]) -> str:
         recall = _mean_sd([float(run["validation_recall"]) for run in runs])
         f1 = _mean_sd([float(run["validation_f1"]) for run in runs])
         spearman = _mean_float([float(run["validation_structural_spearman"]) for run in runs])
+        edit_spearman = _optional_mean_float(runs, "validation_structural_edit_spearman")
+        jaccard_spearman = _optional_mean_float(runs, "validation_structural_jaccard_spearman")
         stress = _optional_mean_float(runs, "validation_structural_normalized_stress")
+        edit_stress = _optional_mean_float(runs, "validation_structural_edit_normalized_stress")
+        jaccard_stress = _optional_mean_float(runs, "validation_structural_jaccard_normalized_stress")
         overlap_at_3 = _mean_float([float(run["validation_structural_neighbor_overlap_at_3"]) for run in runs])
+        exact_overlap_at_3 = _optional_mean_float(runs, "validation_structural_neighbor_exact_overlap_at_3")
+        karcher_residual = _optional_mean_float(runs, "validation_poincare_frechet_residual_mean")
+        radius_max = _optional_mean_float(runs, "validation_poincare_context_radius_ratio_max")
+        near_boundary_rate = _optional_mean_float(runs, "validation_poincare_context_near_boundary_rate")
         curvature = _mean_float([float(run["curvature"]) for run in runs if math.isfinite(float(run["curvature"]))])
         rho = _mean_float([float(run["product_attention_bias_weight"]) for run in runs])
         lines.append(
-            f"| {label} | {precision} | {recall} | {f1} | {spearman} | {stress} | "
-            f"{overlap_at_3} | {curvature} | {rho} | {len(runs)} |"
+            f"| {label} | {precision} | {recall} | {f1} | {spearman} | "
+            f"{edit_spearman} | {jaccard_spearman} | {stress} | {edit_stress} | {jaccard_stress} | "
+            f"{overlap_at_3} | {exact_overlap_at_3} | {karcher_residual} | {radius_max} | "
+            f"{near_boundary_rate} | {curvature} | {rho} | {len(runs)} |"
         )
 
     lines.extend(

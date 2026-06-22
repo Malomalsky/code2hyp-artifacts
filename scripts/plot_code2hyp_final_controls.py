@@ -37,6 +37,11 @@ DEFAULT_INPUTS = (
 
 VARIANT_ORDER = (
     "B39_code2vec_context_transform_baseline",
+    "B47_code2vec_context_transform_distance_control",
+    "B50_code2vec_context_transform_l1_baseline",
+    "B51_code2vec_context_transform_l1_distance_control",
+    "B48_code2hyp_context_transform_product_bias_no_struct",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean",
     "B36_code2hyp_product_frechet_neighbor",
     "B40_code2hyp_context_transform_frechet",
     "B44_code2hyp_context_transform_product_bias_frechet",
@@ -44,6 +49,11 @@ VARIANT_ORDER = (
 
 VARIANT_LABELS = {
     "B39_code2vec_context_transform_baseline": "B39 matched baseline",
+    "B47_code2vec_context_transform_distance_control": "B47 Euclidean + distance",
+    "B50_code2vec_context_transform_l1_baseline": "B50 L1 baseline",
+    "B51_code2vec_context_transform_l1_distance_control": "B51 L1 + distance",
+    "B48_code2hyp_context_transform_product_bias_no_struct": "B48 product, no struct.",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean": "B49 near-Euclidean",
     "B36_code2hyp_product_frechet_neighbor": "B36 performance",
     "B40_code2hyp_context_transform_frechet": "B40 Frechet",
     "B44_code2hyp_context_transform_product_bias_frechet": "B44 structural",
@@ -51,6 +61,11 @@ VARIANT_LABELS = {
 
 VARIANT_STYLES = {
     "B39_code2vec_context_transform_baseline": ("#4D4D4D", "o", "-"),
+    "B47_code2vec_context_transform_distance_control": ("#CC79A7", "P", "--"),
+    "B50_code2vec_context_transform_l1_baseline": ("#999999", "v", ":"),
+    "B51_code2vec_context_transform_l1_distance_control": ("#7F3C8D", "*", "--"),
+    "B48_code2hyp_context_transform_product_bias_no_struct": ("#E69F00", "X", ":"),
+    "B49_code2hyp_context_transform_product_bias_near_euclidean": ("#56B4E9", "^", "--"),
     "B36_code2hyp_product_frechet_neighbor": ("#0072B2", "s", "-"),
     "B40_code2hyp_context_transform_frechet": ("#009E73", "^", "--"),
     "B44_code2hyp_context_transform_product_bias_frechet": ("#D55E00", "D", "-."),

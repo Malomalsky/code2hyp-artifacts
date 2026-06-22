@@ -38,34 +38,19 @@ class Code2HypPairedEffectScriptTests(unittest.TestCase):
         self.assertIn("| B4 | B_tree | validation_f1 | 3 | +0.1833 |", markdown)
         self.assertIn("sign-test p", markdown)
 
-    def test_default_right_variants_include_b7_attention_only_ablation(self) -> None:
-        self.assertIn("B7_hyperbolic_attention_only", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B8_hyperbolic_frechet_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B17_hyperbolic_path_mp_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B18_hyperbolic_path_mp_struct_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B19_hyperbolic_path_mp_rank_annealed", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B20_hyperbolic_path_mp_rank_delayed", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B21_hyperbolic_path_mp_rank_cosine", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B22_hyperbolic_path_mp_rank_warmup_decay", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B23_hyperbolic_path_attention_mp_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B24_hyperbolic_path_attention_mp_rank_annealed", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B25_hyperbolic_path_depth_attention_mp_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B26_hyperbolic_path_depth_attention_mp_rank_annealed", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B27_hyperbolic_path_attention_mp_monotone", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B28_hyperbolic_path_attention_mp_tree_distance", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B29_hyperbolic_path_dual_attention_mp_separated", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B30_hyperbolic_path_dual_attention_mp_rank_separated", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B31_hyperbolic_path_dual_attention_mp_soft_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B32_lorentz_path_dual_attention_mp_soft_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B34_hyperbolic_path_dual_attention_mp_adaptive_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B9_lorentz_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B15_lorentz_product_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B10_factorized_product_code2vec", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B11_factorized_product_struct_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B12_factorized_product_learned_metric_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B16_factorized_product_three_metric_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B13_factorized_product_channel_mixer_rank", DEFAULT_RIGHT_VARIANTS)
-        self.assertIn("B14_bounded_euclidean_metric_code2vec", DEFAULT_RIGHT_VARIANTS)
+    def test_default_right_variants_cover_final_factorial_controls(self) -> None:
+        self.assertEqual(
+            DEFAULT_RIGHT_VARIANTS,
+            (
+                "B47_code2vec_context_transform_distance_control",
+                "B50_code2vec_context_transform_l1_baseline",
+                "B51_code2vec_context_transform_l1_distance_control",
+                "B48_code2hyp_context_transform_product_bias_no_struct",
+                "B49_code2hyp_context_transform_product_bias_near_euclidean",
+                "B36_code2hyp_product_frechet_neighbor",
+                "B39_code2vec_context_transform_baseline",
+            ),
+        )
 
 
 if __name__ == "__main__":

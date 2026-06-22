@@ -13,8 +13,10 @@ from geometry_profile_research.code2hyp_data import (
     encode_records_to_batch,
     encode_records_to_multilabel_batch,
     filter_records_by_known_label_subtokens,
+    label_subtoken_coverage,
     load_code2vec_records,
     parse_code2vec_line,
+    sample_code2vec_records,
     split_label_subtokens,
 )
 from geometry_profile_research.code2hyp_torch import Code2HypBatch, tree_context_features
@@ -100,6 +102,21 @@ class Code2HypDataTests(unittest.TestCase):
         self.assertEqual([record.label for record in records], ["to|lower|case", "equals"])
         self.assertEqual(records[0].contexts[0].ast_path, ("Name", "MethodInvocation", "Name"))
 
+    def test_sample_code2vec_records_is_seeded_and_not_first_n_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "sample.c2v"
+            path.write_text(
+                "\n".join(f"label{i} start,Name|Call,end" for i in range(20)),
+                encoding="utf-8",
+            )
+
+            first = sample_code2vec_records(path, limit=5, seed=17)
+            second = sample_code2vec_records(path, limit=5, seed=17)
+
+        self.assertEqual([record.label for record in first], [record.label for record in second])
+        self.assertEqual(len(first), 5)
+        self.assertNotEqual([record.label for record in first], [f"label{i}" for i in range(5)])
+
     def test_split_label_subtokens_uses_code2seq_pipe_convention(self) -> None:
         self.assertEqual(split_label_subtokens("to|lower|case"), ("to", "lower", "case"))
         self.assertEqual(split_label_subtokens("equals"), ("equals",))
@@ -164,6 +181,26 @@ class Code2HypDataTests(unittest.TestCase):
         filtered = filter_records_by_known_label_subtokens(val_records, target_vocab)
 
         self.assertEqual([record.label for record in filtered], ["to|lower"])
+
+    def test_label_subtoken_coverage_reports_closed_vocabulary_boundary(self) -> None:
+        train_records = [
+            parse_code2vec_line("to|lower obj,Name|Call,value"),
+        ]
+        val_records = [
+            parse_code2vec_line("to|lower obj,Name|Call,value"),
+            parse_code2vec_line("unknown|lower obj,Name|Call,value"),
+            parse_code2vec_line("missing|target obj,Name|Call,value"),
+        ]
+        _, _, target_vocab = build_multilabel_vocabularies(train_records)
+
+        coverage = label_subtoken_coverage(val_records, target_vocab)
+
+        self.assertEqual(coverage["records"], 3)
+        self.assertEqual(coverage["known_records"], 1)
+        self.assertAlmostEqual(coverage["record_coverage"], 1 / 3)
+        self.assertEqual(coverage["subtokens"], 6)
+        self.assertEqual(coverage["known_subtokens"], 3)
+        self.assertAlmostEqual(coverage["subtoken_coverage"], 0.5)
 
     def test_apply_lexical_ablation_obfuscates_endpoint_tokens_but_preserves_structure(self) -> None:
         records = [

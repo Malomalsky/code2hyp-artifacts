@@ -180,6 +180,22 @@ class Code2HypSyntheticTrainingTests(unittest.TestCase):
         self.assertEqual(metrics["precision"], 1.0)
         self.assertEqual(metrics["recall"], 1.0)
         self.assertEqual(metrics["f1"], 1.0)
+        self.assertEqual(metrics["predicted_positive_count_mean"], 2.0)
+
+    def test_multilabel_metrics_support_non_oracle_selection_protocols(self) -> None:
+        logits = torch.tensor([[5.0, 4.0, 0.0], [0.0, 5.0, 4.0]])
+        labels = torch.tensor([[1.0, 1.0, 0.0], [0.0, 1.0, 1.0]])
+        target_sizes = torch.tensor([2, 2])
+
+        fixed_top1 = multilabel_metrics_from_logits(logits, labels, target_sizes, selection="fixed_topk", fixed_k=1)
+        threshold = multilabel_metrics_from_logits(logits, labels, target_sizes, selection="threshold", threshold=4.5)
+
+        self.assertEqual(fixed_top1["precision"], 1.0)
+        self.assertEqual(fixed_top1["recall"], 0.5)
+        self.assertEqual(fixed_top1["predicted_positive_count_mean"], 1.0)
+        self.assertEqual(threshold["precision"], 1.0)
+        self.assertEqual(threshold["recall"], 0.5)
+        self.assertEqual(threshold["predicted_positive_count_mean"], 1.0)
 
     def test_evaluate_multilabel_metrics_keeps_target_sizes_aligned_across_minibatches(self) -> None:
         labels = torch.tensor(

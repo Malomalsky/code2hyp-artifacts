@@ -98,6 +98,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated model seeds, for example: 101 or 101,202,303.",
     )
     parser.add_argument(
+        "--sample-seed",
+        type=int,
+        default=None,
+        help=(
+            "Reservoir-sample train/eval records with this seed instead of using "
+            "the first N records. Leave unset to reproduce earlier first-N pilots."
+        ),
+    )
+    parser.add_argument(
+        "--structural-eval-limit",
+        type=int,
+        default=512,
+        help=(
+            "Maximum known-target records used for structural diagnostics. Prediction "
+            "metrics are still computed on the full known-target evaluation subset."
+        ),
+    )
+    parser.add_argument(
+        "--structural-eval-seed",
+        type=int,
+        default=314159,
+        help="Seed for the structural-diagnostic subset when --structural-eval-limit is active.",
+    )
+    parser.add_argument(
         "--variants",
         type=str,
         default="",
@@ -122,12 +146,16 @@ def build_parser() -> argparse.ArgumentParser:
             "B37_code2hyp_code2vec_attention_frechet,"
             "B38_code2hyp_code2vec_attention_neighbor,"
             "B39_code2vec_context_transform_baseline,"
+            "B46_code2vec_context_transform_neighbor_control,"
             "B40_code2hyp_context_transform_frechet,"
             "B41_code2hyp_context_transform_neighbor,"
             "B42_code2hyp_product_context_transform_frechet,"
             "B43_code2hyp_product_context_transform_neighbor,"
             "B44_code2hyp_context_transform_product_bias_frechet,"
-            "B45_code2hyp_context_transform_product_bias_neighbor"
+            "B48_code2hyp_context_transform_product_bias_no_struct,"
+            "B49_code2hyp_context_transform_product_bias_near_euclidean,"
+            "B45_code2hyp_context_transform_product_bias_neighbor,"
+            "B47_code2vec_context_transform_distance_control"
         ),
     )
     parser.add_argument(
@@ -179,6 +207,9 @@ def main() -> None:
         use_positive_weighting=not args.no_positive_weighting,
         max_positive_weight=args.max_positive_weight,
         model_seeds=model_seeds,
+        sample_seed=args.sample_seed,
+        structural_eval_limit=args.structural_eval_limit,
+        structural_eval_seed=args.structural_eval_seed,
     )
     try:
         variant_filter = parse_variant_selection(
@@ -208,6 +239,9 @@ def main() -> None:
         max_positive_weight=pilot_config.max_positive_weight,
         model_seeds=pilot_config.model_seeds,
         variant_filter=variant_filter,
+        sample_seed=pilot_config.sample_seed,
+        structural_eval_limit=pilot_config.structural_eval_limit,
+        structural_eval_seed=pilot_config.structural_eval_seed,
     )
 
     evaluation_path = inventory.split_paths[args.eval_split]

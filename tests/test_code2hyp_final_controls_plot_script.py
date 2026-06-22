@@ -5,10 +5,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.plot_code2hyp_final_controls import parse_labeled_input, plot_final_controls
+from scripts.plot_code2hyp_final_controls import VARIANT_ORDER, parse_labeled_input, plot_final_controls
 
 
 class Code2HypFinalControlsPlotScriptTests(unittest.TestCase):
+    def test_variant_order_includes_postreview_factorial_controls(self) -> None:
+        self.assertIn("B47_code2vec_context_transform_distance_control", VARIANT_ORDER)
+        self.assertIn("B50_code2vec_context_transform_l1_baseline", VARIANT_ORDER)
+        self.assertIn("B51_code2vec_context_transform_l1_distance_control", VARIANT_ORDER)
+        self.assertIn("B48_code2hyp_context_transform_product_bias_no_struct", VARIANT_ORDER)
+        self.assertIn("B49_code2hyp_context_transform_product_bias_near_euclidean", VARIANT_ORDER)
+
     def test_plot_final_controls_writes_png_and_pdf(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

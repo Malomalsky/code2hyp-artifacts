@@ -1,0 +1,8 @@
+| Left | Right | Metric | n | Mean delta | 95% bootstrap CI | sign-test p | Direction | Evidence status |
+|---|---|---|---:|---:|---:|---:|---|---|
+| B44_code2hyp_context_transform_product_bias_frechet | B39_code2vec_context_transform_baseline | validation_structural_normalized_stress | 5 | -0.7596 | [-0.7736, -0.7465] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |
+| B44_code2hyp_context_transform_product_bias_frechet | B47_code2vec_context_transform_distance_control | validation_structural_normalized_stress | 5 | -0.1358 | [-0.1484, -0.1232] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |
+| B44_code2hyp_context_transform_product_bias_frechet | B50_code2vec_context_transform_l1_baseline | validation_structural_normalized_stress | 5 | -0.7960 | [-0.8050, -0.7872] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |
+| B44_code2hyp_context_transform_product_bias_frechet | B51_code2vec_context_transform_l1_distance_control | validation_structural_normalized_stress | 5 | -0.1156 | [-0.1273, -0.1058] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |
+| B44_code2hyp_context_transform_product_bias_frechet | B48_code2hyp_context_transform_product_bias_no_struct | validation_structural_normalized_stress | 5 | -0.2707 | [-0.2765, -0.2659] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |
+| B44_code2hyp_context_transform_product_bias_frechet | B49_code2hyp_context_transform_product_bias_near_euclidean | validation_structural_normalized_stress | 5 | -0.1194 | [-0.1280, -0.1133] | 0.0625 | +/0 -/5 0/0 | directionally_consistent_negative |

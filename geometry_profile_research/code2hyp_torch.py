@@ -32,13 +32,22 @@ Variant = Literal[
     "code2hyp_product_frechet",
     "code2hyp_code2vec_attention_frechet",
     "code2vec_context_transform",
+    "code2vec_context_transform_l1",
     "code2hyp_context_transform_frechet",
     "code2hyp_product_context_transform_frechet",
     "code2hyp_context_transform_product_bias_frechet",
+    "code2hyp_branch_product_context_transform_frechet",
+    "code2hyp_context_transform_branch_product_bias_frechet",
+    "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+    "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+    "code2hyp_context_transform_branch_sequence_product_bias_frechet",
 ]
 PathEncoder = Literal["mean", "gru"]
 RepresentationTransform = Literal["identity", "tanh"]
-StructuralGeometry = Literal["poincare", "lorentz"]
+StructuralGeometry = Literal["poincare", "lorentz", "poincare_product"]
+StructuralEmbeddingMetric = Literal["l2", "l1"]
+StructuralTargetDistance = Literal["prefix_tree", "edit", "jaccard_bigrams"]
+ProductDistanceMetric = Literal["riemannian_l2", "l1_sum"]
 
 
 @dataclass(frozen=True)
@@ -82,8 +91,12 @@ class Code2HypTorchOutput:
     structural_points: Tensor | None = None
     context_structural_embeddings: Tensor | None = None
     context_structural_points: Tensor | None = None
+    structural_product_points: tuple[Tensor, ...] | None = None
+    context_structural_product_points: tuple[Tensor, ...] | None = None
+    structural_product_distance_metric: ProductDistanceMetric = "riemannian_l2"
     context_tree_features: Tensor | None = None
     structural_geometry: StructuralGeometry | None = None
+    structural_embedding_metric: StructuralEmbeddingMetric = "l2"
     path_node_attention: Tensor | None = None
     path_node_attention_pair: Tensor | None = None
     path_node_attention_monotonicity_loss: Tensor | None = None
@@ -184,6 +197,13 @@ def torch_logmap(base: Tensor, point: Tensor, curvature: Tensor | float, eps: fl
 
 
 def torch_poincare_distance(left: Tensor, right: Tensor, curvature: Tensor | float) -> Tensor:
+    """Geodesic distance in the Poincare ball with curvature ``-curvature``.
+
+    The equivalent ``acosh(1 + z)`` expression is poorly conditioned near
+    ``z = 0`` and requires a positive clamp that makes ``d(x, x)`` non-zero.
+    The ``asinh`` form keeps the diagonal exactly zero while remaining stable
+    for small separations.
+    """
     curvature_tensor = torch.as_tensor(curvature, dtype=left.dtype, device=left.device)
     if bool((curvature_tensor <= 0).any()):
         raise ValueError("curvature must be positive")
@@ -192,15 +212,15 @@ def torch_poincare_distance(left: Tensor, right: Tensor, curvature: Tensor | flo
     right = torch_project_to_ball(right, curvature_tensor)
     left_norm2 = torch.sum(left * left, dim=-1)
     right_norm2 = torch.sum(right * right, dim=-1)
-    diff_norm2 = torch.sum((left - right) ** 2, dim=-1)
-    denominator = torch.clamp(
-        (1.0 - curvature_tensor * left_norm2) * (1.0 - curvature_tensor * right_norm2),
-        min=1e-15,
+    diff_norm = torch.linalg.vector_norm(left - right, dim=-1)
+    denominator = torch.sqrt(
+        torch.clamp(
+            (1.0 - curvature_tensor * left_norm2) * (1.0 - curvature_tensor * right_norm2),
+            min=1e-30,
+        )
     )
-    argument = 1.0 + 2.0 * curvature_tensor * diff_norm2 / denominator
-    # acosh'(1) is singular. The small floor keeps structural regularization
-    # gradients finite when two context embeddings temporarily coincide.
-    return torch.acosh(torch.clamp(argument, min=1.0 + 1e-7)) / sqrt_c
+    argument = sqrt_c * diff_norm / denominator
+    return 2.0 * torch.asinh(argument) / sqrt_c
 
 
 def torch_lorentz_expmap0(v: Tensor, curvature: Tensor | float) -> Tensor:
@@ -323,6 +343,37 @@ def torch_poincare_frechet_mean(
     return torch_project_to_ball(mean, curvature_tensor, eps=eps)
 
 
+def torch_poincare_frechet_residual(
+    points: Tensor,
+    weights: Tensor,
+    mean: Tensor,
+    curvature: Tensor | float,
+    eps: float = 1e-5,
+) -> Tensor:
+    """Norm of the weighted Karcher first-order residual at ``mean``.
+
+    For the weighted Frechet objective ``sum_i w_i d_c(mu, x_i)^2``, an exact
+    Karcher mean satisfies ``sum_i w_i log_mu(x_i) = 0``. This diagnostic
+    reports the norm of that tangent-space residual for each batch item.
+    """
+    curvature_tensor = torch.as_tensor(curvature, dtype=points.dtype, device=points.device)
+    tangent_updates = torch_logmap(mean.unsqueeze(1), points, curvature=curvature_tensor, eps=eps)
+    residual = torch.sum(weights.unsqueeze(-1) * tangent_updates, dim=1)
+    return torch.linalg.vector_norm(residual, dim=-1)
+
+
+def torch_poincare_frechet_objective(
+    points: Tensor,
+    weights: Tensor,
+    mean: Tensor,
+    curvature: Tensor | float,
+) -> Tensor:
+    """Weighted squared-distance Frechet objective at ``mean``."""
+    curvature_tensor = torch.as_tensor(curvature, dtype=points.dtype, device=points.device)
+    distances = torch_poincare_distance(mean.unsqueeze(1), points, curvature=curvature_tensor)
+    return torch.sum(weights * distances.square(), dim=1)
+
+
 def structural_distance_loss(embedding_distances: Tensor, ast_distances: Tensor) -> Tensor:
     """Scale-invariant MSE between embedding distances and AST/tree distances."""
     embedding_distances = embedding_distances.float()
@@ -431,6 +482,112 @@ def ast_sequence_tree_distance(left: Tensor, left_mask: Tensor, right: Tensor, r
     right_len = right_mask.long().sum(dim=-1)
     lca_depth = ast_sequence_lca_depth(left, left_mask, right, right_mask)
     return (left_len + right_len - 2 * lca_depth).float()
+
+
+def ast_path_midpoint_branch_masks(ast_path_mask: Tensor) -> tuple[Tensor, Tensor]:
+    """Split a serialized terminal-to-terminal AST path into two branch masks.
+
+    The original code2seq Java-small files expose serialized AST-node labels,
+    not persistent AST node identifiers. Therefore this split uses the middle
+    observed path position as an LCA proxy. The pivot is included in both
+    branches, matching the interpretation of an LCA shared by the two branches.
+    """
+    if ast_path_mask.ndim < 1:
+        raise ValueError("ast_path_mask must have at least one dimension")
+    path_length = ast_path_mask.shape[-1]
+    positions = torch.arange(path_length, device=ast_path_mask.device).view(*([1] * (ast_path_mask.ndim - 1)), -1)
+    lengths = ast_path_mask.long().sum(dim=-1, keepdim=True)
+    pivot = torch.clamp((lengths - 1) // 2, min=0)
+    left_mask = ast_path_mask & (positions <= pivot) & (lengths > 0)
+    right_mask = ast_path_mask & (positions >= pivot) & (lengths > 0)
+    return left_mask, right_mask
+
+
+def _masked_sequence(row: Tensor, mask: Tensor) -> tuple[int, ...]:
+    return tuple(int(token) for token, keep in zip(row.detach().cpu().tolist(), mask.detach().cpu().tolist()) if keep)
+
+
+def _levenshtein_distance(left: tuple[int, ...], right: tuple[int, ...]) -> int:
+    if not left:
+        return len(right)
+    if not right:
+        return len(left)
+    previous = list(range(len(right) + 1))
+    for left_index, left_token in enumerate(left, start=1):
+        current = [left_index]
+        for right_index, right_token in enumerate(right, start=1):
+            substitution = previous[right_index - 1] + (0 if left_token == right_token else 1)
+            insertion = current[right_index - 1] + 1
+            deletion = previous[right_index] + 1
+            current.append(min(substitution, insertion, deletion))
+        previous = current
+    return previous[-1]
+
+
+def ast_sequence_edit_distance(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
+    """Levenshtein distance between masked AST-path label sequences.
+
+    This is a diagnostic proxy, not a differentiable training objective.
+    """
+    flat_left = left.reshape(-1, left.shape[-1])
+    flat_left_mask = left_mask.reshape(-1, left_mask.shape[-1])
+    flat_right = right.reshape(-1, right.shape[-1])
+    flat_right_mask = right_mask.reshape(-1, right_mask.shape[-1])
+    distances = [
+        float(_levenshtein_distance(_masked_sequence(l_row, l_mask), _masked_sequence(r_row, r_mask)))
+        for l_row, l_mask, r_row, r_mask in zip(flat_left, flat_left_mask, flat_right, flat_right_mask)
+    ]
+    return left.new_tensor(distances, dtype=torch.float32).reshape(left.shape[:-1])
+
+
+def _ngrams(sequence: tuple[int, ...], n: int = 2) -> set[tuple[int, ...]]:
+    if not sequence:
+        return set()
+    if len(sequence) < n:
+        return {sequence}
+    return {sequence[index : index + n] for index in range(len(sequence) - n + 1)}
+
+
+def ast_sequence_jaccard_distance(
+    left: Tensor,
+    left_mask: Tensor,
+    right: Tensor,
+    right_mask: Tensor,
+    ngram: int = 2,
+) -> Tensor:
+    """Jaccard distance between AST-path label n-gram sets."""
+    if ngram <= 0:
+        raise ValueError("ngram must be positive")
+    flat_left = left.reshape(-1, left.shape[-1])
+    flat_left_mask = left_mask.reshape(-1, left_mask.shape[-1])
+    flat_right = right.reshape(-1, right.shape[-1])
+    flat_right_mask = right_mask.reshape(-1, right_mask.shape[-1])
+    distances: list[float] = []
+    for l_row, l_mask, r_row, r_mask in zip(flat_left, flat_left_mask, flat_right, flat_right_mask):
+        left_ngrams = _ngrams(_masked_sequence(l_row, l_mask), n=ngram)
+        right_ngrams = _ngrams(_masked_sequence(r_row, r_mask), n=ngram)
+        union = left_ngrams | right_ngrams
+        if not union:
+            distances.append(0.0)
+        else:
+            distances.append(1.0 - (len(left_ngrams & right_ngrams) / len(union)))
+    return left.new_tensor(distances, dtype=torch.float32).reshape(left.shape[:-1])
+
+
+def ast_sequence_distance(
+    left: Tensor,
+    left_mask: Tensor,
+    right: Tensor,
+    right_mask: Tensor,
+    target_distance: StructuralTargetDistance = "prefix_tree",
+) -> Tensor:
+    if target_distance == "prefix_tree":
+        return ast_sequence_tree_distance(left, left_mask, right, right_mask)
+    if target_distance == "edit":
+        return ast_sequence_edit_distance(left, left_mask, right, right_mask)
+    if target_distance == "jaccard_bigrams":
+        return ast_sequence_jaccard_distance(left, left_mask, right, right_mask, ngram=2)
+    raise ValueError(f"unknown structural target distance: {target_distance}")
 
 
 def tree_context_features(batch: Code2HypBatch) -> Tensor:
@@ -661,8 +818,16 @@ def path_dual_attention_separation_loss(
     return torch.sum(loss_per_path * valid_weight) / torch.clamp(valid_weight.sum(), min=1.0)
 
 
-def _collect_structural_pair_distances(output: Code2HypTorchOutput, batch: Code2HypBatch) -> tuple[Tensor, Tensor]:
-    if output.context_structural_embeddings is None:
+def _collect_structural_pair_distances(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    target_distance: StructuralTargetDistance = "prefix_tree",
+) -> tuple[Tensor, Tensor]:
+    if (
+        output.context_structural_embeddings is None
+        and output.context_structural_points is None
+        and output.context_structural_product_points is None
+    ):
         raise ValueError("model output does not contain context structural embeddings")
 
     embedding_distances = []
@@ -678,9 +843,20 @@ def _collect_structural_pair_distances(output: Code2HypTorchOutput, batch: Code2
             right_ast = batch.ast_paths[valid_pair, right_index]
             left_mask = batch.ast_path_mask[valid_pair, left_index]
             right_mask = batch.ast_path_mask[valid_pair, right_index]
-            ast_distances.append(ast_sequence_tree_distance(left_ast, left_mask, right_ast, right_mask))
+            ast_distances.append(ast_sequence_distance(left_ast, left_mask, right_ast, right_mask, target_distance))
 
-            if output.context_structural_points is not None:
+            if output.context_structural_product_points is not None:
+                left_factors = tuple(factor[valid_pair, left_index] for factor in output.context_structural_product_points)
+                right_factors = tuple(factor[valid_pair, right_index] for factor in output.context_structural_product_points)
+                embedding_distances.append(
+                    _poincare_product_distance(
+                        left_factors,
+                        right_factors,
+                        output.curvature,
+                        metric=output.structural_product_distance_metric,
+                    )
+                )
+            elif output.context_structural_points is not None:
                 left_point = output.context_structural_points[valid_pair, left_index]
                 right_point = output.context_structural_points[valid_pair, right_index]
                 if output.structural_geometry == "lorentz":
@@ -690,7 +866,13 @@ def _collect_structural_pair_distances(output: Code2HypTorchOutput, batch: Code2
             else:
                 left_embedding = output.context_structural_embeddings[valid_pair, left_index]
                 right_embedding = output.context_structural_embeddings[valid_pair, right_index]
-                embedding_distances.append(torch.linalg.vector_norm(left_embedding - right_embedding, dim=-1))
+                embedding_distances.append(
+                    _structural_embedding_distance(
+                        left_embedding,
+                        right_embedding,
+                        metric=output.structural_embedding_metric,
+                    )
+                )
 
     if not embedding_distances:
         empty = output.logits.new_tensor([])
@@ -699,6 +881,16 @@ def _collect_structural_pair_distances(output: Code2HypTorchOutput, batch: Code2
 
 
 def _context_embedding_distance_matrix(output: Code2HypTorchOutput, sample_index: int, valid_contexts: Tensor) -> Tensor:
+    if output.context_structural_product_points is not None:
+        factors = tuple(factor[sample_index, valid_contexts] for factor in output.context_structural_product_points)
+        left_factors = tuple(factor.unsqueeze(1) for factor in factors)
+        right_factors = tuple(factor.unsqueeze(0) for factor in factors)
+        return _poincare_product_distance(
+            left_factors,
+            right_factors,
+            output.curvature,
+            metric=output.structural_product_distance_metric,
+        )
     if output.context_structural_points is not None:
         points = output.context_structural_points[sample_index, valid_contexts]
         left = points.unsqueeze(1)
@@ -709,7 +901,52 @@ def _context_embedding_distance_matrix(output: Code2HypTorchOutput, sample_index
     if output.context_structural_embeddings is None:
         raise ValueError("model output does not contain context structural embeddings")
     embeddings = output.context_structural_embeddings[sample_index, valid_contexts]
-    return torch.linalg.vector_norm(embeddings.unsqueeze(1) - embeddings.unsqueeze(0), dim=-1)
+    return _structural_embedding_distance(
+        embeddings.unsqueeze(1),
+        embeddings.unsqueeze(0),
+        metric=output.structural_embedding_metric,
+    )
+
+
+def _structural_embedding_distance(
+    left: Tensor,
+    right: Tensor,
+    metric: StructuralEmbeddingMetric = "l2",
+) -> Tensor:
+    """Distance between Euclidean structural embeddings.
+
+    The default is Euclidean L2, matching the original code2vec-style controls.
+    The L1 option is a reviewer-requested control for path spaces whose natural
+    relation is closer to an incidence/symmetric-difference metric.
+    """
+    difference = left - right
+    if metric == "l2":
+        return torch.linalg.vector_norm(difference, dim=-1)
+    if metric == "l1":
+        return torch.sum(torch.abs(difference), dim=-1)
+    raise ValueError(f"unknown structural embedding metric: {metric}")
+
+
+def _poincare_product_distance(
+    left_factors: tuple[Tensor, ...],
+    right_factors: tuple[Tensor, ...],
+    curvature: Tensor,
+    metric: ProductDistanceMetric = "riemannian_l2",
+) -> Tensor:
+    if len(left_factors) != len(right_factors):
+        raise ValueError("product factors must have the same number of components")
+    if not left_factors:
+        raise ValueError("product distance requires at least one factor")
+    factor_distances = [
+        torch_poincare_distance(left, right, curvature=curvature)
+        for left, right in zip(left_factors, right_factors)
+    ]
+    stacked = torch.stack(factor_distances, dim=0)
+    if metric == "riemannian_l2":
+        return torch.sqrt(torch.sum(stacked.square(), dim=0) + 1e-12)
+    if metric == "l1_sum":
+        return torch.sum(stacked, dim=0)
+    raise ValueError(f"unknown product distance metric: {metric}")
 
 
 def _context_ast_distance_matrix(batch: Code2HypBatch, sample_index: int, valid_contexts: Tensor) -> Tensor:
@@ -721,6 +958,14 @@ def _context_ast_distance_matrix(batch: Code2HypBatch, sample_index: int, valid_
         paths.unsqueeze(0),
         masks.unsqueeze(0),
     )
+
+
+def _topk_indices_with_index_tiebreak(distances: Tensor, k: int) -> Tensor:
+    """Return nearest-neighbor indices with deterministic index tie-breaking."""
+    context_count = distances.shape[-1]
+    tie_break = torch.arange(context_count, dtype=distances.dtype, device=distances.device)
+    tie_break = tie_break * torch.finfo(distances.dtype).eps
+    return torch.argsort(distances + tie_break.view(1, context_count), dim=-1)[:, :k]
 
 
 def batch_structural_neighbor_overlap_at_k(
@@ -741,7 +986,11 @@ def batch_structural_neighbor_overlap_at_k(
     """
     if k <= 0:
         raise ValueError("k must be positive")
-    if output.context_structural_embeddings is None and output.context_structural_points is None:
+    if (
+        output.context_structural_embeddings is None
+        and output.context_structural_points is None
+        and output.context_structural_product_points is None
+    ):
         raise ValueError("model output does not contain structural context representations")
 
     scores: list[Tensor] = []
@@ -776,6 +1025,208 @@ def batch_structural_neighbor_overlap_at_k(
     return torch.cat(scores).mean()
 
 
+def batch_structural_neighbor_exact_overlap_at_k(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    k: int = 1,
+) -> Tensor:
+    """Exact top-k overlap with deterministic tie-breaking.
+
+    Unlike :func:`batch_structural_neighbor_overlap_at_k`, this diagnostic does
+    not expand the target set when several contexts share the kth AST distance.
+    It reports overlap against exactly k target neighbors after sorting by
+    `(distance, context_index)`. This makes the metric stricter, but also more
+    sensitive to arbitrary ties in discrete prefix-trie distances.
+    """
+    if k <= 0:
+        raise ValueError("k must be positive")
+    if (
+        output.context_structural_embeddings is None
+        and output.context_structural_points is None
+        and output.context_structural_product_points is None
+    ):
+        raise ValueError("model output does not contain structural context representations")
+
+    scores: list[Tensor] = []
+    for sample_index in range(batch.context_mask.shape[0]):
+        valid_contexts = torch.nonzero(batch.context_mask[sample_index], as_tuple=False).flatten()
+        context_count = int(valid_contexts.numel())
+        if context_count <= 1:
+            continue
+        effective_k = min(k, context_count - 1)
+        embedding_distances = _context_embedding_distance_matrix(output, sample_index, valid_contexts)
+        ast_distances = _context_ast_distance_matrix(batch, sample_index, valid_contexts).to(
+            dtype=embedding_distances.dtype,
+            device=embedding_distances.device,
+        )
+        diagonal = torch.eye(context_count, dtype=torch.bool, device=embedding_distances.device)
+        embedding_distances = embedding_distances.masked_fill(diagonal, float("inf"))
+        ast_distances = ast_distances.masked_fill(diagonal, float("inf"))
+
+        predicted_neighbors = _topk_indices_with_index_tiebreak(embedding_distances, effective_k)
+        target_neighbors = _topk_indices_with_index_tiebreak(ast_distances, effective_k)
+        hits = (predicted_neighbors.unsqueeze(-1) == target_neighbors.unsqueeze(1)).any(dim=-1)
+        scores.append(hits.to(dtype=embedding_distances.dtype).mean(dim=-1))
+
+    if not scores:
+        return output.logits.new_tensor(0.0)
+    return torch.cat(scores).mean()
+
+
+def batch_structural_distance_level_summary(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    target_distance: StructuralTargetDistance = "prefix_tree",
+) -> list[dict[str, float | int]]:
+    """Aggregate learned distances conditional on each target-distance level."""
+    embedding_distances, target_distances = _collect_structural_pair_distances(output, batch, target_distance)
+    if embedding_distances.numel() == 0:
+        return []
+
+    summaries: list[dict[str, float | int]] = []
+    unique_levels = torch.unique(target_distances.detach()).sort().values
+    for level in unique_levels:
+        level_mask = target_distances == level
+        level_distances = embedding_distances[level_mask]
+        pair_count = int(level_distances.numel())
+        if pair_count == 0:
+            continue
+        summaries.append(
+            {
+                "target_distance": float(level.detach().cpu()),
+                "pair_count": pair_count,
+                "model_distance_mean": float(level_distances.mean().detach().cpu()),
+                "model_distance_std": float(level_distances.std(unbiased=False).detach().cpu()),
+            }
+        )
+    return summaries
+
+
+def batch_poincare_frechet_diagnostics(
+    output: Code2HypTorchOutput,
+) -> dict[str, Tensor] | None:
+    """Frechet/Karcher residual diagnostics for Poincare aggregation outputs."""
+    if output.structural_geometry == "poincare_product":
+        if output.context_structural_product_points is None or output.structural_product_points is None:
+            return None
+        residuals = []
+        objectives = []
+        for context_points, aggregate_points in zip(
+            output.context_structural_product_points,
+            output.structural_product_points,
+        ):
+            residuals.append(
+                torch_poincare_frechet_residual(
+                    context_points,
+                    output.attention,
+                    aggregate_points,
+                    curvature=output.curvature,
+                )
+            )
+            objectives.append(
+                torch_poincare_frechet_objective(
+                    context_points,
+                    output.attention,
+                    aggregate_points,
+                    curvature=output.curvature,
+                )
+            )
+        residual = torch.stack(residuals, dim=0)
+        objective = torch.stack(objectives, dim=0)
+        return {
+            "residual_mean": residual.mean(),
+            "residual_max": residual.max(),
+            "objective_mean": objective.mean(),
+        }
+    if output.structural_geometry != "poincare":
+        return None
+    if output.context_structural_points is None or output.structural_points is None:
+        return None
+
+    residual = torch_poincare_frechet_residual(
+        output.context_structural_points,
+        output.attention,
+        output.structural_points,
+        curvature=output.curvature,
+    )
+    objective = torch_poincare_frechet_objective(
+        output.context_structural_points,
+        output.attention,
+        output.structural_points,
+        curvature=output.curvature,
+    )
+    return {
+        "residual_mean": residual.mean(),
+        "residual_max": residual.max(),
+        "objective_mean": objective.mean(),
+    }
+
+
+def batch_poincare_radius_utilization(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    near_boundary_threshold: float = 0.95,
+) -> dict[str, Tensor] | None:
+    """Radius-utilization diagnostics for Poincare context and aggregate points."""
+    if output.structural_geometry == "poincare_product":
+        if output.context_structural_product_points is None or output.structural_product_points is None:
+            return None
+        if not 0.0 < near_boundary_threshold < 1.0:
+            raise ValueError("near_boundary_threshold must be in (0, 1)")
+        curvature = torch.as_tensor(
+            output.curvature,
+            dtype=output.context_structural_product_points[0].dtype,
+            device=output.context_structural_product_points[0].device,
+        )
+        radius = 1.0 / torch.sqrt(curvature)
+        context_ratios = [
+            torch.linalg.vector_norm(factor[batch.context_mask], dim=-1) / radius
+            for factor in output.context_structural_product_points
+            if factor[batch.context_mask].numel() > 0
+        ]
+        if not context_ratios:
+            return None
+        aggregate_ratios = [
+            torch.linalg.vector_norm(factor, dim=-1) / radius
+            for factor in output.structural_product_points
+        ]
+        context_ratio = torch.cat(context_ratios)
+        aggregate_ratio = torch.cat(aggregate_ratios)
+        return {
+            "context_radius_ratio_mean": context_ratio.mean(),
+            "context_radius_ratio_max": context_ratio.max(),
+            "context_near_boundary_rate": (context_ratio > near_boundary_threshold).to(dtype=context_ratio.dtype).mean(),
+            "aggregate_radius_ratio_mean": aggregate_ratio.mean(),
+            "aggregate_radius_ratio_max": aggregate_ratio.max(),
+        }
+    if output.structural_geometry != "poincare":
+        return None
+    if output.context_structural_points is None or output.structural_points is None:
+        return None
+    if not 0.0 < near_boundary_threshold < 1.0:
+        raise ValueError("near_boundary_threshold must be in (0, 1)")
+
+    curvature = torch.as_tensor(
+        output.curvature,
+        dtype=output.context_structural_points.dtype,
+        device=output.context_structural_points.device,
+    )
+    radius = 1.0 / torch.sqrt(curvature)
+    valid_context_points = output.context_structural_points[batch.context_mask]
+    if valid_context_points.numel() == 0:
+        return None
+
+    context_ratio = torch.linalg.vector_norm(valid_context_points, dim=-1) / radius
+    aggregate_ratio = torch.linalg.vector_norm(output.structural_points, dim=-1) / radius
+    return {
+        "context_radius_ratio_mean": context_ratio.mean(),
+        "context_radius_ratio_max": context_ratio.max(),
+        "context_near_boundary_rate": (context_ratio > near_boundary_threshold).to(dtype=context_ratio.dtype).mean(),
+        "aggregate_radius_ratio_mean": aggregate_ratio.mean(),
+        "aggregate_radius_ratio_max": aggregate_ratio.max(),
+    }
+
+
 def batch_structural_neighbor_recall_at_k(
     output: Code2HypTorchOutput,
     batch: Code2HypBatch,
@@ -808,7 +1259,11 @@ def batch_structural_neighbor_distribution_regularizer(
         raise ValueError("tree_temperature must be positive")
     if embedding_temperature <= 0.0:
         raise ValueError("embedding_temperature must be positive")
-    if output.context_structural_embeddings is None and output.context_structural_points is None:
+    if (
+        output.context_structural_embeddings is None
+        and output.context_structural_points is None
+        and output.context_structural_product_points is None
+    ):
         raise ValueError("model output does not contain structural context representations")
 
     losses: list[Tensor] = []
@@ -848,9 +1303,38 @@ def batch_structural_distance_regularizer(output: Code2HypTorchOutput, batch: Co
     return structural_distance_loss(embedding_distances, ast_distances)
 
 
-def batch_structural_normalized_stress(output: Code2HypTorchOutput, batch: Code2HypBatch) -> Tensor:
+def batch_structural_multi_metric_distance_regularizer(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    target_distances: tuple[StructuralTargetDistance, ...] = ("prefix_tree", "edit", "jaccard_bigrams"),
+) -> Tensor:
+    """Average distance-preservation loss over several AST-path proxy metrics.
+
+    This objective is intentionally stricter than the single prefix-trie loss:
+    the same learned geometry must align with more than one structural relation
+    between serialized AST paths. It is useful as a cross-metric control because
+    evaluation on edit/Jaccard distances is no longer purely out-of-objective.
+    """
+    if not target_distances:
+        raise ValueError("target_distances must not be empty")
+    losses: list[Tensor] = []
+    for target_distance in target_distances:
+        embedding_distances, ast_distances = _collect_structural_pair_distances(output, batch, target_distance)
+        if embedding_distances.numel() == 0:
+            continue
+        losses.append(structural_distance_loss(embedding_distances, ast_distances))
+    if not losses:
+        return output.logits.new_tensor(0.0)
+    return torch.stack(losses).mean()
+
+
+def batch_structural_normalized_stress(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    target_distance: StructuralTargetDistance = "prefix_tree",
+) -> Tensor:
     """Normalized metric stress over AST path contexts within each method."""
-    embedding_distances, ast_distances = _collect_structural_pair_distances(output, batch)
+    embedding_distances, ast_distances = _collect_structural_pair_distances(output, batch, target_distance)
     if embedding_distances.numel() == 0:
         return output.logits.new_tensor(0.0)
     return structural_normalized_stress(embedding_distances, ast_distances)
@@ -868,9 +1352,13 @@ def batch_structural_rank_regularizer(
     return structural_rank_loss(embedding_distances, ast_distances, margin=margin)
 
 
-def batch_structural_spearman_correlation(output: Code2HypTorchOutput, batch: Code2HypBatch) -> Tensor:
+def batch_structural_spearman_correlation(
+    output: Code2HypTorchOutput,
+    batch: Code2HypBatch,
+    target_distance: StructuralTargetDistance = "prefix_tree",
+) -> Tensor:
     """Diagnostic Spearman correlation over context-pair AST and embedding distances."""
-    embedding_distances, ast_distances = _collect_structural_pair_distances(output, batch)
+    embedding_distances, ast_distances = _collect_structural_pair_distances(output, batch, target_distance)
     if embedding_distances.numel() == 0:
         return output.logits.new_tensor(0.0)
     return structural_spearman_correlation(embedding_distances, ast_distances)
@@ -904,13 +1392,21 @@ class Code2HypTorchModel(nn.Module):
             "code2hyp_product_frechet",
             "code2hyp_code2vec_attention_frechet",
             "code2vec_context_transform",
+            "code2vec_context_transform_l1",
             "code2hyp_context_transform_frechet",
             "code2hyp_product_context_transform_frechet",
             "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
         ):
             raise ValueError(f"unknown Code2Hyp variant: {variant}")
         self.config = config
         self.variant = variant
+        self.branch_left_dim = (config.structural_dim + 1) // 2
+        self.branch_right_dim = config.structural_dim - self.branch_left_dim
         self.token_embeddings = nn.Embedding(config.token_vocab_size, config.token_dim)
         self.ast_node_embeddings = nn.Embedding(config.ast_node_vocab_size, config.structural_dim)
         if config.path_encoder == "gru":
@@ -931,13 +1427,63 @@ class Code2HypTorchModel(nn.Module):
             raise ValueError(f"unknown representation_transform: {config.representation_transform}")
         if variant in (
             "code2vec_context_transform",
+            "code2vec_context_transform_l1",
             "code2hyp_context_transform_frechet",
             "code2hyp_product_context_transform_frechet",
             "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
         ):
             self.context_transform_layer = nn.Linear(config.representation_dim, config.representation_dim)
         else:
             self.context_transform_layer = None
+        if variant in (
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+        ):
+            if self.branch_right_dim <= 0:
+                raise ValueError("structural_dim must be at least 2 for branch-product encoding")
+            self.branch_left_projection = nn.Linear(config.structural_dim, self.branch_left_dim, bias=False)
+            self.branch_right_projection = nn.Linear(config.structural_dim, self.branch_right_dim, bias=False)
+        else:
+            self.branch_left_projection = None
+            self.branch_right_projection = None
+        if variant == "code2hyp_context_transform_branch_sequence_product_bias_frechet":
+            if self.branch_right_dim <= 0:
+                raise ValueError("structural_dim must be at least 2 for branch-sequence-product encoding")
+            self.branch_left_sequence_encoder = nn.GRU(
+                input_size=config.structural_dim,
+                hidden_size=self.branch_left_dim,
+                batch_first=True,
+            )
+            self.branch_right_sequence_encoder = nn.GRU(
+                input_size=config.structural_dim,
+                hidden_size=self.branch_right_dim,
+                batch_first=True,
+            )
+        else:
+            self.branch_left_sequence_encoder = None
+            self.branch_right_sequence_encoder = None
+        if variant in (
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+        ):
+            self.branch_pivot_query = nn.Parameter(torch.empty(config.structural_dim))
+        else:
+            self.register_parameter("branch_pivot_query", None)
+        if variant == "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet":
+            initial_prior_weight = 1.0
+            raw_prior_weight = math.log(math.expm1(initial_prior_weight))
+            self.raw_branch_pivot_center_prior_weight = nn.Parameter(
+                torch.tensor(raw_prior_weight, dtype=torch.float32),
+            )
+        else:
+            self.register_parameter("raw_branch_pivot_center_prior_weight", None)
         self.attention_query = nn.Parameter(torch.empty(config.representation_dim))
         self.tree_feature_projection = nn.Linear(4, 1, bias=False) if variant == "euclidean_tree" else None
         if variant in (
@@ -1017,6 +1563,11 @@ class Code2HypTorchModel(nn.Module):
                 "code2hyp_context_transform_frechet",
                 "code2hyp_product_context_transform_frechet",
                 "code2hyp_context_transform_product_bias_frechet",
+                "code2hyp_branch_product_context_transform_frechet",
+                "code2hyp_context_transform_branch_product_bias_frechet",
+                "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+                "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+                "code2hyp_context_transform_branch_sequence_product_bias_frechet",
             )
             and config.trainable_curvature
         ):
@@ -1031,10 +1582,25 @@ class Code2HypTorchModel(nn.Module):
             "code2hyp_product_frechet",
             "code2hyp_product_context_transform_frechet",
             "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
         ):
             initial_weight = max(1.0 - config.eps, config.eps)
             raw_weight = math.log(math.expm1(initial_weight))
             metric_count = (
+                4
+                if variant
+                in (
+                    "code2hyp_branch_product_context_transform_frechet",
+                    "code2hyp_context_transform_branch_product_bias_frechet",
+                    "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+                    "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+                    "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+                )
+                else
                 3
                 if variant
                 in (
@@ -1050,7 +1616,14 @@ class Code2HypTorchModel(nn.Module):
             )
         else:
             self.register_buffer("raw_factorized_metric_weights", torch.full((2,), math.nan), persistent=False)
-        if variant == "code2hyp_context_transform_product_bias_frechet":
+        if variant in (
+            "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+        ):
             initial_bias_weight = 0.1
             raw_bias_weight = math.log(math.expm1(initial_bias_weight))
             self.raw_product_attention_bias_weight = nn.Parameter(torch.tensor(raw_bias_weight, dtype=torch.float32))
@@ -1074,6 +1647,18 @@ class Code2HypTorchModel(nn.Module):
         if self.context_transform_layer is not None:
             nn.init.xavier_uniform_(self.context_transform_layer.weight)
             nn.init.zeros_(self.context_transform_layer.bias)
+        if self.branch_left_projection is not None and self.branch_right_projection is not None:
+            nn.init.xavier_uniform_(self.branch_left_projection.weight)
+            nn.init.xavier_uniform_(self.branch_right_projection.weight)
+        if self.branch_left_sequence_encoder is not None and self.branch_right_sequence_encoder is not None:
+            for encoder in (self.branch_left_sequence_encoder, self.branch_right_sequence_encoder):
+                for name, parameter in encoder.named_parameters():
+                    if "weight" in name:
+                        nn.init.xavier_uniform_(parameter)
+                    elif "bias" in name:
+                        nn.init.zeros_(parameter)
+        if self.branch_pivot_query is not None:
+            nn.init.normal_(self.branch_pivot_query, mean=0.0, std=0.05)
         if self.tree_feature_projection is not None:
             nn.init.zeros_(self.tree_feature_projection.weight)
         if self.path_message_linear is not None and self.path_update_linear is not None:
@@ -1120,6 +1705,11 @@ class Code2HypTorchModel(nn.Module):
                 "code2hyp_context_transform_frechet",
                 "code2hyp_product_context_transform_frechet",
                 "code2hyp_context_transform_product_bias_frechet",
+                "code2hyp_branch_product_context_transform_frechet",
+                "code2hyp_context_transform_branch_product_bias_frechet",
+                "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+                "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+                "code2hyp_context_transform_branch_sequence_product_bias_frechet",
             )
             and self.config.trainable_curvature
         ):
@@ -1132,6 +1722,11 @@ class Code2HypTorchModel(nn.Module):
             "code2hyp_product_frechet",
             "code2hyp_product_context_transform_frechet",
             "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
         ):
             return F.softplus(self.raw_factorized_metric_weights) + self.config.eps
         if self.variant == "factorized_product_learned_metric":
@@ -1143,9 +1738,21 @@ class Code2HypTorchModel(nn.Module):
         return self.attention_query.new_ones(2)
 
     def product_attention_bias_weight(self) -> Tensor:
-        if self.variant == "code2hyp_context_transform_product_bias_frechet":
+        if self.variant in (
+            "code2hyp_context_transform_product_bias_frechet",
+            "code2hyp_branch_product_context_transform_frechet",
+            "code2hyp_context_transform_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+            "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+        ):
             return F.softplus(self.raw_product_attention_bias_weight) + self.config.eps
         return self.attention_query.new_tensor(0.0)
+
+    def branch_pivot_center_prior_weight(self) -> Tensor:
+        if self.raw_branch_pivot_center_prior_weight is None:
+            return self.attention_query.new_tensor(0.0)
+        return F.softplus(self.raw_branch_pivot_center_prior_weight) + self.config.eps
 
     def factorized_channel_mixer_rank(self) -> int:
         if self.variant != "factorized_product_channel_mixer":
@@ -1180,6 +1787,10 @@ class Code2HypTorchModel(nn.Module):
             path_node_attention_pair = None
 
         context_representations = torch.cat([start_vectors, path_tangents, end_vectors], dim=-1)
+        structural_embedding_metric: StructuralEmbeddingMetric = "l2"
+        structural_product_points: tuple[Tensor, ...] | None = None
+        context_structural_product_points: tuple[Tensor, ...] | None = None
+        structural_product_distance_metric: ProductDistanceMetric = "riemannian_l2"
 
         if self.variant == "euclidean":
             attention = self._attention(context_representations, batch.context_mask)
@@ -1189,7 +1800,7 @@ class Code2HypTorchModel(nn.Module):
             context_structural_points = None
             context_tree_features = None
             structural_geometry = None
-        elif self.variant == "code2vec_context_transform":
+        elif self.variant in ("code2vec_context_transform", "code2vec_context_transform_l1"):
             transformed_contexts = self._code2vec_context_transform(context_representations)
             attention = self._attention(transformed_contexts, batch.context_mask)
             representation = torch.sum(transformed_contexts * attention.unsqueeze(-1), dim=1)
@@ -1198,6 +1809,7 @@ class Code2HypTorchModel(nn.Module):
             context_structural_points = None
             context_tree_features = None
             structural_geometry = None
+            structural_embedding_metric = "l1" if self.variant == "code2vec_context_transform_l1" else "l2"
         elif self.variant == "euclidean_metric":
             attention = self._euclidean_metric_attention(context_representations, batch.context_mask)
             representation = torch.sum(context_representations * attention.unsqueeze(-1), dim=1)
@@ -1386,6 +1998,185 @@ class Code2HypTorchModel(nn.Module):
             context_structural_points = path_points
             context_tree_features = None
             structural_geometry = "poincare"
+        elif self.variant == "code2hyp_context_transform_branch_product_bias_frechet":
+            path_points = torch_expmap0(path_tangents, curvature=curvature, eps=self.config.eps)
+            path_logs = torch_logmap0(path_points, curvature=curvature)
+            left_tangents, right_tangents = self._branch_path_tangents(batch.ast_paths, batch.ast_path_mask)
+            left_points = torch_expmap0(left_tangents, curvature=curvature, eps=self.config.eps)
+            right_points = torch_expmap0(right_tangents, curvature=curvature, eps=self.config.eps)
+            raw_contexts = torch.cat([start_vectors, path_logs, end_vectors], dim=-1)
+            transformed_contexts = self._code2vec_context_transform(raw_contexts)
+            attention = self._code2hyp_branch_product_bias_attention(
+                transformed_contexts,
+                start_vectors,
+                left_points,
+                right_points,
+                end_vectors,
+                batch.context_mask,
+                curvature,
+            )
+
+            left_structural_points = torch_poincare_frechet_mean(
+                left_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            right_structural_points = torch_poincare_frechet_mean(
+                right_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            representation = torch.sum(transformed_contexts * attention.unsqueeze(-1), dim=1)
+            structural_points = None
+            context_structural_embeddings = path_logs
+            context_structural_points = None
+            structural_product_points = (left_structural_points, right_structural_points)
+            context_structural_product_points = (left_points, right_points)
+            context_tree_features = None
+            structural_geometry = "poincare_product"
+        elif self.variant == "code2hyp_context_transform_branch_sequence_product_bias_frechet":
+            path_points = torch_expmap0(path_tangents, curvature=curvature, eps=self.config.eps)
+            path_logs = torch_logmap0(path_points, curvature=curvature)
+            left_tangents, right_tangents = self._branch_sequence_path_tangents(
+                batch.ast_paths,
+                batch.ast_path_mask,
+            )
+            left_points = torch_expmap0(left_tangents, curvature=curvature, eps=self.config.eps)
+            right_points = torch_expmap0(right_tangents, curvature=curvature, eps=self.config.eps)
+            raw_contexts = torch.cat([start_vectors, path_logs, end_vectors], dim=-1)
+            transformed_contexts = self._code2vec_context_transform(raw_contexts)
+            attention = self._code2hyp_branch_product_bias_attention(
+                transformed_contexts,
+                start_vectors,
+                left_points,
+                right_points,
+                end_vectors,
+                batch.context_mask,
+                curvature,
+            )
+
+            left_structural_points = torch_poincare_frechet_mean(
+                left_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            right_structural_points = torch_poincare_frechet_mean(
+                right_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            representation = torch.sum(transformed_contexts * attention.unsqueeze(-1), dim=1)
+            structural_points = None
+            context_structural_embeddings = path_logs
+            context_structural_points = None
+            structural_product_points = (left_structural_points, right_structural_points)
+            context_structural_product_points = (left_points, right_points)
+            context_tree_features = None
+            structural_geometry = "poincare_product"
+        elif self.variant in (
+            "code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+            "code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+        ):
+            path_points = torch_expmap0(path_tangents, curvature=curvature, eps=self.config.eps)
+            path_logs = torch_logmap0(path_points, curvature=curvature)
+            left_tangents, right_tangents, pivot_attention = self._latent_lca_branch_path_tangents(
+                batch.ast_paths,
+                batch.ast_path_mask,
+            )
+            left_points = torch_expmap0(left_tangents, curvature=curvature, eps=self.config.eps)
+            right_points = torch_expmap0(right_tangents, curvature=curvature, eps=self.config.eps)
+            raw_contexts = torch.cat([start_vectors, path_logs, end_vectors], dim=-1)
+            transformed_contexts = self._code2vec_context_transform(raw_contexts)
+            attention = self._code2hyp_branch_product_bias_attention(
+                transformed_contexts,
+                start_vectors,
+                left_points,
+                right_points,
+                end_vectors,
+                batch.context_mask,
+                curvature,
+            )
+
+            left_structural_points = torch_poincare_frechet_mean(
+                left_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            right_structural_points = torch_poincare_frechet_mean(
+                right_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            representation = torch.sum(transformed_contexts * attention.unsqueeze(-1), dim=1)
+            structural_points = None
+            context_structural_embeddings = path_logs
+            context_structural_points = None
+            structural_product_points = (left_structural_points, right_structural_points)
+            context_structural_product_points = (left_points, right_points)
+            context_tree_features = None
+            structural_geometry = "poincare_product"
+            path_node_attention = pivot_attention
+        elif self.variant == "code2hyp_branch_product_context_transform_frechet":
+            left_tangents, right_tangents = self._branch_path_tangents(batch.ast_paths, batch.ast_path_mask)
+            left_points = torch_expmap0(left_tangents, curvature=curvature, eps=self.config.eps)
+            right_points = torch_expmap0(right_tangents, curvature=curvature, eps=self.config.eps)
+            left_logs = torch_logmap0(left_points, curvature=curvature)
+            right_logs = torch_logmap0(right_points, curvature=curvature)
+            path_logs = torch.cat([left_logs, right_logs], dim=-1)
+            raw_contexts = torch.cat([start_vectors, path_logs, end_vectors], dim=-1)
+            transformed_contexts = self._code2vec_context_transform(raw_contexts)
+            attention = self._code2hyp_branch_product_bias_attention(
+                transformed_contexts,
+                start_vectors,
+                left_points,
+                right_points,
+                end_vectors,
+                batch.context_mask,
+                curvature,
+            )
+
+            left_structural_points = torch_poincare_frechet_mean(
+                left_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            right_structural_points = torch_poincare_frechet_mean(
+                right_points,
+                attention,
+                curvature=curvature,
+                steps=self.config.frechet_steps,
+                step_size=self.config.frechet_step_size,
+                eps=self.config.eps,
+            )
+            representation = torch.sum(transformed_contexts * attention.unsqueeze(-1), dim=1)
+            structural_points = None
+            context_structural_embeddings = path_logs
+            context_structural_points = None
+            structural_product_points = (left_structural_points, right_structural_points)
+            context_structural_product_points = (left_points, right_points)
+            context_tree_features = None
+            structural_geometry = "poincare_product"
         elif self.variant == "lorentz_product":
             path_points = torch_lorentz_expmap0(path_tangents, curvature=curvature)
             path_logs = torch_lorentz_logmap0(path_points, curvature=curvature)
@@ -1483,8 +2274,12 @@ class Code2HypTorchModel(nn.Module):
             structural_points=structural_points,
             context_structural_embeddings=context_structural_embeddings,
             context_structural_points=context_structural_points,
+            structural_product_points=structural_product_points,
+            context_structural_product_points=context_structural_product_points,
+            structural_product_distance_metric=structural_product_distance_metric,
             context_tree_features=context_tree_features,
             structural_geometry=structural_geometry,
+            structural_embedding_metric=structural_embedding_metric,
             path_node_attention=path_node_attention,
             path_node_attention_pair=path_node_attention_pair,
             path_node_attention_monotonicity_loss=path_node_attention_monotonicity,
@@ -1521,6 +2316,104 @@ class Code2HypTorchModel(nn.Module):
         summed = torch.sum(embeddings * mask, dim=2)
         counts = torch.clamp(mask.sum(dim=2), min=1.0)
         return summed / counts
+
+    def _branch_path_tangents(self, ast_paths: Tensor, ast_path_mask: Tensor) -> tuple[Tensor, Tensor]:
+        if self.branch_left_projection is None or self.branch_right_projection is None:
+            raise RuntimeError("branch projections are only available for branch-product variants")
+        embeddings = self.ast_node_embeddings(ast_paths)
+        left_mask, right_mask = ast_path_midpoint_branch_masks(ast_path_mask)
+
+        def pooled(mask: Tensor) -> Tensor:
+            weights = mask.unsqueeze(-1).to(dtype=embeddings.dtype)
+            summed = torch.sum(embeddings * weights, dim=2)
+            counts = torch.clamp(weights.sum(dim=2), min=1.0)
+            return summed / counts
+
+        return self.branch_left_projection(pooled(left_mask)), self.branch_right_projection(pooled(right_mask))
+
+    def _branch_sequence_path_tangents(self, ast_paths: Tensor, ast_path_mask: Tensor) -> tuple[Tensor, Tensor]:
+        if self.branch_left_sequence_encoder is None or self.branch_right_sequence_encoder is None:
+            raise RuntimeError("branch sequence encoders are only available for branch-sequence-product variants")
+        embeddings = self.ast_node_embeddings(ast_paths)
+        left_mask, right_mask = ast_path_midpoint_branch_masks(ast_path_mask)
+        left_embeddings = torch.flip(embeddings, dims=(2,))
+        left_mask_reversed = torch.flip(left_mask, dims=(2,))
+        left_tangents = self._masked_branch_sequence_encoding(
+            self.branch_left_sequence_encoder,
+            left_embeddings,
+            left_mask_reversed,
+            self.branch_left_dim,
+        )
+        right_tangents = self._masked_branch_sequence_encoding(
+            self.branch_right_sequence_encoder,
+            embeddings,
+            right_mask,
+            self.branch_right_dim,
+        )
+        return left_tangents, right_tangents
+
+    def _masked_branch_sequence_encoding(
+        self,
+        encoder: nn.GRU,
+        embeddings: Tensor,
+        mask: Tensor,
+        output_dim: int,
+    ) -> Tensor:
+        weights = mask.unsqueeze(-1).to(dtype=embeddings.dtype)
+        batch_size, context_count, path_length, structural_dim = embeddings.shape
+        flat_embeddings = (embeddings * weights).reshape(batch_size * context_count, path_length, structural_dim)
+        encoded, _ = encoder(flat_embeddings)
+        positions = torch.arange(path_length, device=mask.device, dtype=torch.long).view(1, 1, path_length)
+        last_indices = torch.where(mask, positions, torch.zeros_like(positions)).max(dim=2).values
+        gather_index = last_indices.reshape(-1, 1, 1).expand(-1, 1, output_dim)
+        flat_output = torch.gather(encoded, dim=1, index=gather_index).squeeze(1)
+        valid = mask.any(dim=2).reshape(-1, 1).to(dtype=flat_output.dtype)
+        flat_output = flat_output * valid
+        return flat_output.reshape(batch_size, context_count, output_dim)
+
+    def _latent_lca_branch_path_tangents(
+        self,
+        ast_paths: Tensor,
+        ast_path_mask: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        if (
+            self.branch_left_projection is None
+            or self.branch_right_projection is None
+            or self.branch_pivot_query is None
+        ):
+            raise RuntimeError("latent LCA branch encoding is only available for latent branch-product variants")
+        embeddings = self.ast_node_embeddings(ast_paths)
+        valid = ast_path_mask.to(dtype=embeddings.dtype)
+        pivot_scores = torch.sum(embeddings * self.branch_pivot_query.view(1, 1, 1, -1), dim=-1)
+        if self.raw_branch_pivot_center_prior_weight is not None:
+            path_length = ast_path_mask.shape[-1]
+            positions = torch.arange(path_length, dtype=embeddings.dtype, device=embeddings.device).view(1, 1, -1)
+            lengths = torch.clamp(ast_path_mask.sum(dim=-1).to(dtype=embeddings.dtype), min=1.0)
+            midpoint = (lengths - 1.0).unsqueeze(-1) / 2.0
+            scale = torch.clamp(lengths.unsqueeze(-1), min=1.0)
+            center_prior = -torch.abs(positions - midpoint) / scale
+            pivot_scores = pivot_scores + self.branch_pivot_center_prior_weight() * center_prior
+        pivot_scores = pivot_scores.masked_fill(~ast_path_mask, -1e9)
+        pivot_attention = torch.softmax(pivot_scores, dim=-1) * valid
+        pivot_attention = pivot_attention / torch.clamp(pivot_attention.sum(dim=-1, keepdim=True), min=1e-12)
+
+        left_weights = torch.flip(
+            torch.cumsum(torch.flip(pivot_attention, dims=(-1,)), dim=-1),
+            dims=(-1,),
+        )
+        right_weights = torch.cumsum(pivot_attention, dim=-1)
+        left_weights = left_weights * valid
+        right_weights = right_weights * valid
+        left_weights = left_weights / torch.clamp(left_weights.sum(dim=-1, keepdim=True), min=1e-12)
+        right_weights = right_weights / torch.clamp(right_weights.sum(dim=-1, keepdim=True), min=1e-12)
+
+        left_pooled = torch.sum(embeddings * left_weights.unsqueeze(-1), dim=2)
+        right_pooled = torch.sum(embeddings * right_weights.unsqueeze(-1), dim=2)
+        return (
+            self.branch_left_projection(left_pooled),
+            self.branch_right_projection(right_pooled),
+            pivot_attention,
+        )
 
     def _hyperbolic_path_message_tangents(
         self,
@@ -1733,6 +2626,64 @@ class Code2HypTorchModel(nn.Module):
         scores = semantic_scores + self.product_attention_bias_weight() * product_scores
         scores = scores.masked_fill(~context_mask, -torch.inf)
         return torch.softmax(scores, dim=1)
+
+    def _code2hyp_branch_product_bias_attention(
+        self,
+        transformed_contexts: Tensor,
+        start_vectors: Tensor,
+        left_path_points: Tensor,
+        right_path_points: Tensor,
+        end_vectors: Tensor,
+        context_mask: Tensor,
+        curvature: Tensor,
+    ) -> Tensor:
+        semantic_scores = torch.sum(transformed_contexts * self.attention_query, dim=-1)
+        product_scores = self._branch_product_scores(
+            start_vectors,
+            left_path_points,
+            right_path_points,
+            end_vectors,
+            curvature,
+        )
+        scores = semantic_scores + self.product_attention_bias_weight() * product_scores
+        scores = scores.masked_fill(~context_mask, -torch.inf)
+        return torch.softmax(scores, dim=1)
+
+    def _branch_product_scores(
+        self,
+        start_vectors: Tensor,
+        left_path_points: Tensor,
+        right_path_points: Tensor,
+        end_vectors: Tensor,
+        curvature: Tensor,
+    ) -> Tensor:
+        token_dim = self.config.token_dim
+        structural_start = token_dim
+        structural_end = token_dim + self.config.structural_dim
+        query_start = self.attention_query[:token_dim].view(1, 1, token_dim)
+        query_structural = self.attention_query[structural_start:structural_end]
+        query_left_tangent = query_structural[: self.branch_left_dim].view(1, self.branch_left_dim)
+        query_right_tangent = query_structural[self.branch_left_dim :].view(1, self.branch_right_dim)
+        query_end = self.attention_query[structural_end:].view(1, 1, token_dim)
+
+        query_left = torch_expmap0(query_left_tangent, curvature=curvature, eps=self.config.eps)[0]
+        query_right = torch_expmap0(query_right_tangent, curvature=curvature, eps=self.config.eps)[0]
+        query_left_points = query_left.view(1, 1, self.branch_left_dim).expand_as(left_path_points)
+        query_right_points = query_right.view(1, 1, self.branch_right_dim).expand_as(right_path_points)
+
+        start_distances2 = torch.sum((start_vectors - query_start) ** 2, dim=-1)
+        end_distances2 = torch.sum((end_vectors - query_end) ** 2, dim=-1)
+        left_distances2 = torch_poincare_distance(left_path_points, query_left_points, curvature=curvature).square()
+        right_distances2 = torch_poincare_distance(right_path_points, query_right_points, curvature=curvature).square()
+        metric_weights = self.factorized_metric_weights()
+        if metric_weights.numel() != 4:
+            raise RuntimeError("branch-product metric requires four component weights")
+        return -(
+            metric_weights[0] * start_distances2
+            + metric_weights[1] * left_distances2
+            + metric_weights[2] * right_distances2
+            + metric_weights[3] * end_distances2
+        )
 
     def _factorized_lorentz_product_attention(
         self,

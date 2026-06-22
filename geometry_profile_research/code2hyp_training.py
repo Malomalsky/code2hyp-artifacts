@@ -12,6 +12,7 @@ from .code2hyp_torch import (
     Code2HypBatch,
     Code2HypTorchModel,
     batch_structural_distance_regularizer,
+    batch_structural_multi_metric_distance_regularizer,
     batch_structural_neighbor_distribution_regularizer,
     batch_structural_rank_regularizer,
     path_attention_tree_distance_loss,
@@ -84,12 +85,26 @@ def multilabel_metrics_from_logits(
     logits: Tensor,
     labels: Tensor,
     target_sizes: Tensor,
+    selection: str = "oracle_topk",
+    fixed_k: int = 3,
+    threshold: float = 0.0,
 ) -> dict[str, float]:
     predicted = torch.zeros_like(labels)
-    for row_index, target_size in enumerate(target_sizes.tolist()):
-        k = max(1, min(int(target_size), logits.shape[1]))
-        indices = torch.topk(logits[row_index], k=k).indices
-        predicted[row_index, indices] = 1.0
+    if selection == "oracle_topk":
+        for row_index, target_size in enumerate(target_sizes.tolist()):
+            k = max(1, min(int(target_size), logits.shape[1]))
+            indices = torch.topk(logits[row_index], k=k).indices
+            predicted[row_index, indices] = 1.0
+    elif selection == "fixed_topk":
+        if fixed_k <= 0:
+            raise ValueError("fixed_k must be positive")
+        k = min(fixed_k, logits.shape[1])
+        indices = torch.topk(logits, k=k, dim=1).indices
+        predicted.scatter_(1, indices, 1.0)
+    elif selection == "threshold":
+        predicted = (logits >= threshold).to(dtype=labels.dtype)
+    else:
+        raise ValueError(f"unknown multilabel selection protocol: {selection}")
 
     true_positive = float((predicted * labels).sum().detach())
     false_positive = float((predicted * (1.0 - labels)).sum().detach())
@@ -101,6 +116,7 @@ def multilabel_metrics_from_logits(
         "precision": precision,
         "recall": recall,
         "f1": f1,
+        "predicted_positive_count_mean": float(predicted.sum(dim=1).float().mean().detach()),
     }
 
 
@@ -227,6 +243,9 @@ def evaluate_multilabel_metrics(
     labels: Tensor,
     target_sizes: Tensor,
     batch_size: int = 64,
+    selection: str = "oracle_topk",
+    fixed_k: int = 3,
+    threshold: float = 0.0,
 ) -> dict[str, float]:
     model.eval()
     logits = []
@@ -245,6 +264,9 @@ def evaluate_multilabel_metrics(
         torch.cat(logits, dim=0),
         torch.cat(all_labels, dim=0),
         torch.cat(all_target_sizes, dim=0),
+        selection=selection,
+        fixed_k=fixed_k,
+        threshold=threshold,
     )
 
 
@@ -394,6 +416,8 @@ def _structural_regularizer_loss(
 ) -> Tensor:
     if structural_regularizer == "distance":
         return batch_structural_distance_regularizer(output, batch)
+    if structural_regularizer == "multi_metric_distance":
+        return batch_structural_multi_metric_distance_regularizer(output, batch)
     if structural_regularizer == "rank":
         return batch_structural_rank_regularizer(output, batch)
     if structural_regularizer == "neighbor_distribution":

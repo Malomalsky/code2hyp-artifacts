@@ -2,14 +2,51 @@
 
 This repository contains the reproducibility artifacts for the manuscript:
 
-**Code2Hyp: Hyperbolic AST-Path Representations for Structurally Faithful Code Embeddings**
+**Code2Hyp: Product-Manifold Representations of Terminal-to-Terminal AST Paths**
 
 Author: Ivan A. Kosyanenko  
 ORCID: <https://orcid.org/0009-0009-1804-9412>
 
+## Current revision, 2026-06-22
+
+The current revision reframes the study as a controlled geometry analysis of
+terminal-to-terminal AST-label path contexts, not as a broad state-of-the-art
+claim for method-name prediction.
+
+The most relevant files for the current revision are:
+
+```text
+code2hyp_branch_product_revision_report.md
+reports/code2hyp_b62_multi_metric_validation_5k_3seeds_summary.md
+reports/code2seq_path_geometry_audit_smoke_multi_metric.md
+```
+
+The current key method variants are:
+
+```text
+B60: order-aware branch-sequence product model for prefix-trie structural fidelity.
+B62: B60 branch-sequence product model with a multi-metric structural objective.
+B63: product-bias multi-metric control.
+B64: Euclidean multi-metric control.
+B65: L1 multi-metric control.
+```
+
+Under the 5k/3-seed medium validation protocol, B60 is the strongest
+prefix-trie specialist, while B62 is the strongest cross-metric structural
+candidate across prefix-tree, edit-distance, and Jaccard-bigram diagnostics.
+Downstream F1 is reported as a sanity check rather than as the primary claim.
+
 ## Scope
 
-The artifacts support the controlled Code2Hyp study on Java method-name subtoken prediction using the official code2seq Java-small preprocessed corpus. The study evaluates a code2vec-style AST-path model with a Euclidean lexical channel and a hyperbolic structural channel. The main claim is not universal state-of-the-art performance on method-name prediction. The main supported claim is that hyperbolic product geometry substantially improves structural faithfulness of AST-path representations while downstream F1 depends on the interaction between lexical and structural signals.
+The artifacts support a controlled Code2Hyp study on Java method-name subtoken
+prediction using the official code2seq Java-small preprocessed corpus. The
+study evaluates code2vec-style AST-path models with Euclidean, L1,
+near-Euclidean, hyperbolic, and product-manifold structural channels. The main
+claim is not universal state-of-the-art performance on method-name prediction.
+The main supported claim is that representation geometry strongly affects
+structural fidelity of AST-label path contexts, while downstream F1 depends on
+the interaction between lexical signals, structural supervision, and the
+attention/decoder architecture.
 
 ## Repository contents
 
@@ -73,7 +110,7 @@ Generated files are written to `manuscript_figures/` when the script is run from
 
 ## Main result files
 
-The main manuscript tables and figures are based on the following JSON outputs:
+The earlier manuscript tables and figures are based on the following JSON outputs:
 
 ```text
 outputs/code2hyp_test_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress.json
@@ -86,6 +123,18 @@ The main interpretive report is:
 
 ```text
 reports/code2hyp_final_research_summary.md
+```
+
+The current post-review and multi-metric artifacts are:
+
+```text
+outputs/code2hyp_postreview_benchmark_25k_5epochs_5seeds_with_b49_l1_and_geometry_diagnostics.json
+outputs/code2hyp_b60_branch_sequence_validation_5k_3seeds.json
+outputs/code2hyp_b62_multi_metric_validation_5k_3seeds.json
+outputs/code2seq_path_geometry_audit_smoke_multi_metric.json
+reports/code2hyp_postreview_benchmark_25k_5epochs_5seeds_with_b49_l1_and_geometry_diagnostics.md
+reports/code2hyp_b62_multi_metric_validation_5k_3seeds_summary.md
+reports/code2seq_path_geometry_audit_smoke_multi_metric.md
 ```
 
 ## Main benchmark command
@@ -121,10 +170,15 @@ For a quick executable check without the full benchmark cost:
 
 Safe claim:
 
-> Code2Hyp improves structural faithfulness of AST-path representations and improves the matched Euclidean baseline in the original lexical condition.
+> Product/hyperbolic Code2Hyp variants improve structural fidelity of
+> AST-label path representations under controlled local-budget protocols.
 
 Unsafe claim:
 
 > Code2Hyp universally outperforms Euclidean structural baselines on method-name prediction.
 
-The released results show that Euclidean metric/tree controls remain stronger on downstream F1, while Code2Hyp is substantially stronger on AST-distance Spearman, normalized stress, and local neighbor preservation.
+The released results show a Pareto trade-off. B60 is the strongest
+prefix-trie structural-fidelity model. B62 is the strongest cross-metric
+structural model. Some Euclidean or L1 controls remain competitive on
+downstream F1, so downstream prediction and structural adequacy must be
+reported separately.

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
@@ -10,8 +11,10 @@ from collections import defaultdict
 from pathlib import Path
 from statistics import mean, stdev
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = PROJECT_ROOT / "manuscript_figures"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MANUSCRIPT_ROOT = Path(__file__).resolve().parents[1]
+OUT_DIR = MANUSCRIPT_ROOT / "figures"
+GRAYSCALE_DIR = MANUSCRIPT_ROOT / "build" / "grayscale_previews"
 
 os.environ.setdefault("MPLCONFIGDIR", str(PROJECT_ROOT / ".matplotlib-cache"))
 os.environ.setdefault("XDG_CACHE_HOME", str(PROJECT_ROOT / ".matplotlib-cache"))
@@ -20,39 +23,15 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from PIL import Image
 
 
-ORIGINAL_MAIN = PROJECT_ROOT / "outputs/code2hyp_test_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress.json"
-ORIGINAL_CONTROLS = PROJECT_ROOT / "outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_original_plus_euclidean_controls.json"
-RECORD_OBF = PROJECT_ROOT / "outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_record_obfuscated_resumable_with_stress.json"
-STRUCT_ONLY = PROJECT_ROOT / "outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_structural_only_resumable_with_stress.json"
-
-METRICS = (
-    "validation_f1",
-    "validation_structural_spearman",
-    "validation_structural_normalized_stress",
-    "validation_structural_neighbor_overlap_at_3",
-)
-
-LABELS = {
-    "B39_code2vec_context_transform_baseline": "B39\nmatched\nEuclidean",
-    "B36_code2hyp_product_frechet_neighbor": "B36\nCode2Hyp\nperformance",
-    "B40_code2hyp_context_transform_frechet": "B40\nCode2Hyp\nFrechet",
-    "B44_code2hyp_context_transform_product_bias_frechet": "B44\nCode2Hyp\nstructural",
-    "B6_euclidean_metric_code2vec": "B6\nEuclidean\nmetric",
-    "B14_bounded_euclidean_metric_code2vec": "B14\nbounded\nEuclidean",
-    "B_tree_euclidean_lca_bias": "Btree\ntree/LCA\nbias",
-}
-
-MAIN_ORDER = (
-    "B39_code2vec_context_transform_baseline",
-    "B36_code2hyp_product_frechet_neighbor",
-    "B40_code2hyp_context_transform_frechet",
-    "B44_code2hyp_context_transform_product_bias_frechet",
-    "B6_euclidean_metric_code2vec",
-    "B14_bounded_euclidean_metric_code2vec",
-    "B_tree_euclidean_lca_bias",
+POSTREVIEW_RESULT = (
+    PROJECT_ROOT
+    / "outputs/code2hyp_postreview_benchmark_25k_5epochs_5seeds_with_b49_l1_and_geometry_diagnostics.json"
 )
 
 COLORS = {
@@ -63,21 +42,83 @@ COLORS = {
     "purple": "#CC79A7",
     "sky": "#56B4E9",
     "yellow": "#E69F00",
+    "brown": "#8A5A44",
     "grid": "#D8D8D8",
 }
 
+POSTREVIEW_ORDER = (
+    "B39_code2vec_context_transform_baseline",
+    "B47_code2vec_context_transform_distance_control",
+    "B50_code2vec_context_transform_l1_baseline",
+    "B51_code2vec_context_transform_l1_distance_control",
+    "B48_code2hyp_context_transform_product_bias_no_struct",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean",
+    "B36_code2hyp_product_frechet_neighbor",
+    "B44_code2hyp_context_transform_product_bias_frechet",
+)
+
+POSTREVIEW_CODES = {
+    "B39_code2vec_context_transform_baseline": "B39",
+    "B47_code2vec_context_transform_distance_control": "B47",
+    "B50_code2vec_context_transform_l1_baseline": "B50",
+    "B51_code2vec_context_transform_l1_distance_control": "B51",
+    "B48_code2hyp_context_transform_product_bias_no_struct": "B48",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean": "B49",
+    "B36_code2hyp_product_frechet_neighbor": "B36",
+    "B44_code2hyp_context_transform_product_bias_frechet": "B44",
+}
+
+POSTREVIEW_LABELS = {
+    "B39_code2vec_context_transform_baseline": "B39 Euclidean\nbaseline",
+    "B47_code2vec_context_transform_distance_control": "B47 Euclidean\nL2 distance",
+    "B50_code2vec_context_transform_l1_baseline": "B50 Euclidean\nL1 baseline",
+    "B51_code2vec_context_transform_l1_distance_control": "B51 Euclidean\nL1 distance",
+    "B48_code2hyp_context_transform_product_bias_no_struct": "B48 product\nno structural loss",
+    "B49_code2hyp_context_transform_product_bias_near_euclidean": "B49 same path\nnear Euclidean",
+    "B36_code2hyp_product_frechet_neighbor": "B36 Code2Hyp\ndownstream",
+    "B44_code2hyp_context_transform_product_bias_frechet": "B44 Code2Hyp\nstructural",
+}
+
+POSTREVIEW_PALETTE = {
+    "B39": COLORS["baseline"],
+    "B47": COLORS["purple"],
+    "B50": "#8C8C8C",
+    "B51": "#7F3C8D",
+    "B48": COLORS["yellow"],
+    "B49": COLORS["sky"],
+    "B36": COLORS["blue"],
+    "B44": COLORS["orange"],
+}
+
+CURRENT_FIGURE_STEMS = (
+    "figure01_code2hyp_architecture",
+    "figure02_main_results",
+    "figure03_geometry_diagnostics",
+    "figure04_distance_levels",
+)
+
 
 def style() -> None:
+    sns.set_theme(
+        style="whitegrid",
+        context="paper",
+        font="DejaVu Serif",
+        rc={
+            "axes.edgecolor": "#222222",
+            "grid.color": COLORS["grid"],
+            "grid.linewidth": 0.48,
+        },
+    )
     plt.rcParams.update(
         {
             "font.family": "DejaVu Serif",
-            "font.size": 7.4,
-            "axes.labelsize": 7.4,
-            "axes.titlesize": 8.2,
+            "font.size": 7.5,
+            "axes.labelsize": 7.5,
+            "axes.titlesize": 8.1,
             "xtick.labelsize": 6.8,
             "ytick.labelsize": 6.8,
             "legend.fontsize": 6.8,
-            "figure.titlesize": 9.0,
+            "figure.titlesize": 8.5,
             "axes.linewidth": 0.8,
             "savefig.dpi": 450,
         }
@@ -99,28 +140,6 @@ def stat(values: list[float]) -> tuple[float, float]:
     return mean(values), stdev(values) if len(values) > 1 else 0.0
 
 
-def summarize_by_variant(runs: list[dict]) -> dict[str, dict[str, tuple[float, float, int]]]:
-    result: dict[str, dict[str, tuple[float, float, int]]] = {}
-    for variant, items in group(runs).items():
-        result[variant] = {}
-        for metric in METRICS:
-            values = [float(item[metric]) for item in items]
-            m, sd = stat(values)
-            result[variant][metric] = (m, sd, len(values))
-    return result
-
-
-def paired_delta(runs: list[dict], positive: str, negative: str, metric: str) -> tuple[float, float]:
-    by_variant = group(runs)
-    pos = {int(r["model_seed"]): float(r[metric]) for r in by_variant[positive]}
-    neg = {int(r["model_seed"]): float(r[metric]) for r in by_variant[negative]}
-    seeds = sorted(set(pos) & set(neg))
-    values = [pos[s] - neg[s] for s in seeds]
-    m, sd = stat(values)
-    se = sd / math.sqrt(len(values)) if len(values) > 1 else 0.0
-    return m, 1.96 * se
-
-
 def save(fig: plt.Figure, stem: str) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_DIR / f"{stem}.png", dpi=450, bbox_inches="tight", facecolor="white")
@@ -128,13 +147,32 @@ def save(fig: plt.Figure, stem: str) -> None:
     plt.close(fig)
 
 
+def build_grayscale_previews() -> None:
+    """Write grayscale PNG previews for print-readability inspection."""
+    GRAYSCALE_DIR.mkdir(parents=True, exist_ok=True)
+    for stem in CURRENT_FIGURE_STEMS:
+        src = OUT_DIR / f"{stem}.png"
+        if not src.exists():
+            continue
+        Image.open(src).convert("L").save(GRAYSCALE_DIR / src.name)
+
+
+def apply_clean_axes(ax: plt.Axes, *, axis: str = "x") -> None:
+    if axis == "both":
+        ax.grid(True, axis="both", color=COLORS["grid"], linewidth=0.48, alpha=0.8)
+    else:
+        ax.grid(True, axis=axis, color=COLORS["grid"], linewidth=0.48, alpha=0.8)
+        ax.grid(False, axis="y" if axis == "x" else "x")
+    sns.despine(ax=ax, trim=False)
+
+
 def add_box(ax, xy, width, height, text, face, edge="#2B2B2B", size=8):
     box = FancyBboxPatch(
         xy,
         width,
         height,
-        boxstyle="round,pad=0.02,rounding_size=0.025",
-        linewidth=0.9,
+        boxstyle="round,pad=0.018,rounding_size=0.018",
+        linewidth=0.85,
         edgecolor=edge,
         facecolor=face,
     )
@@ -155,8 +193,8 @@ def add_arrow(ax, start, end, color="#333333", rad=0.0):
         start,
         end,
         arrowstyle="-|>",
-        mutation_scale=10,
-        linewidth=1.0,
+        mutation_scale=9,
+        linewidth=0.95,
         color=color,
         connectionstyle=f"arc3,rad={rad}",
     )
@@ -165,199 +203,351 @@ def add_arrow(ax, start, end, color="#333333", rad=0.0):
 
 def plot_architecture() -> None:
     style()
-    fig, ax = plt.subplots(figsize=(4.8, 2.85))
+    fig, ax = plt.subplots(figsize=(6.85, 2.75))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
 
-    add_box(ax, (0.03, 0.56), 0.16, 0.16, "Java\nmethod", "#F2F2F2", size=7)
-    add_box(ax, (0.24, 0.56), 0.20, 0.16, "AST path\ncontexts\n$(x_i,p_i,y_i)$", "#EAF3F8", size=7)
-    add_box(ax, (0.51, 0.72), 0.22, 0.13, "lexical\nchannel\n$\\mathbb{E}^{d_e}$", "#E6F2FF", size=6.6)
-    add_box(ax, (0.51, 0.39), 0.22, 0.13, "structural\nchannel\n$\\mathbb{H}^{d_h}_c$", "#FFF0E8", size=6.6)
-    add_box(ax, (0.80, 0.56), 0.17, 0.16, "product\nrepresentation\n$\\mathbb{E}\\times\\mathbb{H}$", "#F1F7ED", size=6.5)
-    add_box(ax, (0.36, 0.15), 0.23, 0.13, "attention\nand decoder", "#F7F4E8", size=6.8)
-    add_box(ax, (0.67, 0.15), 0.24, 0.13, "method-name\nsubtokens", "#F2F2F2", size=6.8)
+    add_box(ax, (0.035, 0.48), 0.13, 0.18, "Java\nmethod", "#F5F5F5", size=7.3)
+    add_box(ax, (0.225, 0.47), 0.18, 0.20, "AST path contexts\n$(x_i, p_i, y_i)$", "#EAF3F8", size=7.1)
 
-    add_arrow(ax, (0.19, 0.64), (0.24, 0.64))
-    add_arrow(ax, (0.44, 0.64), (0.51, 0.78))
-    add_arrow(ax, (0.44, 0.64), (0.51, 0.46))
-    add_arrow(ax, (0.73, 0.785), (0.80, 0.68))
-    add_arrow(ax, (0.73, 0.455), (0.80, 0.60))
-    add_arrow(ax, (0.885, 0.56), (0.50, 0.28), rad=-0.12)
-    add_arrow(ax, (0.59, 0.215), (0.67, 0.215))
+    add_box(ax, (0.455, 0.68), 0.19, 0.18, "lexical tokens\n$z_E\\in\\mathbb{E}^{d_e}$", "#E7F1FA", size=6.8)
+    add_box(ax, (0.455, 0.28), 0.19, 0.18, "AST path structure\n$z_H\\in\\mathbb{H}^{d_h}_{c}$", "#FFF0E6", size=6.8)
+    add_box(ax, (0.705, 0.48), 0.14, 0.18, "product vector\n$z=(z_E,z_H)$", "#F0F7EC", size=6.6)
+    add_box(ax, (0.705, 0.15), 0.14, 0.13, "attention +\ndecoder", "#F7F4E8", size=6.4)
+    add_box(ax, (0.895, 0.15), 0.085, 0.13, "method-name\nsubtokens", "#F5F5F5", size=5.3)
 
-    ax.text(
-        0.52,
-        0.035,
-        "Code2Hyp keeps token semantics Euclidean and tests negative curvature only for AST-path structure.",
-        ha="center",
-        va="bottom",
-        fontsize=6.4,
-    )
+    add_arrow(ax, (0.165, 0.57), (0.225, 0.57))
+    add_arrow(ax, (0.405, 0.58), (0.455, 0.77))
+    add_arrow(ax, (0.405, 0.55), (0.455, 0.37))
+    add_arrow(ax, (0.645, 0.77), (0.705, 0.61))
+    add_arrow(ax, (0.645, 0.37), (0.705, 0.53))
+    add_arrow(ax, (0.775, 0.48), (0.775, 0.28))
+    add_arrow(ax, (0.845, 0.215), (0.895, 0.215))
+
+    ax.text(0.55, 0.91, "Euclidean lexical factor", ha="center", va="center", fontsize=6.2, color="#333333")
+    ax.text(0.55, 0.21, "hyperbolic structural factor", ha="center", va="center", fontsize=6.2, color="#333333")
+    ax.text(0.50, 0.055, "Only the AST-path channel is assigned negative curvature.", ha="center", va="bottom", fontsize=6.2, color="#333333")
     save(fig, "figure01_code2hyp_architecture")
 
 
-def plot_main_results() -> None:
+def load_postreview_runs(path: Path = POSTREVIEW_RESULT) -> list[dict]:
+    if not path.exists():
+        raise FileNotFoundError(
+            "Final factorial benchmark JSON is missing. Run "
+            "`scripts/run_code2hyp_postreview_benchmark.sh` before rebuilding "
+            f"manuscript result figures. Expected: {path}"
+        )
+    runs = load(path)
+    grouped = group(runs)
+    missing = [variant for variant in POSTREVIEW_ORDER if variant not in grouped]
+    if missing:
+        raise ValueError(
+            "Final factorial benchmark JSON is incomplete; missing variants: "
+            + ", ".join(missing)
+        )
+    return runs
+
+
+def postreview_summary(runs: list[dict]) -> dict[str, dict[str, tuple[float, float, int]]]:
+    required_metrics = (
+        "validation_f1",
+        "validation_structural_spearman",
+        "validation_structural_normalized_stress",
+        "validation_structural_neighbor_exact_overlap_at_3",
+    )
+    result: dict[str, dict[str, tuple[float, float, int]]] = {}
+    grouped = group(runs)
+    for variant in POSTREVIEW_ORDER:
+        items = grouped[variant]
+        result[variant] = {}
+        for metric in required_metrics:
+            missing = [item.get("model_seed", "?") for item in items if metric not in item]
+            if missing:
+                raise ValueError(f"{variant} lacks {metric} for seeds {missing}")
+            values = [float(item[metric]) for item in items]
+            m, sd = stat(values)
+            result[variant][metric] = (m, sd, len(values))
+    return result
+
+
+def plot_postreview_main_results(runs: list[dict]) -> None:
     style()
-    main = summarize_by_variant(load(ORIGINAL_MAIN))
-    controls = summarize_by_variant(load(ORIGINAL_CONTROLS))
-    combined = dict(main)
-    for variant in ("B6_euclidean_metric_code2vec", "B14_bounded_euclidean_metric_code2vec", "B_tree_euclidean_lca_bias"):
-        combined[variant] = controls[variant]
+    summary = postreview_summary(runs)
+    panels = (
+        ("validation_f1", "A. Downstream prediction", "Target-subtoken F1, %", 100.0, True),
+        ("validation_structural_spearman", "B. Rank preservation", "Prefix-trie Spearman", 1.0, True),
+        ("validation_structural_normalized_stress", "C. Metric distortion", "Normalized stress", 1.0, False),
+        ("validation_structural_neighbor_exact_overlap_at_3", "D. Exact local neighborhoods", "Exact Overlap@3", 1.0, True),
+    )
+    labels = [POSTREVIEW_LABELS[variant] for variant in POSTREVIEW_ORDER]
 
-    palette = [
-        COLORS["baseline"],
-        COLORS["blue"],
-        COLORS["green"],
-        COLORS["orange"],
-        COLORS["sky"],
-        COLORS["purple"],
-        COLORS["yellow"],
-    ]
-    short_labels = {
-        "B39_code2vec_context_transform_baseline": "B39 baseline",
-        "B36_code2hyp_product_frechet_neighbor": "B36 Code2Hyp",
-        "B40_code2hyp_context_transform_frechet": "B40 Frechet",
-        "B44_code2hyp_context_transform_product_bias_frechet": "B44 structural",
-        "B6_euclidean_metric_code2vec": "B6 Euclidean metric",
-        "B14_bounded_euclidean_metric_code2vec": "B14 bounded Euclidean",
-        "B_tree_euclidean_lca_bias": "Btree LCA bias",
-    }
-
-    fig = plt.figure(figsize=(6.9, 5.15))
-    gs = fig.add_gridspec(2, 2, hspace=0.35, wspace=0.36)
-    axes = [fig.add_subplot(gs[i, j]) for i in range(2) for j in range(2)]
-
-    metric_specs = [
-        ("validation_f1", "A. Downstream prediction", "Target-subtoken F1, %", 100.0),
-        ("validation_structural_spearman", "B. AST-distance rank preservation", "Spearman correlation", 1.0),
-        ("validation_structural_normalized_stress", "C. Metric distortion", "Normalized stress", 1.0),
-    ]
-
-    y = list(range(len(MAIN_ORDER)))
-    for ax, (metric, title, ylabel, scale) in zip(axes[:3], metric_specs, strict=True):
-        means = [combined[v][metric][0] * scale for v in MAIN_ORDER]
-        sds = [combined[v][metric][1] * scale for v in MAIN_ORDER]
-        for yi, value, error, color in zip(y, means, sds, palette, strict=True):
+    fig, axes = plt.subplots(2, 2, figsize=(7.9, 5.65), constrained_layout=True)
+    for ax, (metric, title, xlabel, scale, higher_is_better) in zip(axes.ravel(), panels, strict=True):
+        rows: list[dict] = []
+        for variant in POSTREVIEW_ORDER:
+            value, sd, n = summary[variant][metric]
+            code = POSTREVIEW_CODES[variant]
+            rows.append(
+                {
+                    "variant": variant,
+                    "code": code,
+                    "label": POSTREVIEW_LABELS[variant],
+                    "value": value * scale,
+                    "sd": sd * scale,
+                    "n": n,
+                }
+            )
+        df = pd.DataFrame(rows)
+        df["label"] = pd.Categorical(df["label"], categories=labels, ordered=True)
+        sns.scatterplot(
+            data=df,
+            x="value",
+            y="label",
+            hue="code",
+            palette=POSTREVIEW_PALETTE,
+            s=55,
+            edgecolor="#222222",
+            linewidth=0.55,
+            legend=False,
+            zorder=3,
+            ax=ax,
+        )
+        for row in df.itertuples(index=False):
+            y = labels.index(str(row.label))
             ax.errorbar(
-                value,
-                yi,
-                xerr=error,
-                marker="o",
-                markersize=5,
-                capsize=2.2,
-                color=color,
-                markeredgecolor="#222222",
-                markeredgewidth=0.4,
-                linewidth=1.0,
+                row.value,
+                y,
+                xerr=row.sd,
+                fmt="none",
+                ecolor=POSTREVIEW_PALETTE[row.code],
+                elinewidth=1.0,
+                capsize=2.0,
+                capthick=1.0,
+                zorder=2,
             )
         ax.set_title(title, loc="left", fontweight="bold")
-        ax.set_xlabel(ylabel)
-        ax.set_yticks(y, [short_labels[v] for v in MAIN_ORDER])
-        ax.invert_yaxis()
-        lo = min(m - e for m, e in zip(means, sds, strict=True))
-        hi = max(m + e for m, e in zip(means, sds, strict=True))
-        pad = max((hi - lo) * 0.10, 0.02 if scale == 1.0 else 0.4)
-        ax.set_xlim(lo - pad, hi + pad)
-        ax.grid(axis="x", color=COLORS["grid"], linewidth=0.5, alpha=0.75)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("")
         if metric == "validation_structural_spearman":
             ax.axvline(0, color="#222222", linewidth=0.7)
-        if metric == "validation_structural_normalized_stress":
-            ax.text(0.03, 0.05, "lower is better", transform=ax.transAxes, fontsize=6.5)
+        if not higher_is_better:
+            ax.text(
+                0.03,
+                0.06,
+                "lower is better",
+                transform=ax.transAxes,
+                fontsize=6.4,
+                bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.82, "pad": 1.2},
+            )
+        apply_clean_axes(ax, axis="x")
 
-    ax = axes[3]
-    for i, variant in enumerate(MAIN_ORDER):
-        f1 = combined[variant]["validation_f1"][0] * 100
-        spearman = combined[variant]["validation_structural_spearman"][0]
-        stress = combined[variant]["validation_structural_normalized_stress"][0]
-        size = 42 + 110 * max(0.0, 1.0 - min(stress, 1.0))
-        ax.scatter(f1, spearman, s=size, color=palette[i], edgecolor="#222222", linewidth=0.55, zorder=3)
-        offsets = {
-            "B39_code2vec_context_transform_baseline": (0.18, 0.03),
-            "B36_code2hyp_product_frechet_neighbor": (0.15, 0.03),
-            "B40_code2hyp_context_transform_frechet": (0.13, 0.03),
-            "B44_code2hyp_context_transform_product_bias_frechet": (0.14, 0.03),
-            "B6_euclidean_metric_code2vec": (0.08, 0.08),
-            "B14_bounded_euclidean_metric_code2vec": (0.14, 0.02),
-            "B_tree_euclidean_lca_bias": (0.08, -0.08),
-        }
-        dx, dy = offsets[variant]
-        ax.text(f1 + dx, spearman + dy, short_labels[variant].split()[0], fontsize=6.7)
-    ax.axhline(0, color="#222222", linewidth=0.7)
-    ax.set_title("D. Prediction-structure trade-off", loc="left", fontweight="bold")
-    ax.set_xlabel("Target-subtoken F1, %")
-    ax.set_ylabel("AST-distance Spearman")
-    ax.grid(color=COLORS["grid"], linewidth=0.5, alpha=0.75)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.text(0.02, 0.96, "larger marker = lower stress", transform=ax.transAxes, fontsize=6.5, va="top")
-
-    fig.suptitle("Main Code2Hyp results under the 25,000-example local training budget", y=0.995)
+    fig.suptitle("Factorial control comparison under the 25,000-example budget", y=1.02)
     save(fig, "figure02_main_results")
 
 
-def plot_control_deltas() -> None:
+def optional_metric_summary(runs: list[dict], metric: str) -> list[dict]:
+    rows: list[dict] = []
+    for variant, items in group(runs).items():
+        if variant not in POSTREVIEW_ORDER:
+            continue
+        values = [
+            float(item[metric])
+            for item in items
+            if metric in item and item[metric] is not None and math.isfinite(float(item[metric]))
+        ]
+        if not values:
+            continue
+        m, sd = stat(values)
+        code = POSTREVIEW_CODES[variant]
+        rows.append(
+            {
+                "variant": variant,
+                "code": code,
+                "label": POSTREVIEW_LABELS[variant],
+                "value": m,
+                "sd": sd,
+                "n": len(values),
+            }
+        )
+    rows.sort(key=lambda row: POSTREVIEW_ORDER.index(row["variant"]))
+    return rows
+
+
+def plot_metric_panel(ax: plt.Axes, rows: list[dict], title: str, xlabel: str) -> None:
+    if not rows:
+        ax.text(0.5, 0.5, "not available", ha="center", va="center", fontsize=8)
+        ax.set_axis_off()
+        return
+    labels = [row["label"] for row in rows]
+    df = pd.DataFrame(rows)
+    df["label"] = pd.Categorical(df["label"], categories=labels, ordered=True)
+    sns.barplot(
+        data=df,
+        x="value",
+        y="label",
+        hue="code",
+        palette=POSTREVIEW_PALETTE,
+        dodge=False,
+        edgecolor="#222222",
+        linewidth=0.45,
+        legend=False,
+        ax=ax,
+    )
+    for row in df.itertuples(index=False):
+        y = labels.index(str(row.label))
+        ax.errorbar(
+            row.value,
+            y,
+            xerr=row.sd,
+            fmt="none",
+            ecolor="#222222",
+            elinewidth=0.9,
+            capsize=1.8,
+            capthick=0.9,
+            zorder=3,
+        )
+    ax.set_title(title, loc="left", fontweight="bold")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("")
+    apply_clean_axes(ax, axis="x")
+
+
+def plot_postreview_geometry_diagnostics(runs: list[dict]) -> None:
     style()
-    modes = [
-        ("Original", load(ORIGINAL_MAIN)),
-        ("Record-\nobfuscated", load(RECORD_OBF)),
-        ("Structural\nonly", load(STRUCT_ONLY)),
-    ]
-    x = list(range(len(modes)))
+    fig, axes = plt.subplots(2, 2, figsize=(7.9, 5.55), constrained_layout=True)
+    panels = (
+        (
+            "validation_poincare_frechet_residual_mean",
+            "A. Karcher residual",
+            r"$\|\sum_i \alpha_i \log_\mu(h_i)\|$",
+        ),
+        (
+            "validation_poincare_context_radius_ratio_max",
+            "B. Radius utilization",
+            r"max $\sqrt{c}\|h_i\|$",
+        ),
+        (
+            "validation_poincare_context_near_boundary_rate",
+            "C. Near-boundary rate",
+            "fraction of context points",
+        ),
+        ("curvature", "D. Final curvature", "curvature parameter c"),
+    )
+    for ax, (metric, title, xlabel) in zip(axes.ravel(), panels, strict=True):
+        plot_metric_panel(ax, optional_metric_summary(runs, metric), title, xlabel)
+    fig.suptitle("Geometry diagnostics for product-manifold variants", y=1.02)
+    save(fig, "figure03_geometry_diagnostics")
 
-    fig, axes = plt.subplots(2, 2, figsize=(6.8, 4.45), constrained_layout=True)
-    axes = list(axes.ravel())
 
-    b39 = "B39_code2vec_context_transform_baseline"
-    b36 = "B36_code2hyp_product_frechet_neighbor"
-    b44 = "B44_code2hyp_context_transform_product_bias_frechet"
+def load_distance_level_rows(runs: list[dict]) -> dict[str, list[dict[str, float]]]:
+    per_variant_level: dict[str, dict[float, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for run in runs:
+        variant = str(run["variant"])
+        summary = run.get("validation_structural_prefix_distance_level_summary")
+        if summary is None:
+            raise ValueError("benchmark lacks validation_structural_prefix_distance_level_summary")
+        for item in summary:
+            level = float(item["target_distance"])
+            per_variant_level[variant][level].append(float(item["model_distance_mean"]))
 
-    summaries = [summarize_by_variant(runs) for _, runs in modes]
+    rows: dict[str, list[dict[str, float]]] = {}
+    for variant, by_level in per_variant_level.items():
+        variant_rows = []
+        for level in sorted(by_level):
+            values = by_level[level]
+            variant_rows.append(
+                {
+                    "target_distance": level,
+                    "model_distance_mean": mean(values),
+                    "model_distance_sd": stdev(values) if len(values) > 1 else 0.0,
+                }
+            )
+        rows[variant] = variant_rows
+    return rows
 
-    for variant, color, label in [(b39, COLORS["baseline"], "B39 baseline"), (b36, COLORS["blue"], "B36 Code2Hyp")]:
-        means = [summary[variant]["validation_f1"][0] * 100 for summary in summaries]
-        sds = [summary[variant]["validation_f1"][1] * 100 for summary in summaries]
-        axes[0].errorbar(x, means, yerr=sds, color=color, marker="o", capsize=2.5, linewidth=1.4, label=label)
-    axes[0].set_title("A. F1 under lexical controls", loc="left", fontweight="bold")
-    axes[0].set_ylabel("F1, %")
 
-    deltas = [paired_delta(runs, b36, b39, "validation_f1") for _, runs in modes]
-    axes[1].bar(x, [d[0] * 100 for d in deltas], yerr=[d[1] * 100 for d in deltas], color=COLORS["blue"], capsize=2.5)
-    axes[1].axhline(0, color="#222222", linewidth=0.75)
-    axes[1].set_title("B. Paired F1 delta", loc="left", fontweight="bold")
-    axes[1].set_ylabel("B36 - B39, points")
+def plot_postreview_distance_levels(runs: list[dict]) -> None:
+    style()
+    rows_by_variant = load_distance_level_rows(runs)
+    fig, ax = plt.subplots(figsize=(8.6, 4.45), constrained_layout=True)
 
-    for variant, color, label in [(b39, COLORS["baseline"], "B39 baseline"), (b44, COLORS["orange"], "B44 Code2Hyp")]:
-        means = [summary[variant]["validation_structural_spearman"][0] for summary in summaries]
-        sds = [summary[variant]["validation_structural_spearman"][1] for summary in summaries]
-        axes[2].errorbar(x, means, yerr=sds, color=color, marker="o", capsize=2.5, linewidth=1.4, label=label)
-    axes[2].axhline(0, color="#222222", linewidth=0.75)
-    axes[2].set_title("C. Structural rank preservation", loc="left", fontweight="bold")
-    axes[2].set_ylabel("AST-distance Spearman")
+    line_styles = {
+        "B39": ("#4D4D4D", "o", "-"),
+        "B47": ("#CC79A7", "P", "--"),
+        "B50": ("#999999", "v", ":"),
+        "B51": ("#7F3C8D", "*", "--"),
+        "B48": ("#E69F00", "X", ":"),
+        "B49": ("#56B4E9", "^", "--"),
+        "B36": ("#0072B2", "s", "-"),
+        "B44": ("#D55E00", "D", "-."),
+    }
+    labels = {
+        "B39": "B39 Euclidean baseline",
+        "B47": "B47 Euclidean distance loss",
+        "B50": "B50 L1 baseline",
+        "B51": "B51 L1 distance loss",
+        "B48": "B48 product, no structural loss",
+        "B49": "B49 near-Euclidean same code path",
+        "B36": "B36 downstream-oriented Code2Hyp",
+        "B44": "B44 structure-oriented Code2Hyp",
+    }
 
-    deltas = [paired_delta(runs, b44, b39, "validation_structural_spearman") for _, runs in modes]
-    axes[3].bar(x, [d[0] for d in deltas], yerr=[d[1] for d in deltas], color=COLORS["orange"], capsize=2.5)
-    axes[3].axhline(0, color="#222222", linewidth=0.75)
-    axes[3].set_title("D. Paired structural delta", loc="left", fontweight="bold")
-    axes[3].set_ylabel("B44 - B39, Spearman")
+    for variant in POSTREVIEW_ORDER:
+        if variant not in rows_by_variant:
+            continue
+        code = POSTREVIEW_CODES[variant]
+        color, marker, linestyle = line_styles[code]
+        rows = rows_by_variant[variant]
+        x_values = [row["target_distance"] for row in rows]
+        y_values = [row["model_distance_mean"] for row in rows]
+        y_sd = [row["model_distance_sd"] for row in rows]
+        lower = [max(0.0, y - sd) for y, sd in zip(y_values, y_sd, strict=True)]
+        upper = [y + sd for y, sd in zip(y_values, y_sd, strict=True)]
+        ax.plot(
+            x_values,
+            y_values,
+            marker=marker,
+            linestyle=linestyle,
+            linewidth=1.35,
+            markersize=4.1,
+            color=color,
+            label=labels[code],
+        )
+        ax.fill_between(x_values, lower, upper, color=color, alpha=0.09, linewidth=0.0)
 
-    for ax in axes:
-        ax.set_xticks(x, [label for label, _ in modes])
-        ax.grid(axis="y", color=COLORS["grid"], linewidth=0.5, alpha=0.75)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-    axes[0].legend(frameon=False, loc="best")
-    axes[2].legend(frameon=False, loc="best")
-    save(fig, "figure03_lexical_controls")
+    ax.set_title("Learned structural distance by prefix-trie target level")
+    ax.set_xlabel("Prefix-trie path distance")
+    ax.set_ylabel("Mean learned distance")
+    ax.grid(axis="both", color=COLORS["grid"], linewidth=0.48, alpha=0.8)
+    sns.despine(ax=ax, trim=False)
+    ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False, fontsize=6.3, borderaxespad=0.0)
+    save(fig, "figure04_distance_levels")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build publication figures for the Code2Hyp manuscript.",
+    )
+    parser.add_argument(
+        "--grayscale-preview",
+        action="store_true",
+        help="also write grayscale PNG previews under build/grayscale_previews",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
+    args = parse_args()
+    postreview_runs = load_postreview_runs()
     plot_architecture()
-    plot_main_results()
-    plot_control_deltas()
+    plot_postreview_main_results(postreview_runs)
+    plot_postreview_geometry_diagnostics(postreview_runs)
+    plot_postreview_distance_levels(postreview_runs)
     print(f"Wrote figures to {OUT_DIR}")
+    if args.grayscale_preview:
+        build_grayscale_previews()
+        print(f"Wrote grayscale previews to {GRAYSCALE_DIR}")
 
 
 if __name__ == "__main__":

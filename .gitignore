@@ -1,11 +1,14 @@
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 .DS_Store
 .matplotlib-cache/
 .matplotlib_cache/
-data/code2seq_java_small/java-small/
-data/code2seq_java_small/java-small-preprocessed.tar.gz
+.pytest_cache/
+.venv/
+__pycache__/
+*.pyc
+
+# Keep datasets out of git. Dataset sources and expected paths are documented
+# in the manifest files instead.
+data/**
+!data/
+!data/code2seq_java_small/
+!data/code2seq_java_small/DATASET_MANIFEST.md

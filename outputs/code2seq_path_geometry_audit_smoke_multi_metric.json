@@ -1,0 +1,959 @@
+{
+  "config": {
+    "data_root": "data/code2seq_java_small/java-small",
+    "splits": [
+      "train",
+      "val"
+    ],
+    "record_limit_per_split": 200,
+    "sample_seed": 777,
+    "max_contexts": 30,
+    "max_path_length": 8,
+    "tie_k": 3,
+    "hyperbolicity_samples": 100
+  },
+  "split_summaries": {
+    "train": {
+      "contexts": 4387,
+      "records_with_at_least_one_context": 200,
+      "unique_full_paths": 1789,
+      "unique_truncated_paths": 1622,
+      "full_path_collision_rate_pairwise": 0.003348512076731287,
+      "truncated_path_collision_rate_pairwise": 0.0035289564959523176,
+      "ambiguous_truncated_pair_rate": 0.000180444419221031,
+      "truncated_classes": 1622,
+      "ambiguous_truncated_classes": 114,
+      "ambiguous_truncated_class_rate": 0.07028360049321825,
+      "contexts_in_ambiguous_truncated_classes": 395,
+      "contexts_in_ambiguous_truncated_classes_rate": 0.09003875085479826,
+      "mean_full_variants_per_truncated_path": 1.1029593094944512,
+      "p95_full_variants_per_truncated_path": 2.0,
+      "max_full_variants_per_truncated_path": 9,
+      "mean_contexts_per_truncated_path": 2.7046855733662145,
+      "p95_contexts_per_truncated_path": 8.0,
+      "max_contexts_per_truncated_path": 87,
+      "within_record_pairs": 57110,
+      "within_record_zero_distance_pairs": 1581,
+      "within_record_zero_distance_pair_rate": 0.027683417965330064,
+      "within_record_ambiguous_zero_pairs": 377,
+      "within_record_ambiguous_zero_pair_rate": 0.006601295745053405,
+      "prefix_distance_unique_levels_global": 16,
+      "prefix_distance_entropy_bits": 3.9070553258345897,
+      "metric_unique_levels_global": {
+        "prefix_tree": 16,
+        "edit": 9,
+        "jaccard_bigrams": 33
+      },
+      "metric_entropy_bits": {
+        "prefix_tree": 3.9070553258345897,
+        "edit": 3.017952123676025,
+        "jaccard_bigrams": 4.006758662931998
+      },
+      "cross_metric_spearman": {
+        "prefix_tree_vs_edit": 0.580541705952986,
+        "prefix_tree_vs_jaccard_bigrams": 0.3874781991135062,
+        "edit_vs_jaccard_bigrams": 0.8275454552510536
+      },
+      "top_prefix_distance_levels": [
+        {
+          "distance": 11,
+          "pairs": 5916,
+          "share": 0.1035895639992996
+        },
+        {
+          "distance": 12,
+          "pairs": 5807,
+          "share": 0.10168096655576957
+        },
+        {
+          "distance": 10,
+          "pairs": 5139,
+          "share": 0.08998424093853966
+        },
+        {
+          "distance": 7,
+          "pairs": 4539,
+          "share": 0.07947819996497986
+        },
+        {
+          "distance": 9,
+          "pairs": 4346,
+          "share": 0.07609875678515146
+        },
+        {
+          "distance": 8,
+          "pairs": 3920,
+          "share": 0.06863946769392401
+        },
+        {
+          "distance": 16,
+          "pairs": 3705,
+          "share": 0.06487480301173175
+        },
+        {
+          "distance": 2,
+          "pairs": 3479,
+          "share": 0.060917527578357555
+        },
+        {
+          "distance": 6,
+          "pairs": 3169,
+          "share": 0.055489406408684994
+        },
+        {
+          "distance": 13,
+          "pairs": 3063,
+          "share": 0.05363333917002276
+        },
+        {
+          "distance": 15,
+          "pairs": 3007,
+          "share": 0.05265277534582385
+        },
+        {
+          "distance": 14,
+          "pairs": 2947,
+          "share": 0.05160217124846787
+        }
+      ],
+      "top_metric_distance_levels": {
+        "prefix_tree": [
+          {
+            "distance": 11.0,
+            "pairs": 5916,
+            "share": 0.1035895639992996
+          },
+          {
+            "distance": 12.0,
+            "pairs": 5807,
+            "share": 0.10168096655576957
+          },
+          {
+            "distance": 10.0,
+            "pairs": 5139,
+            "share": 0.08998424093853966
+          },
+          {
+            "distance": 7.0,
+            "pairs": 4539,
+            "share": 0.07947819996497986
+          },
+          {
+            "distance": 9.0,
+            "pairs": 4346,
+            "share": 0.07609875678515146
+          },
+          {
+            "distance": 8.0,
+            "pairs": 3920,
+            "share": 0.06863946769392401
+          },
+          {
+            "distance": 16.0,
+            "pairs": 3705,
+            "share": 0.06487480301173175
+          },
+          {
+            "distance": 2.0,
+            "pairs": 3479,
+            "share": 0.060917527578357555
+          },
+          {
+            "distance": 6.0,
+            "pairs": 3169,
+            "share": 0.055489406408684994
+          },
+          {
+            "distance": 13.0,
+            "pairs": 3063,
+            "share": 0.05363333917002276
+          },
+          {
+            "distance": 15.0,
+            "pairs": 3007,
+            "share": 0.05265277534582385
+          },
+          {
+            "distance": 14.0,
+            "pairs": 2947,
+            "share": 0.05160217124846787
+          }
+        ],
+        "edit": [
+          {
+            "distance": 6.0,
+            "pairs": 9092,
+            "share": 0.15920154088600946
+          },
+          {
+            "distance": 4.0,
+            "pairs": 8715,
+            "share": 0.15260024514095605
+          },
+          {
+            "distance": 3.0,
+            "pairs": 8137,
+            "share": 0.1424794256697601
+          },
+          {
+            "distance": 5.0,
+            "pairs": 7623,
+            "share": 0.13347925056907722
+          },
+          {
+            "distance": 2.0,
+            "pairs": 7386,
+            "share": 0.1293293643845211
+          },
+          {
+            "distance": 7.0,
+            "pairs": 7182,
+            "share": 0.12575731045351077
+          },
+          {
+            "distance": 1.0,
+            "pairs": 5323,
+            "share": 0.09320609350376466
+          },
+          {
+            "distance": 8.0,
+            "pairs": 2071,
+            "share": 0.036263351427070566
+          },
+          {
+            "distance": 0.0,
+            "pairs": 1581,
+            "share": 0.027683417965330064
+          }
+        ],
+        "jaccard_bigrams": [
+          {
+            "distance": 1.0,
+            "pairs": 20159,
+            "share": 0.3529854666433199
+          },
+          {
+            "distance": 0.66666667,
+            "pairs": 2477,
+            "share": 0.043372439152512696
+          },
+          {
+            "distance": 0.5,
+            "pairs": 2334,
+            "share": 0.04086849938714761
+          },
+          {
+            "distance": 0.83333333,
+            "pairs": 2265,
+            "share": 0.03966030467518823
+          },
+          {
+            "distance": 0.8,
+            "pairs": 1924,
+            "share": 0.03368937138854842
+          },
+          {
+            "distance": 0.6,
+            "pairs": 1824,
+            "share": 0.03193836455962178
+          },
+          {
+            "distance": 0.0,
+            "pairs": 1584,
+            "share": 0.027735948170197863
+          },
+          {
+            "distance": 0.75,
+            "pairs": 1576,
+            "share": 0.027595867623883732
+          },
+          {
+            "distance": 0.25,
+            "pairs": 1535,
+            "share": 0.026877954824023814
+          },
+          {
+            "distance": 0.875,
+            "pairs": 1438,
+            "share": 0.02517947819996498
+          },
+          {
+            "distance": 0.7,
+            "pairs": 1412,
+            "share": 0.024724216424444057
+          },
+          {
+            "distance": 0.85714286,
+            "pairs": 1400,
+            "share": 0.02451409560497286
+          }
+        ]
+      },
+      "mean_unique_distance_levels_per_record": 11.97938144329897,
+      "median_unique_distance_levels_per_record": 13.0,
+      "mean_pair_count_per_record": 294.3814432989691,
+      "tie_k": 3,
+      "mean_tie_set_size_at_k": 4.549646199497832,
+      "median_tie_set_size_at_k": 4,
+      "p95_tie_set_size_at_k": 10.0,
+      "max_tie_set_size_at_k": 25,
+      "mean_tie_expansion_ratio_at_k": 1.5165487331659437,
+      "four_point_hyperbolicity_by_metric": {
+        "prefix_tree": {
+          "samples": 100,
+          "delta_mean": 0.0,
+          "delta_max": 0.0,
+          "delta_over_diameter_mean": 0.0,
+          "delta_over_diameter_max": 0.0
+        },
+        "edit": {
+          "samples": 100,
+          "delta_mean": 0.39,
+          "delta_max": 1.5,
+          "delta_over_diameter_mean": 0.04875,
+          "delta_over_diameter_max": 0.1875
+        },
+        "jaccard_bigrams": {
+          "samples": 100,
+          "delta_mean": 0.018682886557886556,
+          "delta_max": 0.11666666666666659,
+          "delta_over_diameter_mean": 0.018682886557886556,
+          "delta_over_diameter_max": 0.11666666666666659
+        }
+      },
+      "four_point_hyperbolicity_samples": 100,
+      "four_point_delta_mean": 0.0,
+      "four_point_delta_max": 0.0,
+      "four_point_delta_over_diameter_mean": 0.0,
+      "four_point_delta_over_diameter_max": 0.0
+    },
+    "val": {
+      "contexts": 4738,
+      "records_with_at_least_one_context": 200,
+      "unique_full_paths": 1722,
+      "unique_truncated_paths": 1641,
+      "full_path_collision_rate_pairwise": 0.0035943832593132406,
+      "truncated_path_collision_rate_pairwise": 0.003642948780840554,
+      "ambiguous_truncated_pair_rate": 4.8565521527313475e-05,
+      "truncated_classes": 1641,
+      "ambiguous_truncated_classes": 67,
+      "ambiguous_truncated_class_rate": 0.04082876294942109,
+      "contexts_in_ambiguous_truncated_classes": 246,
+      "contexts_in_ambiguous_truncated_classes_rate": 0.051920641620937104,
+      "mean_full_variants_per_truncated_path": 1.0493601462522852,
+      "p95_full_variants_per_truncated_path": 1.0,
+      "max_full_variants_per_truncated_path": 6,
+      "mean_contexts_per_truncated_path": 2.8872638634978673,
+      "p95_contexts_per_truncated_path": 9.0,
+      "max_contexts_per_truncated_path": 89,
+      "within_record_pairs": 61688,
+      "within_record_zero_distance_pairs": 1056,
+      "within_record_zero_distance_pair_rate": 0.017118402282453638,
+      "within_record_ambiguous_zero_pairs": 152,
+      "within_record_ambiguous_zero_pair_rate": 0.0024640124497471143,
+      "prefix_distance_unique_levels_global": 16,
+      "prefix_distance_entropy_bits": 3.831480323786723,
+      "metric_unique_levels_global": {
+        "prefix_tree": 16,
+        "edit": 9,
+        "jaccard_bigrams": 31
+      },
+      "metric_entropy_bits": {
+        "prefix_tree": 3.831480323786723,
+        "edit": 2.9970643735702263,
+        "jaccard_bigrams": 3.8625412362615466
+      },
+      "cross_metric_spearman": {
+        "prefix_tree_vs_edit": 0.4153359309993673,
+        "prefix_tree_vs_jaccard_bigrams": 0.15097375159824114,
+        "edit_vs_jaccard_bigrams": 0.8244163198217951
+      },
+      "top_prefix_distance_levels": [
+        {
+          "distance": 11,
+          "pairs": 6166,
+          "share": 0.09995461029697834
+        },
+        {
+          "distance": 12,
+          "pairs": 6025,
+          "share": 0.09766891453767346
+        },
+        {
+          "distance": 14,
+          "pairs": 5744,
+          "share": 0.0931137336272857
+        },
+        {
+          "distance": 10,
+          "pairs": 5422,
+          "share": 0.08789391777979509
+        },
+        {
+          "distance": 13,
+          "pairs": 5211,
+          "share": 0.08447347944494878
+        },
+        {
+          "distance": 9,
+          "pairs": 5033,
+          "share": 0.08158799118142912
+        },
+        {
+          "distance": 16,
+          "pairs": 4984,
+          "share": 0.08079367137855012
+        },
+        {
+          "distance": 15,
+          "pairs": 4527,
+          "share": 0.07338542342108675
+        },
+        {
+          "distance": 7,
+          "pairs": 4031,
+          "share": 0.0653449617429646
+        },
+        {
+          "distance": 6,
+          "pairs": 3393,
+          "share": 0.05500259369731552
+        },
+        {
+          "distance": 2,
+          "pairs": 3109,
+          "share": 0.050398780962261705
+        },
+        {
+          "distance": 8,
+          "pairs": 2784,
+          "share": 0.045130333290105046
+        }
+      ],
+      "top_metric_distance_levels": {
+        "prefix_tree": [
+          {
+            "distance": 11.0,
+            "pairs": 6166,
+            "share": 0.09995461029697834
+          },
+          {
+            "distance": 12.0,
+            "pairs": 6025,
+            "share": 0.09766891453767346
+          },
+          {
+            "distance": 14.0,
+            "pairs": 5744,
+            "share": 0.0931137336272857
+          },
+          {
+            "distance": 10.0,
+            "pairs": 5422,
+            "share": 0.08789391777979509
+          },
+          {
+            "distance": 13.0,
+            "pairs": 5211,
+            "share": 0.08447347944494878
+          },
+          {
+            "distance": 9.0,
+            "pairs": 5033,
+            "share": 0.08158799118142912
+          },
+          {
+            "distance": 16.0,
+            "pairs": 4984,
+            "share": 0.08079367137855012
+          },
+          {
+            "distance": 15.0,
+            "pairs": 4527,
+            "share": 0.07338542342108675
+          },
+          {
+            "distance": 7.0,
+            "pairs": 4031,
+            "share": 0.0653449617429646
+          },
+          {
+            "distance": 6.0,
+            "pairs": 3393,
+            "share": 0.05500259369731552
+          },
+          {
+            "distance": 2.0,
+            "pairs": 3109,
+            "share": 0.050398780962261705
+          },
+          {
+            "distance": 8.0,
+            "pairs": 2784,
+            "share": 0.045130333290105046
+          }
+        ],
+        "edit": [
+          {
+            "distance": 6.0,
+            "pairs": 11428,
+            "share": 0.18525483076125016
+          },
+          {
+            "distance": 4.0,
+            "pairs": 8628,
+            "share": 0.13986512773959278
+          },
+          {
+            "distance": 3.0,
+            "pairs": 8537,
+            "share": 0.13838996239138893
+          },
+          {
+            "distance": 5.0,
+            "pairs": 8404,
+            "share": 0.1362339514978602
+          },
+          {
+            "distance": 7.0,
+            "pairs": 8010,
+            "share": 0.12984697185838412
+          },
+          {
+            "distance": 2.0,
+            "pairs": 7287,
+            "share": 0.11812670211386331
+          },
+          {
+            "distance": 1.0,
+            "pairs": 5454,
+            "share": 0.08841265724289975
+          },
+          {
+            "distance": 8.0,
+            "pairs": 2884,
+            "share": 0.046751394112307096
+          },
+          {
+            "distance": 0.0,
+            "pairs": 1056,
+            "share": 0.017118402282453638
+          }
+        ],
+        "jaccard_bigrams": [
+          {
+            "distance": 1.0,
+            "pairs": 23822,
+            "share": 0.3861691090649721
+          },
+          {
+            "distance": 0.83333333,
+            "pairs": 2461,
+            "share": 0.03989430683439243
+          },
+          {
+            "distance": 0.5,
+            "pairs": 2372,
+            "share": 0.0384515627026326
+          },
+          {
+            "distance": 0.66666667,
+            "pairs": 2287,
+            "share": 0.03707366100376086
+          },
+          {
+            "distance": 0.8,
+            "pairs": 2112,
+            "share": 0.034236804564907276
+          },
+          {
+            "distance": 0.75,
+            "pairs": 2013,
+            "share": 0.03263195435092724
+          },
+          {
+            "distance": 0.55555556,
+            "pairs": 1773,
+            "share": 0.02874140837764233
+          },
+          {
+            "distance": 0.6,
+            "pairs": 1767,
+            "share": 0.028644144728310207
+          },
+          {
+            "distance": 0.77777778,
+            "pairs": 1747,
+            "share": 0.028319932563869797
+          },
+          {
+            "distance": 0.625,
+            "pairs": 1727,
+            "share": 0.027995720399429387
+          },
+          {
+            "distance": 0.28571429,
+            "pairs": 1568,
+            "share": 0.025418233692128128
+          },
+          {
+            "distance": 0.88888889,
+            "pairs": 1535,
+            "share": 0.02488328362080145
+          }
+        ]
+      },
+      "mean_unique_distance_levels_per_record": 12.015,
+      "median_unique_distance_levels_per_record": 13.0,
+      "mean_pair_count_per_record": 308.44,
+      "tie_k": 3,
+      "mean_tie_set_size_at_k": 4.285985647952723,
+      "median_tie_set_size_at_k": 4.0,
+      "p95_tie_set_size_at_k": 8.0,
+      "max_tie_set_size_at_k": 14,
+      "mean_tie_expansion_ratio_at_k": 1.4286618826509077,
+      "four_point_hyperbolicity_by_metric": {
+        "prefix_tree": {
+          "samples": 100,
+          "delta_mean": 0.0,
+          "delta_max": 0.0,
+          "delta_over_diameter_mean": 0.0,
+          "delta_over_diameter_max": 0.0
+        },
+        "edit": {
+          "samples": 100,
+          "delta_mean": 0.325,
+          "delta_max": 1.5,
+          "delta_over_diameter_mean": 0.040625,
+          "delta_over_diameter_max": 0.1875
+        },
+        "jaccard_bigrams": {
+          "samples": 100,
+          "delta_mean": 0.01973863636363636,
+          "delta_max": 0.09999999999999998,
+          "delta_over_diameter_mean": 0.01973863636363636,
+          "delta_over_diameter_max": 0.09999999999999998
+        }
+      },
+      "four_point_hyperbolicity_samples": 100,
+      "four_point_delta_mean": 0.0,
+      "four_point_delta_max": 0.0,
+      "four_point_delta_over_diameter_mean": 0.0,
+      "four_point_delta_over_diameter_max": 0.0
+    }
+  },
+  "combined_summary": {
+    "contexts": 9125,
+    "records_with_at_least_one_context": 400,
+    "unique_full_paths": 3166,
+    "unique_truncated_paths": 2923,
+    "full_path_collision_rate_pairwise": 0.0031694101962008972,
+    "truncated_path_collision_rate_pairwise": 0.00324320623614973,
+    "ambiguous_truncated_pair_rate": 7.379603994883283e-05,
+    "truncated_classes": 2923,
+    "ambiguous_truncated_classes": 176,
+    "ambiguous_truncated_class_rate": 0.06021211084502224,
+    "contexts_in_ambiguous_truncated_classes": 660,
+    "contexts_in_ambiguous_truncated_classes_rate": 0.07232876712328767,
+    "mean_full_variants_per_truncated_path": 1.0831337666780705,
+    "p95_full_variants_per_truncated_path": 2.0,
+    "max_full_variants_per_truncated_path": 11,
+    "mean_contexts_per_truncated_path": 3.121792678754704,
+    "p95_contexts_per_truncated_path": 9.0,
+    "max_contexts_per_truncated_path": 172,
+    "within_record_pairs": 118798,
+    "within_record_zero_distance_pairs": 2637,
+    "within_record_zero_distance_pair_rate": 0.022197343389619355,
+    "within_record_ambiguous_zero_pairs": 529,
+    "within_record_ambiguous_zero_pair_rate": 0.004452936918129935,
+    "prefix_distance_unique_levels_global": 16,
+    "prefix_distance_entropy_bits": 3.884470980550963,
+    "metric_unique_levels_global": {
+      "prefix_tree": 16,
+      "edit": 9,
+      "jaccard_bigrams": 33
+    },
+    "metric_entropy_bits": {
+      "prefix_tree": 3.884470980550963,
+      "edit": 3.009685111831524,
+      "jaccard_bigrams": 3.9411033439752656
+    },
+    "cross_metric_spearman": {
+      "prefix_tree_vs_edit": 0.49615700934254925,
+      "prefix_tree_vs_jaccard_bigrams": 0.26787215407204834,
+      "edit_vs_jaccard_bigrams": 0.8260074162001955
+    },
+    "top_prefix_distance_levels": [
+      {
+        "distance": 11,
+        "pairs": 12082,
+        "share": 0.10170204885604135
+      },
+      {
+        "distance": 12,
+        "pairs": 11832,
+        "share": 0.09959763632384383
+      },
+      {
+        "distance": 10,
+        "pairs": 10561,
+        "share": 0.08889880301015168
+      },
+      {
+        "distance": 9,
+        "pairs": 9379,
+        "share": 0.07894914055792185
+      },
+      {
+        "distance": 14,
+        "pairs": 8691,
+        "share": 0.0731577972693143
+      },
+      {
+        "distance": 16,
+        "pairs": 8689,
+        "share": 0.07314096196905671
+      },
+      {
+        "distance": 7,
+        "pairs": 8570,
+        "share": 0.0721392616037307
+      },
+      {
+        "distance": 13,
+        "pairs": 8274,
+        "share": 0.06964763716560884
+      },
+      {
+        "distance": 15,
+        "pairs": 7534,
+        "share": 0.06341857607030421
+      },
+      {
+        "distance": 8,
+        "pairs": 6704,
+        "share": 0.05643192646340847
+      },
+      {
+        "distance": 2,
+        "pairs": 6588,
+        "share": 0.05545547904846883
+      },
+      {
+        "distance": 6,
+        "pairs": 6562,
+        "share": 0.05523662014512029
+      }
+    ],
+    "top_metric_distance_levels": {
+      "prefix_tree": [
+        {
+          "distance": 11.0,
+          "pairs": 12082,
+          "share": 0.10170204885604135
+        },
+        {
+          "distance": 12.0,
+          "pairs": 11832,
+          "share": 0.09959763632384383
+        },
+        {
+          "distance": 10.0,
+          "pairs": 10561,
+          "share": 0.08889880301015168
+        },
+        {
+          "distance": 9.0,
+          "pairs": 9379,
+          "share": 0.07894914055792185
+        },
+        {
+          "distance": 14.0,
+          "pairs": 8691,
+          "share": 0.0731577972693143
+        },
+        {
+          "distance": 16.0,
+          "pairs": 8689,
+          "share": 0.07314096196905671
+        },
+        {
+          "distance": 7.0,
+          "pairs": 8570,
+          "share": 0.0721392616037307
+        },
+        {
+          "distance": 13.0,
+          "pairs": 8274,
+          "share": 0.06964763716560884
+        },
+        {
+          "distance": 15.0,
+          "pairs": 7534,
+          "share": 0.06341857607030421
+        },
+        {
+          "distance": 8.0,
+          "pairs": 6704,
+          "share": 0.05643192646340847
+        },
+        {
+          "distance": 2.0,
+          "pairs": 6588,
+          "share": 0.05545547904846883
+        },
+        {
+          "distance": 6.0,
+          "pairs": 6562,
+          "share": 0.05523662014512029
+        }
+      ],
+      "edit": [
+        {
+          "distance": 6.0,
+          "pairs": 20520,
+          "share": 0.17273018064277176
+        },
+        {
+          "distance": 4.0,
+          "pairs": 17343,
+          "share": 0.14598730618360578
+        },
+        {
+          "distance": 3.0,
+          "pairs": 16674,
+          "share": 0.14035589824744524
+        },
+        {
+          "distance": 5.0,
+          "pairs": 16027,
+          "share": 0.1349096786141181
+        },
+        {
+          "distance": 7.0,
+          "pairs": 15192,
+          "share": 0.12788094075657838
+        },
+        {
+          "distance": 2.0,
+          "pairs": 14673,
+          "share": 0.12351218033973636
+        },
+        {
+          "distance": 1.0,
+          "pairs": 10777,
+          "share": 0.09071701543797034
+        },
+        {
+          "distance": 8.0,
+          "pairs": 4955,
+          "share": 0.04170945638815468
+        },
+        {
+          "distance": 0.0,
+          "pairs": 2637,
+          "share": 0.022197343389619355
+        }
+      ],
+      "jaccard_bigrams": [
+        {
+          "distance": 1.0,
+          "pairs": 43981,
+          "share": 0.37021667031431504
+        },
+        {
+          "distance": 0.66666667,
+          "pairs": 4764,
+          "share": 0.04010168521355578
+        },
+        {
+          "distance": 0.83333333,
+          "pairs": 4726,
+          "share": 0.039781814508661764
+        },
+        {
+          "distance": 0.5,
+          "pairs": 4706,
+          "share": 0.03961346150608596
+        },
+        {
+          "distance": 0.8,
+          "pairs": 4036,
+          "share": 0.03397363591979663
+        },
+        {
+          "distance": 0.6,
+          "pairs": 3591,
+          "share": 0.030227781612485058
+        },
+        {
+          "distance": 0.75,
+          "pairs": 3589,
+          "share": 0.03021094631222748
+        },
+        {
+          "distance": 0.55555556,
+          "pairs": 3089,
+          "share": 0.026002121247832456
+        },
+        {
+          "distance": 0.77777778,
+          "pairs": 3073,
+          "share": 0.025867438845771813
+        },
+        {
+          "distance": 0.625,
+          "pairs": 2955,
+          "share": 0.024874156130574587
+        },
+        {
+          "distance": 0.88888889,
+          "pairs": 2769,
+          "share": 0.02330847320661964
+        },
+        {
+          "distance": 0.0,
+          "pairs": 2640,
+          "share": 0.022222596340005726
+        }
+      ]
+    },
+    "mean_unique_distance_levels_per_record": 11.99746192893401,
+    "median_unique_distance_levels_per_record": 13.0,
+    "mean_pair_count_per_record": 301.51776649746193,
+    "tie_k": 3,
+    "mean_tie_set_size_at_k": 4.412654896370216,
+    "median_tie_set_size_at_k": 4,
+    "p95_tie_set_size_at_k": 9.0,
+    "max_tie_set_size_at_k": 25,
+    "mean_tie_expansion_ratio_at_k": 1.4708849654567386,
+    "four_point_hyperbolicity_by_metric": {
+      "prefix_tree": {
+        "samples": 100,
+        "delta_mean": 0.0,
+        "delta_max": 0.0,
+        "delta_over_diameter_mean": 0.0,
+        "delta_over_diameter_max": 0.0
+      },
+      "edit": {
+        "samples": 100,
+        "delta_mean": 0.415,
+        "delta_max": 1.5,
+        "delta_over_diameter_mean": 0.051875,
+        "delta_over_diameter_max": 0.1875
+      },
+      "jaccard_bigrams": {
+        "samples": 100,
+        "delta_mean": 0.020406080031080027,
+        "delta_max": 0.11111111111111116,
+        "delta_over_diameter_mean": 0.020406080031080027,
+        "delta_over_diameter_max": 0.11111111111111116
+      }
+    },
+    "four_point_hyperbolicity_samples": 100,
+    "four_point_delta_mean": 0.0,
+    "four_point_delta_max": 0.0,
+    "four_point_delta_over_diameter_mean": 0.0,
+    "four_point_delta_over_diameter_max": 0.0
+  }
+}

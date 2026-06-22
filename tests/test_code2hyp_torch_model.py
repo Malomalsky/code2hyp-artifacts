@@ -8,8 +8,11 @@ from geometry_profile_research.code2hyp_torch import (
     Code2HypBatch,
     Code2HypTorchConfig,
     Code2HypTorchModel,
+    ast_sequence_edit_distance,
+    ast_sequence_jaccard_distance,
     ast_sequence_lca_depth,
     ast_sequence_tree_distance,
+    ast_path_midpoint_branch_masks,
     batch_structural_distance_regularizer,
     batch_structural_neighbor_distribution_regularizer,
     batch_structural_neighbor_overlap_at_k,
@@ -17,10 +20,13 @@ from geometry_profile_research.code2hyp_torch import (
     batch_structural_rank_regularizer,
     batch_structural_spearman_correlation,
     Code2HypTorchOutput,
+    batch_poincare_frechet_diagnostics,
+    batch_poincare_radius_utilization,
     path_node_attention_monotonicity_loss,
     path_attention_soft_tree_distances,
     path_attention_tree_distance_loss,
     path_dual_attention_separation_loss,
+    batch_structural_multi_metric_distance_regularizer,
     structural_distance_loss,
     structural_normalized_stress,
     structural_rank_loss,
@@ -34,9 +40,15 @@ from geometry_profile_research.code2hyp_torch import (
     torch_lorentz_weighted_centroid,
     torch_logmap,
     torch_logmap0,
+    torch_poincare_frechet_objective,
     torch_poincare_frechet_mean,
+    torch_poincare_frechet_residual,
     torch_poincare_distance,
     torch_poincare_weighted_midpoint,
+    batch_structural_neighbor_exact_overlap_at_k,
+    batch_structural_distance_level_summary,
+    _poincare_product_distance,
+    _structural_embedding_distance,
 )
 
 
@@ -81,6 +93,17 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
 
         torch.testing.assert_close(recovered, tangent, atol=1e-7, rtol=1e-7)
 
+    def test_torch_exp_log_maps_are_inverse_near_boundary(self) -> None:
+        curvature = torch.tensor(1.0, dtype=torch.float64)
+        base = torch.tensor([[0.82, 0.00]], dtype=torch.float64)
+        tangent = torch.tensor([[0.002, 0.004]], dtype=torch.float64)
+
+        point = torch_expmap(base, tangent, curvature=curvature)
+        recovered = torch_logmap(base, point, curvature=curvature)
+
+        self.assertLess(float(torch.linalg.vector_norm(point, dim=-1).max()), 1.0)
+        torch.testing.assert_close(recovered, tangent, atol=1e-6, rtol=1e-6)
+
     def test_torch_poincare_distance_is_symmetric_and_differentiable(self) -> None:
         left = torch.tensor([[0.10, 0.20, 0.05]], dtype=torch.float64, requires_grad=True)
         right = torch.tensor([[0.20, -0.05, 0.03]], dtype=torch.float64, requires_grad=True)
@@ -93,6 +116,85 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
         torch.testing.assert_close(forward, backward, atol=1e-10, rtol=1e-10)
         self.assertTrue(torch.isfinite(left.grad).all())
         self.assertTrue(torch.isfinite(right.grad).all())
+
+    def test_torch_poincare_distance_is_zero_on_identity_for_multiple_curvatures(self) -> None:
+        points = torch.tensor(
+            [[0.00, 0.00, 0.00], [0.10, -0.05, 0.03], [-0.20, 0.04, 0.02]],
+            dtype=torch.float64,
+        )
+
+        for curvature_value in (1.0, 0.01, 0.0001):
+            with self.subTest(curvature=curvature_value):
+                curvature = torch.tensor(curvature_value, dtype=torch.float64)
+                identity = torch_poincare_distance(points, points, curvature=curvature)
+
+                torch.testing.assert_close(identity, torch.zeros_like(identity), atol=1e-12, rtol=0.0)
+
+    def test_torch_poincare_distance_satisfies_sampled_triangle_inequality(self) -> None:
+        curvature = torch.tensor(0.9, dtype=torch.float64)
+        points = torch.tensor(
+            [
+                [0.00, 0.00],
+                [0.12, -0.04],
+                [-0.08, 0.18],
+                [0.20, 0.06],
+                [-0.15, -0.10],
+            ],
+            dtype=torch.float64,
+        )
+
+        for left_index in range(points.shape[0]):
+            for mid_index in range(points.shape[0]):
+                for right_index in range(points.shape[0]):
+                    left = points[left_index : left_index + 1]
+                    mid = points[mid_index : mid_index + 1]
+                    right = points[right_index : right_index + 1]
+                    direct = torch_poincare_distance(left, right, curvature=curvature)
+                    via_mid = torch_poincare_distance(left, mid, curvature=curvature) + torch_poincare_distance(
+                        mid,
+                        right,
+                        curvature=curvature,
+                    )
+
+                    self.assertLessEqual(float(direct), float(via_mid) + 1e-10)
+
+    def test_poincare_and_lorentz_origin_charts_have_matching_distances(self) -> None:
+        curvature = torch.tensor(1.3, dtype=torch.float64)
+        left_tangent = torch.tensor([[0.08, -0.03, 0.02], [0.04, 0.05, -0.01]], dtype=torch.float64)
+        right_tangent = torch.tensor([[-0.02, 0.06, 0.04], [0.03, -0.02, 0.07]], dtype=torch.float64)
+
+        left_poincare = torch_expmap0(left_tangent, curvature=curvature)
+        right_poincare = torch_expmap0(right_tangent, curvature=curvature)
+        # The Poincare implementation uses Euclidean tangent coordinates where
+        # the Riemannian norm at the origin is 2 * ||v||. The Lorentz chart uses
+        # tangent vectors directly in Riemannian norm, so the factor 2 aligns
+        # the two coordinate conventions.
+        left_lorentz = torch_lorentz_expmap0(2.0 * left_tangent, curvature=curvature)
+        right_lorentz = torch_lorentz_expmap0(2.0 * right_tangent, curvature=curvature)
+
+        poincare_distance = torch_poincare_distance(left_poincare, right_poincare, curvature=curvature)
+        lorentz_distance = torch_lorentz_distance(left_lorentz, right_lorentz, curvature=curvature)
+
+        torch.testing.assert_close(poincare_distance, lorentz_distance, atol=1e-8, rtol=1e-8)
+
+    def test_poincare_distance_gradient_matches_finite_difference(self) -> None:
+        curvature = torch.tensor(0.8, dtype=torch.float64)
+        left = torch.tensor([[0.10, 0.04]], dtype=torch.float64, requires_grad=True)
+        right = torch.tensor([[0.21, -0.03]], dtype=torch.float64)
+        distance = torch_poincare_distance(left, right, curvature=curvature).sum()
+        distance.backward()
+
+        step = 1e-6
+        left_plus = left.detach().clone()
+        left_minus = left.detach().clone()
+        left_plus[0, 0] += step
+        left_minus[0, 0] -= step
+        finite_difference = (
+            torch_poincare_distance(left_plus, right, curvature=curvature)
+            - torch_poincare_distance(left_minus, right, curvature=curvature)
+        ) / (2.0 * step)
+
+        torch.testing.assert_close(left.grad[0, 0], finite_difference.squeeze(), atol=1e-5, rtol=1e-5)
 
     def test_poincare_weighted_midpoint_is_not_tangent_space_mean(self) -> None:
         tangents = torch.tensor(
@@ -141,6 +243,62 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
         self.assertEqual(frechet.shape, (1, 2))
         self.assertLess(float(torch.linalg.vector_norm(frechet, dim=-1).max()), 1.0 / float(torch.sqrt(curvature)))
         self.assertLessEqual(float(frechet_objective), float(midpoint_objective) + 1e-8)
+
+    def test_poincare_frechet_mean_reduces_karcher_residual(self) -> None:
+        tangents = torch.tensor(
+            [[[0.40, 0.06], [0.10, 0.32], [-0.20, 0.18], [0.06, -0.16]]],
+            dtype=torch.float64,
+        )
+        weights = torch.tensor([[0.35, 0.30, 0.20, 0.15]], dtype=torch.float64)
+        curvature = torch.tensor(0.9, dtype=torch.float64)
+        points = torch_expmap0(tangents, curvature=curvature)
+        midpoint = torch_poincare_weighted_midpoint(points, weights, curvature=curvature)
+        frechet = torch_poincare_frechet_mean(points, weights, curvature=curvature, steps=8, step_size=0.5)
+
+        midpoint_residual = torch_poincare_frechet_residual(points, weights, midpoint, curvature=curvature)
+        frechet_residual = torch_poincare_frechet_residual(points, weights, frechet, curvature=curvature)
+        frechet_objective = torch_poincare_frechet_objective(points, weights, frechet, curvature=curvature)
+
+        self.assertLessEqual(float(frechet_residual), float(midpoint_residual) + 1e-8)
+        self.assertGreaterEqual(float(frechet_objective), 0.0)
+
+    def test_batch_poincare_diagnostics_report_frechet_and_radius_utilization(self) -> None:
+        batch = Code2HypBatch(
+            start_tokens=torch.tensor([[1, 1, 1]], dtype=torch.long),
+            end_tokens=torch.tensor([[2, 2, 2]], dtype=torch.long),
+            ast_paths=torch.tensor([[[1, 2], [1, 3], [1, 4]]], dtype=torch.long),
+            ast_path_mask=torch.ones(1, 3, 2, dtype=torch.bool),
+            context_mask=torch.ones(1, 3, dtype=torch.bool),
+        )
+        curvature = torch.tensor(1.0, dtype=torch.float64)
+        points = torch_expmap0(
+            torch.tensor([[[0.10, 0.00], [0.00, 0.12], [-0.08, 0.04]]], dtype=torch.float64),
+            curvature=curvature,
+        )
+        attention = torch.tensor([[0.50, 0.30, 0.20]], dtype=torch.float64)
+        mean = torch_poincare_frechet_mean(points, attention, curvature=curvature, steps=4, step_size=0.5)
+        output = Code2HypTorchOutput(
+            logits=torch.zeros(1, 1, dtype=torch.float64),
+            representation=torch.zeros(1, 2, dtype=torch.float64),
+            attention=attention,
+            curvature=curvature,
+            structural_points=mean,
+            context_structural_points=points,
+            structural_geometry="poincare",
+        )
+
+        frechet = batch_poincare_frechet_diagnostics(output)
+        radius = batch_poincare_radius_utilization(output, batch)
+
+        self.assertIsNotNone(frechet)
+        self.assertIsNotNone(radius)
+        assert frechet is not None
+        assert radius is not None
+        self.assertLess(float(frechet["residual_mean"]), 0.02)
+        self.assertGreaterEqual(float(frechet["objective_mean"]), 0.0)
+        self.assertGreater(float(radius["context_radius_ratio_mean"]), 0.0)
+        self.assertLess(float(radius["context_radius_ratio_max"]), 1.0)
+        self.assertEqual(float(radius["context_near_boundary_rate"]), 0.0)
 
     def test_lorentz_exp_log_maps_are_inverse_near_origin(self) -> None:
         tangent = torch.tensor([[0.05, -0.02, 0.03], [0.01, 0.04, -0.03]], dtype=torch.float64)
@@ -218,6 +376,18 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
         self.assertEqual(float(good_overlap), 1.0)
         self.assertLess(float(bad_overlap), float(good_overlap))
 
+    def test_independent_ast_path_sequence_diagnostics_are_well_defined(self) -> None:
+        left = torch.tensor([[1, 2, 3], [1, 2, 0]], dtype=torch.long)
+        right = torch.tensor([[1, 2, 4], [8, 9, 0]], dtype=torch.long)
+        left_mask = torch.tensor([[True, True, True], [True, True, False]])
+        right_mask = torch.tensor([[True, True, True], [True, True, False]])
+
+        edit = ast_sequence_edit_distance(left, left_mask, right, right_mask)
+        jaccard = ast_sequence_jaccard_distance(left, left_mask, right, right_mask)
+
+        torch.testing.assert_close(edit, torch.tensor([1.0, 2.0]))
+        torch.testing.assert_close(jaccard, torch.tensor([2.0 / 3.0, 1.0]))
+
     def test_structural_neighbor_overlap_is_tie_tolerant(self) -> None:
         batch = Code2HypBatch(
             start_tokens=torch.tensor([[1, 1, 1]], dtype=torch.long),
@@ -237,6 +407,50 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
         overlap = batch_structural_neighbor_overlap_at_k(output, batch, k=1)
 
         self.assertEqual(float(overlap), 1.0)
+
+    def test_structural_neighbor_exact_overlap_does_not_expand_ties(self) -> None:
+        batch = Code2HypBatch(
+            start_tokens=torch.tensor([[1, 1, 1]], dtype=torch.long),
+            end_tokens=torch.tensor([[2, 2, 2]], dtype=torch.long),
+            ast_paths=torch.tensor([[[1, 2], [1, 3], [1, 4]]], dtype=torch.long),
+            ast_path_mask=torch.ones(1, 3, 2, dtype=torch.bool),
+            context_mask=torch.ones(1, 3, dtype=torch.bool),
+        )
+        output = Code2HypTorchOutput(
+            logits=torch.zeros(1, 1),
+            representation=torch.zeros(1, 2),
+            attention=torch.full((1, 3), 1 / 3),
+            curvature=torch.tensor(1.0),
+            context_structural_embeddings=torch.tensor([[[0.0], [10.0], [0.1]]]),
+        )
+
+        tie_tolerant = batch_structural_neighbor_overlap_at_k(output, batch, k=1)
+        exact = batch_structural_neighbor_exact_overlap_at_k(output, batch, k=1)
+
+        self.assertEqual(float(tie_tolerant), 1.0)
+        self.assertLess(float(exact), float(tie_tolerant))
+
+    def test_structural_distance_level_summary_groups_by_target_distance(self) -> None:
+        batch = Code2HypBatch(
+            start_tokens=torch.tensor([[1, 1, 1]], dtype=torch.long),
+            end_tokens=torch.tensor([[2, 2, 2]], dtype=torch.long),
+            ast_paths=torch.tensor([[[1, 2, 3], [1, 2, 4], [8, 9, 10]]], dtype=torch.long),
+            ast_path_mask=torch.ones(1, 3, 3, dtype=torch.bool),
+            context_mask=torch.ones(1, 3, dtype=torch.bool),
+        )
+        output = Code2HypTorchOutput(
+            logits=torch.zeros(1, 1),
+            representation=torch.zeros(1, 2),
+            attention=torch.full((1, 3), 1 / 3),
+            curvature=torch.tensor(1.0),
+            context_structural_embeddings=torch.tensor([[[0.0], [0.5], [2.0]]]),
+        )
+
+        summary = batch_structural_distance_level_summary(output, batch)
+
+        self.assertEqual([item["target_distance"] for item in summary], [2.0, 6.0])
+        self.assertEqual([item["pair_count"] for item in summary], [1, 2])
+        self.assertTrue(all(item["model_distance_mean"] > 0.0 for item in summary))
 
     def test_structural_normalized_stress_is_zero_for_scaled_distances(self) -> None:
         ast_distances = torch.tensor([1.0, 2.0, 4.0, 6.0])
@@ -797,6 +1011,30 @@ class Code2HypTorchModelTests(unittest.TestCase):
         self.assertIsNotNone(b39_model.context_transform_layer.weight.grad)
         self.assertTrue(torch.isfinite(b39_model.context_transform_layer.weight.grad).all())
 
+    def test_code2vec_context_transform_l1_variant_uses_manhattan_structural_metric(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=5,
+        )
+        batch = _toy_batch()
+        model = Code2HypTorchModel(config, variant="code2vec_context_transform_l1")
+
+        output = model(batch)
+        left = torch.tensor([[0.0, 0.0], [1.0, -1.0]])
+        right = torch.tensor([[3.0, 4.0], [-1.0, 2.0]])
+
+        l1_distance = _structural_embedding_distance(left, right, metric="l1")
+        l2_distance = _structural_embedding_distance(left, right, metric="l2")
+
+        self.assertEqual(output.structural_geometry, None)
+        self.assertEqual(output.structural_embedding_metric, "l1")
+        self.assertEqual(output.context_structural_embeddings.shape, (2, 3, config.structural_dim))
+        torch.testing.assert_close(l1_distance, torch.tensor([7.0, 5.0]))
+        torch.testing.assert_close(l2_distance, torch.tensor([5.0, 3.6055512]))
+
     def test_code2hyp_context_transform_frechet_uses_code2vec_context_layer_and_hyperbolic_path_mean(self) -> None:
         config = Code2HypTorchConfig(
             token_vocab_size=16,
@@ -940,6 +1178,271 @@ class Code2HypTorchModelTests(unittest.TestCase):
         self.assertTrue(torch.isfinite(b44_model.raw_factorized_metric_weights.grad).all())
         self.assertTrue(torch.isfinite(b44_model.raw_product_attention_bias_weight.grad).all())
         self.assertTrue(torch.isfinite(b44_model.context_transform_layer.weight.grad).all())
+
+    def test_code2hyp_branch_product_context_transform_splits_ast_path_into_two_factors(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=6,
+            curvature=1.3,
+            trainable_curvature=True,
+            frechet_steps=3,
+        )
+        batch = _toy_batch()
+        baseline = Code2HypTorchModel(config, variant="code2vec_context_transform")
+        model = Code2HypTorchModel(config, variant="code2hyp_branch_product_context_transform_frechet")
+
+        output = model(batch)
+        start_vectors = model.token_embeddings(batch.start_tokens)
+        end_vectors = model.token_embeddings(batch.end_tokens)
+        left_tangents, right_tangents = model._branch_path_tangents(batch.ast_paths, batch.ast_path_mask)
+        left_points = torch_expmap0(left_tangents, curvature=output.curvature, eps=config.eps)
+        right_points = torch_expmap0(right_tangents, curvature=output.curvature, eps=config.eps)
+        path_logs = torch.cat(
+            [
+                torch_logmap0(left_points, curvature=output.curvature),
+                torch_logmap0(right_points, curvature=output.curvature),
+            ],
+            dim=-1,
+        )
+        transformed_contexts = model._code2vec_context_transform(torch.cat([start_vectors, path_logs, end_vectors], dim=-1))
+        expected_attention = model._code2hyp_branch_product_bias_attention(
+            transformed_contexts,
+            start_vectors,
+            left_points,
+            right_points,
+            end_vectors,
+            batch.context_mask,
+            output.curvature,
+        )
+        expected_representation = torch.sum(transformed_contexts * expected_attention.unsqueeze(-1), dim=1)
+        loss = output.logits.square().sum()
+        loss.backward()
+
+        self.assertEqual(output.logits.shape, (2, 7))
+        self.assertEqual(output.representation.shape, (2, config.representation_dim))
+        self.assertEqual(output.structural_geometry, "poincare_product")
+        self.assertIsNone(output.structural_points)
+        self.assertIsNone(output.context_structural_points)
+        self.assertIsNotNone(output.structural_product_points)
+        self.assertIsNotNone(output.context_structural_product_points)
+        self.assertEqual(output.structural_product_points[0].shape, (2, 3))
+        self.assertEqual(output.structural_product_points[1].shape, (2, 3))
+        self.assertEqual(output.context_structural_product_points[0].shape, (2, 3, 3))
+        self.assertEqual(output.context_structural_product_points[1].shape, (2, 3, 3))
+        self.assertEqual(output.context_structural_embeddings.shape, (2, 3, config.structural_dim))
+        self.assertEqual(model.factorized_metric_weights().numel(), 4)
+        self.assertGreater(model.parameter_count(), baseline.parameter_count())
+        torch.testing.assert_close(output.attention, expected_attention)
+        torch.testing.assert_close(output.representation, expected_representation)
+        self.assertGreater(float(model.product_attention_bias_weight().detach()), 0.0)
+        self.assertIsNotNone(model.raw_curvature.grad)
+        self.assertIsNotNone(model.raw_factorized_metric_weights.grad)
+        self.assertIsNotNone(model.raw_product_attention_bias_weight.grad)
+        self.assertIsNotNone(model.branch_left_projection.weight.grad)
+        self.assertIsNotNone(model.branch_right_projection.weight.grad)
+        self.assertTrue(torch.isfinite(model.raw_curvature.grad).all())
+        self.assertTrue(torch.isfinite(model.raw_factorized_metric_weights.grad).all())
+        self.assertTrue(torch.isfinite(model.raw_product_attention_bias_weight.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_left_projection.weight.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_right_projection.weight.grad).all())
+
+    def test_code2hyp_context_transform_branch_product_bias_keeps_whole_path_decoder_channel(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=6,
+            curvature=1.3,
+            trainable_curvature=True,
+            frechet_steps=3,
+        )
+        batch = _toy_batch()
+        model = Code2HypTorchModel(config, variant="code2hyp_context_transform_branch_product_bias_frechet")
+
+        output = model(batch)
+        start_vectors = model.token_embeddings(batch.start_tokens)
+        end_vectors = model.token_embeddings(batch.end_tokens)
+        path_tangents = model._path_tangents(batch.ast_paths, batch.ast_path_mask)
+        path_points = torch_expmap0(path_tangents, curvature=output.curvature, eps=config.eps)
+        path_logs = torch_logmap0(path_points, curvature=output.curvature)
+        left_tangents, right_tangents = model._branch_path_tangents(batch.ast_paths, batch.ast_path_mask)
+        left_points = torch_expmap0(left_tangents, curvature=output.curvature, eps=config.eps)
+        right_points = torch_expmap0(right_tangents, curvature=output.curvature, eps=config.eps)
+        transformed_contexts = model._code2vec_context_transform(torch.cat([start_vectors, path_logs, end_vectors], dim=-1))
+        expected_attention = model._code2hyp_branch_product_bias_attention(
+            transformed_contexts,
+            start_vectors,
+            left_points,
+            right_points,
+            end_vectors,
+            batch.context_mask,
+            output.curvature,
+        )
+        expected_representation = torch.sum(transformed_contexts * expected_attention.unsqueeze(-1), dim=1)
+        loss = output.logits.square().sum()
+        loss.backward()
+
+        self.assertEqual(output.structural_geometry, "poincare_product")
+        self.assertIsNone(output.context_structural_points)
+        self.assertIsNotNone(output.context_structural_product_points)
+        self.assertEqual(output.context_structural_embeddings.shape, (2, 3, config.structural_dim))
+        torch.testing.assert_close(output.attention, expected_attention)
+        torch.testing.assert_close(output.representation, expected_representation)
+        self.assertIsNotNone(model.branch_left_projection.weight.grad)
+        self.assertIsNotNone(model.branch_right_projection.weight.grad)
+        self.assertTrue(torch.isfinite(model.branch_left_projection.weight.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_right_projection.weight.grad).all())
+
+    def test_code2hyp_latent_lca_branch_product_bias_learns_branch_split(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=6,
+            curvature=1.3,
+            trainable_curvature=True,
+            frechet_steps=3,
+        )
+        batch = _toy_batch()
+        model = Code2HypTorchModel(
+            config,
+            variant="code2hyp_context_transform_latent_lca_branch_product_bias_frechet",
+        )
+
+        output = model(batch)
+        start_vectors = model.token_embeddings(batch.start_tokens)
+        end_vectors = model.token_embeddings(batch.end_tokens)
+        path_tangents = model._path_tangents(batch.ast_paths, batch.ast_path_mask)
+        path_points = torch_expmap0(path_tangents, curvature=output.curvature, eps=config.eps)
+        path_logs = torch_logmap0(path_points, curvature=output.curvature)
+        left_tangents, right_tangents, pivot_attention = model._latent_lca_branch_path_tangents(
+            batch.ast_paths,
+            batch.ast_path_mask,
+        )
+        left_points = torch_expmap0(left_tangents, curvature=output.curvature, eps=config.eps)
+        right_points = torch_expmap0(right_tangents, curvature=output.curvature, eps=config.eps)
+        transformed_contexts = model._code2vec_context_transform(torch.cat([start_vectors, path_logs, end_vectors], dim=-1))
+        expected_attention = model._code2hyp_branch_product_bias_attention(
+            transformed_contexts,
+            start_vectors,
+            left_points,
+            right_points,
+            end_vectors,
+            batch.context_mask,
+            output.curvature,
+        )
+        expected_representation = torch.sum(transformed_contexts * expected_attention.unsqueeze(-1), dim=1)
+        valid_paths = batch.ast_path_mask.any(dim=-1)
+        loss = output.logits.square().sum()
+        loss.backward()
+
+        self.assertEqual(output.structural_geometry, "poincare_product")
+        self.assertIsNone(output.context_structural_points)
+        self.assertIsNotNone(output.context_structural_product_points)
+        self.assertIsNotNone(output.path_node_attention)
+        self.assertEqual(output.context_structural_embeddings.shape, (2, 3, config.structural_dim))
+        torch.testing.assert_close(output.attention, expected_attention)
+        torch.testing.assert_close(output.representation, expected_representation)
+        torch.testing.assert_close(output.path_node_attention, pivot_attention)
+        torch.testing.assert_close(
+            output.path_node_attention.sum(dim=-1)[valid_paths],
+            torch.ones_like(output.path_node_attention.sum(dim=-1)[valid_paths]),
+        )
+        torch.testing.assert_close(
+            output.path_node_attention.sum(dim=-1)[~valid_paths],
+            torch.zeros_like(output.path_node_attention.sum(dim=-1)[~valid_paths]),
+        )
+        self.assertIsNotNone(model.branch_pivot_query.grad)
+        self.assertIsNotNone(model.branch_left_projection.weight.grad)
+        self.assertIsNotNone(model.branch_right_projection.weight.grad)
+        self.assertTrue(torch.isfinite(model.branch_pivot_query.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_left_projection.weight.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_right_projection.weight.grad).all())
+
+    def test_code2hyp_latent_lca_prior_branch_product_bias_has_trainable_center_prior(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=6,
+            curvature=1.3,
+            trainable_curvature=True,
+            frechet_steps=3,
+        )
+        batch = _toy_batch()
+        model = Code2HypTorchModel(
+            config,
+            variant="code2hyp_context_transform_latent_lca_prior_branch_product_bias_frechet",
+        )
+
+        output = model(batch)
+        loss = output.logits.square().sum()
+        loss.backward()
+
+        self.assertEqual(output.structural_geometry, "poincare_product")
+        self.assertIsNotNone(output.path_node_attention)
+        self.assertGreater(float(model.branch_pivot_center_prior_weight().detach()), 0.0)
+        self.assertIsNotNone(model.branch_pivot_query.grad)
+        self.assertIsNotNone(model.raw_branch_pivot_center_prior_weight.grad)
+        self.assertTrue(torch.isfinite(model.branch_pivot_query.grad).all())
+        self.assertTrue(torch.isfinite(model.raw_branch_pivot_center_prior_weight.grad).all())
+
+    def test_code2hyp_branch_sequence_product_bias_encodes_ordered_branches(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=6,
+            curvature=1.3,
+            trainable_curvature=True,
+            frechet_steps=3,
+        )
+        batch = _toy_batch()
+        model = Code2HypTorchModel(
+            config,
+            variant="code2hyp_context_transform_branch_sequence_product_bias_frechet",
+        )
+
+        output = model(batch)
+        start_vectors = model.token_embeddings(batch.start_tokens)
+        end_vectors = model.token_embeddings(batch.end_tokens)
+        path_tangents = model._path_tangents(batch.ast_paths, batch.ast_path_mask)
+        path_points = torch_expmap0(path_tangents, curvature=output.curvature, eps=config.eps)
+        path_logs = torch_logmap0(path_points, curvature=output.curvature)
+        left_tangents, right_tangents = model._branch_sequence_path_tangents(batch.ast_paths, batch.ast_path_mask)
+        left_points = torch_expmap0(left_tangents, curvature=output.curvature, eps=config.eps)
+        right_points = torch_expmap0(right_tangents, curvature=output.curvature, eps=config.eps)
+        transformed_contexts = model._code2vec_context_transform(torch.cat([start_vectors, path_logs, end_vectors], dim=-1))
+        expected_attention = model._code2hyp_branch_product_bias_attention(
+            transformed_contexts,
+            start_vectors,
+            left_points,
+            right_points,
+            end_vectors,
+            batch.context_mask,
+            output.curvature,
+        )
+        expected_representation = torch.sum(transformed_contexts * expected_attention.unsqueeze(-1), dim=1)
+        loss = output.logits.square().sum()
+        loss.backward()
+
+        self.assertEqual(output.structural_geometry, "poincare_product")
+        self.assertIsNone(output.context_structural_points)
+        self.assertIsNotNone(output.context_structural_product_points)
+        self.assertEqual(output.context_structural_embeddings.shape, (2, 3, config.structural_dim))
+        torch.testing.assert_close(output.attention, expected_attention)
+        torch.testing.assert_close(output.representation, expected_representation)
+        self.assertIsNotNone(model.branch_left_sequence_encoder.weight_ih_l0.grad)
+        self.assertIsNotNone(model.branch_right_sequence_encoder.weight_ih_l0.grad)
+        self.assertTrue(torch.isfinite(model.branch_left_sequence_encoder.weight_ih_l0.grad).all())
+        self.assertTrue(torch.isfinite(model.branch_right_sequence_encoder.weight_ih_l0.grad).all())
 
     def test_hyperbolic_path_message_passing_variant_updates_ast_path_nodes(self) -> None:
         config = Code2HypTorchConfig(
@@ -1458,6 +1961,41 @@ class Code2HypTorchModelTests(unittest.TestCase):
         self.assertGreaterEqual(float(b1_loss.detach()), 0.0)
         self.assertGreaterEqual(float(b3_loss.detach()), 0.0)
 
+    def test_batch_structural_multi_metric_regularizer_is_finite_for_euclidean_and_product(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=5,
+            trainable_curvature=True,
+        )
+        batch = _toy_batch()
+        euclidean = Code2HypTorchModel(config, variant="euclidean")
+        product = Code2HypTorchModel(config, variant="product")
+
+        b1_loss = batch_structural_multi_metric_distance_regularizer(euclidean(batch), batch)
+        b3_loss = batch_structural_multi_metric_distance_regularizer(product(batch), batch)
+
+        self.assertTrue(torch.isfinite(b1_loss))
+        self.assertTrue(torch.isfinite(b3_loss))
+        self.assertGreaterEqual(float(b1_loss.detach()), 0.0)
+        self.assertGreaterEqual(float(b3_loss.detach()), 0.0)
+
+    def test_batch_structural_multi_metric_regularizer_rejects_empty_target_set(self) -> None:
+        config = Code2HypTorchConfig(
+            token_vocab_size=16,
+            ast_node_vocab_size=12,
+            label_vocab_size=7,
+            token_dim=4,
+            structural_dim=5,
+        )
+        batch = _toy_batch()
+        output = Code2HypTorchModel(config, variant="euclidean")(batch)
+
+        with self.assertRaisesRegex(ValueError, "target_distances"):
+            batch_structural_multi_metric_distance_regularizer(output, batch, target_distances=())
+
     def test_batch_structural_rank_regularizer_is_finite_for_b1_and_b3(self) -> None:
         config = Code2HypTorchConfig(
             token_vocab_size=16,
@@ -1511,6 +2049,69 @@ class Code2HypTorchModelTests(unittest.TestCase):
         distances = ast_sequence_tree_distance(left, left_mask, right, right_mask)
 
         torch.testing.assert_close(distances, torch.tensor([2.0, 3.0]))
+
+    def test_ast_path_midpoint_branch_masks_share_the_pivot_as_lca_proxy(self) -> None:
+        mask = torch.tensor(
+            [
+                [True, True, True, True, True, False],
+                [True, True, True, True, False, False],
+                [True, False, False, False, False, False],
+                [False, False, False, False, False, False],
+            ],
+            dtype=torch.bool,
+        )
+
+        left, right = ast_path_midpoint_branch_masks(mask)
+
+        expected_left = torch.tensor(
+            [
+                [True, True, True, False, False, False],
+                [True, True, False, False, False, False],
+                [True, False, False, False, False, False],
+                [False, False, False, False, False, False],
+            ],
+            dtype=torch.bool,
+        )
+        expected_right = torch.tensor(
+            [
+                [False, False, True, True, True, False],
+                [False, True, True, True, False, False],
+                [True, False, False, False, False, False],
+                [False, False, False, False, False, False],
+            ],
+            dtype=torch.bool,
+        )
+        torch.testing.assert_close(left, expected_left)
+        torch.testing.assert_close(right, expected_right)
+
+    def test_poincare_product_distance_combines_branch_factors(self) -> None:
+        curvature = torch.tensor(1.0)
+        left_a = torch_expmap0(torch.tensor([[0.10, 0.00]]), curvature=curvature)
+        left_b = torch_expmap0(torch.tensor([[0.20, 0.00]]), curvature=curvature)
+        right_a = torch_expmap0(torch.tensor([[0.00, 0.10]]), curvature=curvature)
+        right_b = torch_expmap0(torch.tensor([[0.00, 0.30]]), curvature=curvature)
+
+        product_distance = _poincare_product_distance((left_a, right_a), (left_b, right_b), curvature)
+        left_distance = torch_poincare_distance(left_a, left_b, curvature)
+        right_distance = torch_poincare_distance(right_a, right_b, curvature)
+
+        torch.testing.assert_close(
+            product_distance,
+            torch.sqrt(left_distance.square() + right_distance.square()),
+            atol=1e-6,
+            rtol=1e-6,
+        )
+
+    def test_poincare_product_distance_has_finite_gradient_on_coincident_factors(self) -> None:
+        curvature = torch.tensor(1.0)
+        left = torch.zeros(2, 3, requires_grad=True)
+        right = torch.zeros(2, 3, requires_grad=True)
+
+        distance = _poincare_product_distance((left, right), (left, right), curvature)
+        distance.sum().backward()
+
+        self.assertTrue(torch.isfinite(left.grad).all())
+        self.assertTrue(torch.isfinite(right.grad).all())
 
 
 if __name__ == "__main__":
