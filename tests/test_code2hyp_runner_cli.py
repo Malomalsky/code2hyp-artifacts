@@ -25,3 +25,9 @@ def test_runner_accepts_neighbor_distribution_regularizer() -> None:
     args = build_parser().parse_args(["--structural-regularizer", "neighbor_distribution"])
 
     assert args.structural_regularizer == "neighbor_distribution"
+
+
+def test_runner_accepts_context_sample_seed() -> None:
+    args = build_parser().parse_args(["--context-sample-seed", "17"])
+
+    assert args.context_sample_seed == 17

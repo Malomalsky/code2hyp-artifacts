@@ -107,6 +107,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--context-sample-seed",
+        type=int,
+        default=None,
+        help=(
+            "Sample max-contexts path contexts per training record with this seed. "
+            "Leave unset to keep the first max-contexts contexts for compatibility."
+        ),
+    )
+    parser.add_argument(
         "--structural-eval-limit",
         type=int,
         default=512,
@@ -208,6 +217,7 @@ def main() -> None:
         max_positive_weight=args.max_positive_weight,
         model_seeds=model_seeds,
         sample_seed=args.sample_seed,
+        context_sample_seed=args.context_sample_seed,
         structural_eval_limit=args.structural_eval_limit,
         structural_eval_seed=args.structural_eval_seed,
     )

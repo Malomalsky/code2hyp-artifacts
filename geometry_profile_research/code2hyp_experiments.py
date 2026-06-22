@@ -77,6 +77,7 @@ class RealCode2HypPilotConfig:
     model_seeds: tuple[int, ...] = (101, 202, 303)
     variant_filter: tuple[str, ...] | None = None
     sample_seed: int | None = None
+    context_sample_seed: int | None = None
     structural_eval_limit: int | None = 512
     structural_eval_seed: int = 314159
 
@@ -798,6 +799,7 @@ def _build_real_pilot_result(
                 "oracle_topk remains for continuity with earlier controlled results."
             ),
             "sample_seed": config.sample_seed,
+            "context_sample_seed": config.context_sample_seed,
             "structural_eval_limit": config.structural_eval_limit,
             "structural_eval_seed": config.structural_eval_seed,
         },
@@ -1595,6 +1597,7 @@ def run_real_code2hyp_pilot(
         curvature=config.curvature,
         path_encoder=config.path_encoder,
         representation_transform=config.representation_transform,
+        context_sample_seed=config.context_sample_seed,
     )
     validation_records = filter_records_by_known_label_subtokens(
         raw_validation_records,

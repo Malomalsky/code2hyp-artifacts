@@ -250,6 +250,27 @@ def build_multilabel_vocabularies(
     return token_vocab, ast_node_vocab, target_vocab
 
 
+def _unique_subtokens(label: str) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(split_label_subtokens(label)))
+
+
+def _select_record_contexts(
+    contexts: tuple[RawCode2VecContext, ...],
+    max_contexts: int,
+    *,
+    context_sample_seed: int | None,
+    record_index: int,
+) -> tuple[RawCode2VecContext, ...]:
+    if len(contexts) <= max_contexts:
+        return contexts
+    if context_sample_seed is None:
+        return contexts[:max_contexts]
+
+    rng = random.Random((context_sample_seed + 1) * 1_000_003 + record_index)
+    sampled_indices = rng.sample(range(len(contexts)), max_contexts)
+    return tuple(contexts[index] for index in sampled_indices)
+
+
 def filter_records_by_known_label_subtokens(
     records: Iterable[RawCode2VecRecord],
     target_vocab: Vocabulary,
@@ -314,6 +335,7 @@ def encode_records_to_batch(
     curvature: float = 1.0,
     path_encoder: str = "mean",
     representation_transform: str = "identity",
+    context_sample_seed: int | None = None,
 ) -> EncodedCode2HypDataset:
     if not records:
         raise ValueError("records must not be empty")
@@ -333,7 +355,13 @@ def encode_records_to_batch(
 
     for record_index, record in enumerate(records):
         labels[record_index] = label_vocab.lookup(record.label)
-        for context_index, context in enumerate(record.contexts[:max_contexts]):
+        selected_contexts = _select_record_contexts(
+            record.contexts,
+            max_contexts,
+            context_sample_seed=context_sample_seed,
+            record_index=record_index,
+        )
+        for context_index, context in enumerate(selected_contexts):
             context_mask[record_index, context_index] = True
             start_tokens[record_index, context_index] = token_vocab.lookup(context.start_token)
             end_tokens[record_index, context_index] = token_vocab.lookup(context.end_token)
@@ -380,6 +408,7 @@ def encode_records_to_multilabel_batch(
     token_vocab: Vocabulary | None = None,
     ast_node_vocab: Vocabulary | None = None,
     target_vocab: Vocabulary | None = None,
+    context_sample_seed: int | None = None,
 ) -> EncodedCode2HypMultiLabelDataset:
     if not records:
         raise ValueError("records must not be empty")
@@ -401,11 +430,17 @@ def encode_records_to_multilabel_batch(
     target_sizes = torch.zeros(examples, dtype=torch.long)
 
     for record_index, record in enumerate(records):
-        subtokens = split_label_subtokens(record.label)
+        subtokens = _unique_subtokens(record.label)
         target_sizes[record_index] = len(subtokens)
         for subtoken in subtokens:
             labels[record_index, target_vocab.lookup(subtoken)] = 1.0
-        for context_index, context in enumerate(record.contexts[:max_contexts]):
+        selected_contexts = _select_record_contexts(
+            record.contexts,
+            max_contexts,
+            context_sample_seed=context_sample_seed,
+            record_index=record_index,
+        )
+        for context_index, context in enumerate(selected_contexts):
             context_mask[record_index, context_index] = True
             start_tokens[record_index, context_index] = token_vocab.lookup(context.start_token)
             end_tokens[record_index, context_index] = token_vocab.lookup(context.end_token)

@@ -126,6 +126,7 @@ def _make_config(args, model_seeds: tuple[int, ...], variant_filter: tuple[str, 
         model_seeds=model_seeds,
         variant_filter=variant_filter,
         sample_seed=args.sample_seed,
+        context_sample_seed=args.context_sample_seed,
         structural_eval_limit=args.structural_eval_limit,
         structural_eval_seed=args.structural_eval_seed,
     )

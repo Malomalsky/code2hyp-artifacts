@@ -32,7 +32,7 @@ B65: L1 multi-metric control.
 ```
 
 Under the 5k/3-seed medium validation protocol, B60 is the strongest
-prefix-trie specialist, while B62 is the strongest cross-metric structural
+prefix-trie specialist, while B62 is the strongest multi-objective structural
 candidate across prefix-tree, edit-distance, and Jaccard-bigram diagnostics.
 Downstream F1 is reported as a sanity check rather than as the primary claim.
 
@@ -139,11 +139,14 @@ reports/code2seq_path_geometry_audit_smoke_multi_metric.md
 
 ## Main benchmark command
 
-The main local-budget benchmark can be reproduced with:
+Use `val` for model selection and exploratory comparisons. The `test` split is
+reserved for a frozen final configuration and should not be used for iterative
+variant selection. The main local-budget validation benchmark can be reproduced
+with:
 
 ```bash
 .venv/bin/python scripts/run_code2hyp_resumable_benchmark.py \
-  --eval-split test \
+  --eval-split val \
   --train-limit 25000 \
   --val-limit 8192 \
   --max-contexts 30 \
@@ -155,7 +158,7 @@ The main local-budget benchmark can be reproduced with:
   --model-seeds 101,202,303,404,505 \
   --max-positive-weight 7.0 \
   --variants B39_code2vec_context_transform_baseline,B36_code2hyp_product_frechet_neighbor,B40_code2hyp_context_transform_frechet,B44_code2hyp_context_transform_product_bias_frechet \
-  --output outputs/code2hyp_test_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress_reproduced.json
+  --output outputs/code2hyp_val_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress_reproduced.json
 ```
 
 For a quick executable check without the full benchmark cost:
@@ -177,8 +180,9 @@ Unsafe claim:
 
 > Code2Hyp universally outperforms Euclidean structural baselines on method-name prediction.
 
-The released results show a Pareto trade-off. B60 is the strongest
-prefix-trie structural-fidelity model. B62 is the strongest cross-metric
-structural model. Some Euclidean or L1 controls remain competitive on
-downstream F1, so downstream prediction and structural adequacy must be
-reported separately.
+The released results show a trade-off. B60 is the strongest prefix-trie
+structural-fidelity model. B62 is the strongest multi-objective structural
+candidate among the currently tested variants. Held-out relation experiments
+are required before claiming cross-metric generalization. Some Euclidean or L1
+controls remain competitive on downstream F1, so downstream prediction and
+structural adequacy must be reported separately.

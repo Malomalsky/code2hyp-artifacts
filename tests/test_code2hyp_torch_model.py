@@ -13,6 +13,8 @@ from geometry_profile_research.code2hyp_torch import (
     ast_sequence_lca_depth,
     ast_sequence_tree_distance,
     ast_path_midpoint_branch_masks,
+    longest_common_prefix_length,
+    prefix_trie_distance,
     batch_structural_distance_regularizer,
     batch_structural_neighbor_distribution_regularizer,
     batch_structural_neighbor_overlap_at_k,
@@ -323,6 +325,17 @@ class Code2HypTorchGeometryTests(unittest.TestCase):
         torch.testing.assert_close(right_norm, torch.full_like(right_norm, -1.0 / curvature), atol=1e-8, rtol=1e-8)
         torch.testing.assert_close(forward, backward, atol=1e-10, rtol=1e-10)
         self.assertGreater(float(forward), 0.0)
+
+    def test_lorentz_distance_has_exact_zero_diagonal_for_small_curvature(self) -> None:
+        curvature = torch.tensor(1e-4, dtype=torch.float64)
+        points = torch_lorentz_expmap0(
+            torch.tensor([[0.08, -0.03, 0.02], [-0.02, 0.06, 0.04]], dtype=torch.float64),
+            curvature=curvature,
+        )
+
+        distances = torch_lorentz_distance(points, points, curvature=curvature)
+
+        torch.testing.assert_close(distances, torch.zeros_like(distances), atol=1e-12, rtol=0.0)
 
     def test_lorentz_weighted_centroid_returns_valid_hyperboloid_point(self) -> None:
         tangents = torch.tensor(
@@ -1825,7 +1838,7 @@ class Code2HypTorchModelTests(unittest.TestCase):
         self.assertEqual(b14_model.parameter_count(), b6_model.parameter_count())
         torch.testing.assert_close(output.attention.sum(dim=1), torch.ones(2), atol=1e-6, rtol=1e-6)
 
-    def test_tree_context_features_encode_length_distance_and_lca_controls(self) -> None:
+    def test_tree_context_features_encode_length_distance_and_prefix_controls(self) -> None:
         batch = Code2HypBatch(
             start_tokens=torch.tensor([[1, 1, 1]], dtype=torch.long),
             end_tokens=torch.tensor([[2, 2, 2]], dtype=torch.long),
@@ -1837,7 +1850,7 @@ class Code2HypTorchModelTests(unittest.TestCase):
             context_mask=torch.tensor([[True, True, True]], dtype=torch.bool),
         )
 
-        lca_depth = ast_sequence_lca_depth(
+        lcp_length = ast_sequence_lca_depth(
             batch.ast_paths[:, 0],
             batch.ast_path_mask[:, 0],
             batch.ast_paths[:, 1],
@@ -1845,7 +1858,7 @@ class Code2HypTorchModelTests(unittest.TestCase):
         )
         features = tree_context_features(batch)
 
-        torch.testing.assert_close(lca_depth, torch.tensor([2.0]))
+        torch.testing.assert_close(lcp_length, torch.tensor([2.0]))
         torch.testing.assert_close(
             features[0],
             torch.tensor(
@@ -2040,15 +2053,27 @@ class Code2HypTorchModelTests(unittest.TestCase):
         self.assertGreaterEqual(float(b3_correlation.detach()), -1.0)
         self.assertLessEqual(float(b3_correlation.detach()), 1.0)
 
-    def test_ast_sequence_tree_distance_uses_lca_prefix(self) -> None:
+    def test_prefix_trie_distance_uses_longest_common_prefix(self) -> None:
         left = torch.tensor([[1, 2, 3, 0], [1, 2, 4, 0]], dtype=torch.long)
         right = torch.tensor([[1, 2, 5, 0], [1, 6, 0, 0]], dtype=torch.long)
         left_mask = torch.tensor([[True, True, True, False], [True, True, True, False]])
         right_mask = torch.tensor([[True, True, True, False], [True, True, False, False]])
 
-        distances = ast_sequence_tree_distance(left, left_mask, right, right_mask)
+        lcp_lengths = longest_common_prefix_length(left, left_mask, right, right_mask)
+        distances = prefix_trie_distance(left, left_mask, right, right_mask)
 
+        torch.testing.assert_close(lcp_lengths, torch.tensor([2.0, 1.0]))
         torch.testing.assert_close(distances, torch.tensor([2.0, 3.0]))
+
+    def test_legacy_ast_sequence_tree_distance_alias_keeps_previous_behavior(self) -> None:
+        left = torch.tensor([[1, 2, 3, 0]], dtype=torch.long)
+        right = torch.tensor([[1, 2, 5, 0]], dtype=torch.long)
+        mask = torch.tensor([[True, True, True, False]])
+
+        torch.testing.assert_close(
+            ast_sequence_tree_distance(left, mask, right, mask),
+            prefix_trie_distance(left, mask, right, mask),
+        )
 
     def test_ast_path_midpoint_branch_masks_share_the_pivot_as_lca_proxy(self) -> None:
         mask = torch.tensor(

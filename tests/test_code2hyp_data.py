@@ -63,6 +63,25 @@ class Code2HypDataTests(unittest.TestCase):
         self.assertTrue(torch.equal(encoded.batch.context_mask[1], torch.tensor([True, False])))
         self.assertTrue(torch.equal(encoded.batch.ast_path_mask[0, 0], torch.tensor([True, True])))
 
+    def test_encode_records_to_batch_can_sample_contexts_with_seed(self) -> None:
+        records = [
+            parse_code2vec_line(
+                "get_value "
+                "a,PathA,end "
+                "b,PathB,end "
+                "c,PathC,end "
+                "d,PathD,end "
+                "e,PathE,end"
+            )
+        ]
+
+        first = encode_records_to_batch(records, max_contexts=2, max_path_length=1, context_sample_seed=17)
+        second = encode_records_to_batch(records, max_contexts=2, max_path_length=1, context_sample_seed=17)
+        deterministic = encode_records_to_batch(records, max_contexts=2, max_path_length=1)
+
+        self.assertTrue(torch.equal(first.batch.ast_paths, second.batch.ast_paths))
+        self.assertFalse(torch.equal(first.batch.ast_paths, deterministic.batch.ast_paths))
+
     def test_encode_records_to_batch_precomputes_tree_features(self) -> None:
         records = [
             parse_code2vec_line("get_value obj,Name|Member|Return,value this,Name|Call,get"),
@@ -133,6 +152,16 @@ class Code2HypDataTests(unittest.TestCase):
         self.assertEqual(encoded.model_config.label_vocab_size, 4)
         self.assertEqual(encoded.target_sizes.tolist(), [3, 2])
         self.assertEqual(encoded.target_vocab.token(int(torch.argmax(encoded.labels[0]))), "to")
+
+    def test_encode_records_to_multilabel_batch_counts_unique_target_subtokens(self) -> None:
+        records = [
+            parse_code2vec_line("to|to|lower obj,Name|Call,value"),
+        ]
+
+        encoded = encode_records_to_multilabel_batch(records, max_contexts=1, max_path_length=2)
+
+        self.assertEqual(encoded.labels.sum(dim=1).tolist(), [2.0])
+        self.assertEqual(encoded.target_sizes.tolist(), [2])
 
     def test_encode_records_to_multilabel_batch_precomputes_tree_features(self) -> None:
         records = [

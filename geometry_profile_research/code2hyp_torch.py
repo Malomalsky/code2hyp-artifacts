@@ -260,14 +260,20 @@ def torch_lorentz_minkowski_inner(left: Tensor, right: Tensor) -> Tensor:
 
 
 def torch_lorentz_distance(left: Tensor, right: Tensor, curvature: Tensor | float) -> Tensor:
-    """Geodesic distance on the Lorentz hyperboloid."""
+    """Geodesic distance on the Lorentz hyperboloid.
+
+    The direct ``acosh(-c <x,y>_L)`` form is unstable near the diagonal if the
+    argument is clamped above 1. The equivalent ``asinh`` form keeps
+    ``d(x, x)`` exactly zero, which is important for small-curvature controls.
+    """
     curvature_tensor = torch.as_tensor(curvature, dtype=left.dtype, device=left.device)
     if bool((curvature_tensor <= 0).any()):
         raise ValueError("curvature must be positive")
     sqrt_c = torch.sqrt(curvature_tensor)
-    inner = torch_lorentz_minkowski_inner(left, right)
-    argument = torch.clamp(-curvature_tensor * inner, min=1.0 + 1e-7)
-    return torch.acosh(argument) / sqrt_c
+    difference = left - right
+    spacelike_separation = torch.clamp(torch_lorentz_minkowski_inner(difference, difference), min=0.0)
+    argument = torch.sqrt(torch.clamp(curvature_tensor * spacelike_separation / 4.0, min=0.0))
+    return 2.0 * torch.asinh(argument) / sqrt_c
 
 
 def torch_lorentz_weighted_centroid(points: Tensor, weights: Tensor, curvature: Tensor | float) -> Tensor:
@@ -465,8 +471,8 @@ def structural_spearman_correlation(embedding_distances: Tensor, ast_distances: 
     return torch.sum(emb_centered * ast_centered) / denominator
 
 
-def ast_sequence_lca_depth(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
-    """Depth of the longest common prefix used as an LCA proxy for AST paths."""
+def longest_common_prefix_length(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
+    """Length of the common prefix in serialized AST-label path sequences."""
     max_len = min(left.shape[-1], right.shape[-1])
     shared = (left[..., :max_len] == right[..., :max_len]) & left_mask[..., :max_len] & right_mask[..., :max_len]
     if max_len > 1:
@@ -476,12 +482,32 @@ def ast_sequence_lca_depth(left: Tensor, left_mask: Tensor, right: Tensor, right
     return shared_prefix.long().sum(dim=-1).float()
 
 
-def ast_sequence_tree_distance(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
-    """Tree distance between root-to-node AST sequences using longest common prefix."""
+def prefix_trie_distance(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
+    """Tree distance in the prefix trie of serialized AST-label path sequences.
+
+    This operates on the sequence representation available in code2vec/code2seq
+    preprocessed files. It is not a true source-AST LCA distance unless the
+    extractor also preserves endpoint node identifiers and parent links.
+    """
     left_len = left_mask.long().sum(dim=-1)
     right_len = right_mask.long().sum(dim=-1)
-    lca_depth = ast_sequence_lca_depth(left, left_mask, right, right_mask)
-    return (left_len + right_len - 2 * lca_depth).float()
+    lcp_length = longest_common_prefix_length(left, left_mask, right, right_mask)
+    return (left_len + right_len - 2 * lcp_length).float()
+
+
+def ast_sequence_lca_depth(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
+    """Backward-compatible alias for ``longest_common_prefix_length``.
+
+    The old name is retained for existing experiment artifacts. New code should
+    use ``longest_common_prefix_length`` to avoid implying access to true AST
+    LCA nodes.
+    """
+    return longest_common_prefix_length(left, left_mask, right, right_mask)
+
+
+def ast_sequence_tree_distance(left: Tensor, left_mask: Tensor, right: Tensor, right_mask: Tensor) -> Tensor:
+    """Backward-compatible alias for ``prefix_trie_distance``."""
+    return prefix_trie_distance(left, left_mask, right, right_mask)
 
 
 def ast_path_midpoint_branch_masks(ast_path_mask: Tensor) -> tuple[Tensor, Tensor]:
@@ -555,7 +581,11 @@ def ast_sequence_jaccard_distance(
     right_mask: Tensor,
     ngram: int = 2,
 ) -> Tensor:
-    """Jaccard distance between AST-path label n-gram sets."""
+    """Set-Jaccard distance over directed AST-label n-grams.
+
+    Multiplicity is intentionally ignored. Use a multiset or weighted Jaccard
+    sensitivity analysis before making claims about repeated grammar patterns.
+    """
     if ngram <= 0:
         raise ValueError("ngram must be positive")
     flat_left = left.reshape(-1, left.shape[-1])
@@ -582,7 +612,7 @@ def ast_sequence_distance(
     target_distance: StructuralTargetDistance = "prefix_tree",
 ) -> Tensor:
     if target_distance == "prefix_tree":
-        return ast_sequence_tree_distance(left, left_mask, right, right_mask)
+        return prefix_trie_distance(left, left_mask, right, right_mask)
     if target_distance == "edit":
         return ast_sequence_edit_distance(left, left_mask, right, right_mask)
     if target_distance == "jaccard_bigrams":
@@ -591,11 +621,11 @@ def ast_sequence_distance(
 
 
 def tree_context_features(batch: Code2HypBatch) -> Tensor:
-    """Explicit non-hyperbolic tree features for each path context.
+    """Explicit non-hyperbolic prefix-trie features for each path context.
 
     Features are normalized to a stable [0, 1]-scale:
-    path length, mean tree distance to other contexts, max tree distance to
-    other contexts, and mean LCA-prefix depth against other contexts.
+    path length, mean prefix-trie distance to other contexts, max prefix-trie
+    distance to other contexts, and mean longest-common-prefix length.
     """
     if batch.context_tree_features is not None:
         return batch.context_tree_features
@@ -610,7 +640,7 @@ def tree_context_features(batch: Code2HypBatch) -> Tensor:
     path_length_feature = path_lengths / normalizer
     distance_sum = torch.zeros(batch_size, context_count, dtype=dtype, device=device)
     distance_max = torch.zeros(batch_size, context_count, dtype=dtype, device=device)
-    lca_sum = torch.zeros(batch_size, context_count, dtype=dtype, device=device)
+    lcp_sum = torch.zeros(batch_size, context_count, dtype=dtype, device=device)
     pair_counts = torch.zeros(batch_size, context_count, dtype=dtype, device=device)
 
     for left_index in range(context_count):
@@ -620,13 +650,13 @@ def tree_context_features(batch: Code2HypBatch) -> Tensor:
             valid_pair = batch.context_mask[:, left_index] & batch.context_mask[:, right_index]
             if not bool(valid_pair.any()):
                 continue
-            distance = ast_sequence_tree_distance(
+            distance = prefix_trie_distance(
                 batch.ast_paths[:, left_index],
                 batch.ast_path_mask[:, left_index],
                 batch.ast_paths[:, right_index],
                 batch.ast_path_mask[:, right_index],
             ).to(dtype=dtype) / distance_normalizer
-            lca_depth = ast_sequence_lca_depth(
+            lcp_length = longest_common_prefix_length(
                 batch.ast_paths[:, left_index],
                 batch.ast_path_mask[:, left_index],
                 batch.ast_paths[:, right_index],
@@ -635,7 +665,7 @@ def tree_context_features(batch: Code2HypBatch) -> Tensor:
             valid_float = valid_pair.to(dtype=dtype)
             distance_sum[:, left_index] = distance_sum[:, left_index] + distance * valid_float
             distance_max[:, left_index] = torch.maximum(distance_max[:, left_index], distance * valid_float)
-            lca_sum[:, left_index] = lca_sum[:, left_index] + lca_depth * valid_float
+            lcp_sum[:, left_index] = lcp_sum[:, left_index] + lcp_length * valid_float
             pair_counts[:, left_index] = pair_counts[:, left_index] + valid_float
 
     denominator = torch.clamp(pair_counts, min=1.0)
@@ -644,7 +674,7 @@ def tree_context_features(batch: Code2HypBatch) -> Tensor:
             path_length_feature,
             distance_sum / denominator,
             distance_max,
-            lca_sum / denominator,
+            lcp_sum / denominator,
         ],
         dim=-1,
     )
@@ -737,7 +767,7 @@ def path_attention_soft_tree_distances(
 
                     left_prefix_mask = left_mask[:, : left_node_index + 1]
                     right_prefix_mask = right_mask[:, : right_node_index + 1]
-                    lca_depth = ast_sequence_lca_depth(
+                    lcp_length = longest_common_prefix_length(
                         left_paths[:, : left_node_index + 1],
                         left_prefix_mask,
                         right_paths[:, : right_node_index + 1],
@@ -745,13 +775,13 @@ def path_attention_soft_tree_distances(
                     ).to(dtype=weights.dtype)
                     left_depth = left_prefix_mask.to(dtype=weights.dtype).sum(dim=-1)
                     right_depth = right_prefix_mask.to(dtype=weights.dtype).sum(dim=-1)
-                    node_distance = left_depth + right_depth - 2.0 * lca_depth
+                    node_distance = left_depth + right_depth - 2.0 * lcp_length
                     node_weight = left_weights[:, left_node_index] * right_weights[:, right_node_index]
                     expected_distance = expected_distance + node_weight * node_distance
 
             soft_distances.append(expected_distance)
             leaf_distances.append(
-                ast_sequence_tree_distance(left_paths, left_mask, right_paths, right_mask).to(dtype=weights.dtype)
+                prefix_trie_distance(left_paths, left_mask, right_paths, right_mask).to(dtype=weights.dtype)
             )
 
     if not soft_distances:
@@ -952,7 +982,7 @@ def _poincare_product_distance(
 def _context_ast_distance_matrix(batch: Code2HypBatch, sample_index: int, valid_contexts: Tensor) -> Tensor:
     paths = batch.ast_paths[sample_index, valid_contexts]
     masks = batch.ast_path_mask[sample_index, valid_contexts]
-    return ast_sequence_tree_distance(
+    return prefix_trie_distance(
         paths.unsqueeze(1),
         masks.unsqueeze(1),
         paths.unsqueeze(0),
