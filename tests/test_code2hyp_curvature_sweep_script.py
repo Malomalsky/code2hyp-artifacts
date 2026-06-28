@@ -24,6 +24,11 @@ class Code2HypCurvatureSweepScriptTests(unittest.TestCase):
 
         self.assertEqual(args.structural_regularizer, "neighbor_distribution")
 
+    def test_parse_args_accepts_relation_specific_regularizer(self) -> None:
+        args = parse_args(["--structural-regularizer", "distance_edit"])
+
+        self.assertEqual(args.structural_regularizer, "distance_edit")
+
 
 if __name__ == "__main__":
     unittest.main()

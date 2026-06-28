@@ -9,6 +9,9 @@ __all__ = [
     "experiment_summary",
     "geometry_features",
     "graphs",
+    "gromov_wasserstein",
+    "java_raw_ast",
     "metrics",
+    "raw_ast",
     "retrieval",
 ]

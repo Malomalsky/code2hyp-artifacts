@@ -33,6 +33,8 @@ def test_variant_catalog_exposes_recommended_research_variants() -> None:
     assert catalog["B48_code2hyp_context_transform_product_bias_no_struct"].status == "diagnostic"
     assert catalog["B49_code2hyp_context_transform_product_bias_near_euclidean"].status == "diagnostic"
     assert catalog["B45_code2hyp_context_transform_product_bias_neighbor"].status == "candidate"
+    assert catalog["B84_geocodepath_relation_conditioned_product_proxy"].status == "candidate"
+    assert catalog["B85_geocodepath_relation_conditioned_aux_product_proxy"].status == "candidate"
     assert "balanced" in catalog["B4_hyperbolic_code2vec"].profiles
     assert "path_attention" in catalog["B31_hyperbolic_path_dual_attention_mp_soft_rank"].profiles
     assert "path_attention" in catalog["B32_lorentz_path_dual_attention_mp_soft_rank"].profiles
@@ -93,7 +95,21 @@ def test_parse_variant_selection_uses_profile_and_explicit_variants() -> None:
         "B48_code2hyp_context_transform_product_bias_no_struct",
         "B49_code2hyp_context_transform_product_bias_near_euclidean",
         "B45_code2hyp_context_transform_product_bias_neighbor",
-    )
+        "B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet",
+        "B66_branch_sequence_euclidean_product_l2_multi_metric_control",
+        "B67_branch_sequence_euclidean_product_l1_multi_metric_control",
+        "B68_branch_sequence_product_bias_near_euclidean_multi_metric",
+        "B69_branch_sequence_product_bias_fixed_curvature_multi_metric",
+        "B70_branch_sequence_single_hyperbolic_multi_metric_control",
+        "B80_geocodepath_endpoint_geodesic_product_proxy",
+        "B81_geocodepath_endpoint_lca_product_proxy",
+        "B82_geocodepath_endpoint_lca_prior_product_proxy",
+            "B83_geocodepath_endpoint_lca_axiom_product_proxy",
+                "B84_geocodepath_relation_conditioned_product_proxy",
+                "B85_geocodepath_relation_conditioned_aux_product_proxy",
+                "B86_geocodepath_method_transport_aux_product_proxy",
+                "B87_geocodepath_multi_metric_method_transport_aux_product_proxy",
+            )
 
 
 def test_b36_real_spec_fixes_neighbor_distribution_regularizer() -> None:
@@ -158,6 +174,149 @@ def test_b39_b40_b41_specs_model_true_code2vec_context_transform_family() -> Non
     assert specs["B41_code2hyp_context_transform_neighbor"]["trainable_curvature"] is True
     assert specs["B41_code2hyp_context_transform_neighbor"]["structural_regularizer"] == "neighbor_distribution"
     assert specs["B41_code2hyp_context_transform_neighbor"]["structural_loss_schedule"] == "delayed_linear"
+
+
+def test_b62_matched_control_and_relation_generalization_specs_are_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B62_code2hyp_context_transform_branch_sequence_product_bias_multi_metric_frechet"][
+        "structural_regularizer"
+    ] == "multi_metric_distance"
+    assert specs["B66_branch_sequence_euclidean_product_l2_multi_metric_control"]["torch_variant"] == (
+        "code2hyp_context_transform_branch_sequence_euclidean_product_l2"
+    )
+    assert specs["B66_branch_sequence_euclidean_product_l2_multi_metric_control"]["structural_regularizer"] == (
+        "multi_metric_distance"
+    )
+    assert specs["B67_branch_sequence_euclidean_product_l1_multi_metric_control"]["torch_variant"] == (
+        "code2hyp_context_transform_branch_sequence_euclidean_product_l1"
+    )
+    assert specs["B68_branch_sequence_product_bias_near_euclidean_multi_metric"]["curvature"] == 1e-4
+    assert specs["B68_branch_sequence_product_bias_near_euclidean_multi_metric"]["trainable_curvature"] is False
+    assert specs["B69_branch_sequence_product_bias_fixed_curvature_multi_metric"]["curvature"] == 1.0
+    assert specs["B70_branch_sequence_single_hyperbolic_multi_metric_control"]["torch_variant"] == (
+        "code2hyp_context_transform_branch_sequence_single_bias_frechet"
+    )
+    assert specs["B71_branch_sequence_product_bias_prefix_only"]["structural_regularizer"] == "distance_prefix"
+    assert specs["B72_branch_sequence_product_bias_edit_only"]["structural_regularizer"] == "distance_edit"
+    assert specs["B73_branch_sequence_product_bias_jaccard_only"]["structural_regularizer"] == "distance_jaccard"
+    assert specs["B74_branch_sequence_product_bias_prefix_edit"]["structural_regularizer"] == "multi_metric_prefix_edit"
+    assert specs["B75_branch_sequence_product_bias_prefix_jaccard"]["structural_regularizer"] == (
+        "multi_metric_prefix_jaccard"
+    )
+    assert specs["B76_branch_sequence_product_bias_edit_jaccard"]["structural_regularizer"] == (
+        "multi_metric_edit_jaccard"
+    )
+
+
+def test_b80_geocodepath_endpoint_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B80_geocodepath_endpoint_geodesic_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_endpoint_geodesic_product_bias_frechet"
+    )
+    assert specs["B80_geocodepath_endpoint_geodesic_product_proxy"]["trainable_curvature"] is True
+    assert specs["B80_geocodepath_endpoint_geodesic_product_proxy"]["structural_regularizer"] == (
+        "multi_metric_distance"
+    )
+    assert specs["B80_geocodepath_endpoint_geodesic_product_proxy"]["structural_loss_schedule"] == "delayed_linear"
+
+
+def test_b81_geocodepath_endpoint_lca_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B81_geocodepath_endpoint_lca_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_endpoint_lca_product_bias_frechet"
+    )
+    assert specs["B81_geocodepath_endpoint_lca_product_proxy"]["trainable_curvature"] is True
+    assert specs["B81_geocodepath_endpoint_lca_product_proxy"]["structural_regularizer"] == "multi_metric_distance"
+    assert specs["B81_geocodepath_endpoint_lca_product_proxy"]["structural_loss_schedule"] == "delayed_linear"
+
+
+def test_b82_geocodepath_endpoint_lca_prior_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B82_geocodepath_endpoint_lca_prior_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_endpoint_lca_prior_product_bias_frechet"
+    )
+    assert specs["B82_geocodepath_endpoint_lca_prior_product_proxy"]["trainable_curvature"] is True
+    assert specs["B82_geocodepath_endpoint_lca_prior_product_proxy"]["structural_regularizer"] == (
+        "multi_metric_distance"
+    )
+    assert specs["B82_geocodepath_endpoint_lca_prior_product_proxy"]["structural_loss_schedule"] == "delayed_linear"
+
+
+def test_b83_geocodepath_endpoint_lca_axiom_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B83_geocodepath_endpoint_lca_axiom_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_endpoint_lca_axiom_product_bias_frechet"
+    )
+    assert specs["B83_geocodepath_endpoint_lca_axiom_product_proxy"]["trainable_curvature"] is True
+    assert specs["B83_geocodepath_endpoint_lca_axiom_product_proxy"]["structural_regularizer"] == (
+        "multi_metric_lca_axiom"
+    )
+    assert specs["B83_geocodepath_endpoint_lca_axiom_product_proxy"]["structural_loss_schedule"] == "delayed_linear"
+
+
+def test_b84_geocodepath_relation_conditioned_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B84_geocodepath_relation_conditioned_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_relation_conditioned_product_bias_frechet"
+    )
+    assert specs["B84_geocodepath_relation_conditioned_product_proxy"]["trainable_curvature"] is True
+    assert specs["B84_geocodepath_relation_conditioned_product_proxy"]["structural_regularizer"] == (
+        "relation_conditioned_lca_axiom"
+    )
+    assert specs["B84_geocodepath_relation_conditioned_product_proxy"]["structural_loss_schedule"] == (
+        "delayed_linear"
+    )
+
+
+def test_b85_geocodepath_relation_conditioned_aux_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B85_geocodepath_relation_conditioned_aux_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet"
+    )
+    assert specs["B85_geocodepath_relation_conditioned_aux_product_proxy"]["trainable_curvature"] is True
+    assert specs["B85_geocodepath_relation_conditioned_aux_product_proxy"]["structural_regularizer"] == (
+        "relation_conditioned_lca_axiom"
+    )
+    assert specs["B85_geocodepath_relation_conditioned_aux_product_proxy"]["structural_loss_schedule"] == (
+        "delayed_linear"
+    )
+
+
+def test_b86_geocodepath_method_transport_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B86_geocodepath_method_transport_aux_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet"
+    )
+    assert specs["B86_geocodepath_method_transport_aux_product_proxy"]["trainable_curvature"] is True
+    assert specs["B86_geocodepath_method_transport_aux_product_proxy"]["structural_regularizer"] == (
+        "method_transport"
+    )
+    assert specs["B86_geocodepath_method_transport_aux_product_proxy"]["structural_loss_schedule"] == (
+        "delayed_linear"
+    )
+
+
+def test_b87_geocodepath_multi_metric_method_transport_proxy_spec_is_available() -> None:
+    specs = real_variant_specs(RealCode2HypPilotConfig())
+
+    assert specs["B87_geocodepath_multi_metric_method_transport_aux_product_proxy"]["torch_variant"] == (
+        "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet"
+    )
+    assert specs["B87_geocodepath_multi_metric_method_transport_aux_product_proxy"]["trainable_curvature"] is True
+    assert specs["B87_geocodepath_multi_metric_method_transport_aux_product_proxy"]["structural_regularizer"] == (
+        "method_transport_multi_metric"
+    )
+    assert specs["B87_geocodepath_multi_metric_method_transport_aux_product_proxy"]["structural_loss_schedule"] == (
+        "delayed_linear"
+    )
 
 
 def test_b42_b43_specs_combine_code2vec_context_transform_with_product_metric_attention() -> None:

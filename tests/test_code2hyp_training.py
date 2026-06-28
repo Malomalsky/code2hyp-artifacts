@@ -16,6 +16,7 @@ from geometry_profile_research.code2hyp_synthetic import (
 from geometry_profile_research.code2hyp_training import (
     ADAPTIVE_RANK_MAX_WEIGHT,
     ADAPTIVE_RANK_MIN_WEIGHT,
+    STRUCTURAL_DISTANCE_TARGETS,
     _structural_regularizer_loss,
     compute_multilabel_pos_weight,
     evaluate_accuracy,
@@ -385,6 +386,71 @@ class Code2HypSyntheticTrainingTests(unittest.TestCase):
 
         self.assertGreater(metrics["loss"], 0.0)
         self.assertGreaterEqual(metrics["structural_loss"], 0.0)
+
+    def test_structural_regularizer_loss_accepts_relation_specific_distance_sets(self) -> None:
+        dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=47))
+        model = Code2HypTorchModel(
+            dataset.model_config,
+            variant="code2hyp_context_transform_branch_sequence_product_bias_frechet",
+        )
+        output = model(dataset.batch)
+
+        for regularizer in STRUCTURAL_DISTANCE_TARGETS:
+            loss = _structural_regularizer_loss(output, dataset.batch, regularizer)
+            self.assertTrue(torch.isfinite(loss), regularizer)
+            self.assertGreaterEqual(float(loss.detach()), 0.0, regularizer)
+
+    def test_structural_regularizer_loss_accepts_lca_axiom_regularizer(self) -> None:
+        dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=147))
+        model = Code2HypTorchModel(
+            dataset.model_config,
+            variant="code2hyp_context_transform_endpoint_lca_axiom_product_bias_frechet",
+        )
+        output = model(dataset.batch)
+
+        loss = _structural_regularizer_loss(output, dataset.batch, "multi_metric_lca_axiom")
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertGreaterEqual(float(loss.detach()), 0.0)
+
+    def test_structural_regularizer_loss_accepts_relation_conditioned_lca_axiom_regularizer(self) -> None:
+        dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=149))
+        model = Code2HypTorchModel(
+            dataset.model_config,
+            variant="code2hyp_context_transform_relation_conditioned_product_bias_frechet",
+        )
+        output = model(dataset.batch)
+
+        loss = _structural_regularizer_loss(output, dataset.batch, "relation_conditioned_lca_axiom")
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertGreaterEqual(float(loss.detach()), 0.0)
+
+    def test_structural_regularizer_loss_accepts_method_transport_regularizer(self) -> None:
+        dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=151))
+        model = Code2HypTorchModel(
+            dataset.model_config,
+            variant="code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet",
+        )
+        output = model(dataset.batch)
+
+        loss = _structural_regularizer_loss(output, dataset.batch, "method_transport")
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertGreaterEqual(float(loss.detach()), 0.0)
+
+    def test_structural_regularizer_loss_accepts_method_transport_multi_metric_regularizer(self) -> None:
+        dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=153))
+        model = Code2HypTorchModel(
+            dataset.model_config,
+            variant="code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet",
+        )
+        output = model(dataset.batch)
+
+        loss = _structural_regularizer_loss(output, dataset.batch, "method_transport_multi_metric")
+
+        self.assertTrue(torch.isfinite(loss))
+        self.assertGreaterEqual(float(loss.detach()), 0.0)
 
     def test_dual_attention_soft_rank_regularizer_uses_fractional_rank_weight(self) -> None:
         dataset = make_synthetic_code2hyp_dataset(SyntheticCode2HypConfig(examples=16, seed=48))

@@ -16,6 +16,15 @@ from geometry_profile_research.code2hyp_experiments import (
 )
 from geometry_profile_research.code2hyp_real_dataset import Code2SeqPreprocessedInventory
 from geometry_profile_research.code2hyp_reporting import summarize_pilot_runs
+from geometry_profile_research.code2hyp_training import STRUCTURAL_DISTANCE_TARGETS
+
+
+STRUCTURAL_REGULARIZER_CHOICES = (
+    "distance",
+    "rank",
+    "neighbor_distribution",
+    *STRUCTURAL_DISTANCE_TARGETS.keys(),
+)
 
 
 def parse_curvature_grid(raw: str) -> tuple[float, ...]:
@@ -119,7 +128,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--structural-loss-weight", type=float, default=0.05)
     parser.add_argument(
         "--structural-regularizer",
-        choices=("distance", "rank", "neighbor_distribution"),
+        choices=STRUCTURAL_REGULARIZER_CHOICES,
         default="distance",
     )
     parser.add_argument(

@@ -1,188 +1,210 @@
 # Code2Hyp Artifacts
 
-This repository contains the reproducibility artifacts for the manuscript:
-
-**Code2Hyp: Product-Manifold Representations of Terminal-to-Terminal AST Paths**
+This repository contains reproducibility artifacts for the Code2Hyp research line.
+It intentionally does not include the manuscript text.
 
 Author: Ivan A. Kosyanenko  
 ORCID: <https://orcid.org/0009-0009-1804-9412>
 
-## Current revision, 2026-06-22
-
-The current revision reframes the study as a controlled geometry analysis of
-terminal-to-terminal AST-label path contexts, not as a broad state-of-the-art
-claim for method-name prediction.
-
-The most relevant files for the current revision are:
-
-```text
-code2hyp_branch_product_revision_report.md
-reports/code2hyp_b62_multi_metric_validation_5k_3seeds_summary.md
-reports/code2seq_path_geometry_audit_smoke_multi_metric.md
-```
-
-The current key method variants are:
-
-```text
-B60: order-aware branch-sequence product model for prefix-trie structural fidelity.
-B62: B60 branch-sequence product model with a multi-metric structural objective.
-B63: product-bias multi-metric control.
-B64: Euclidean multi-metric control.
-B65: L1 multi-metric control.
-```
-
-Under the 5k/3-seed medium validation protocol, B60 is the strongest
-prefix-trie specialist, while B62 is the strongest multi-objective structural
-candidate across prefix-tree, edit-distance, and Jaccard-bigram diagnostics.
-Downstream F1 is reported as a sanity check rather than as the primary claim.
-
 ## Scope
 
-The artifacts support a controlled Code2Hyp study on Java method-name subtoken
-prediction using the official code2seq Java-small preprocessed corpus. The
-study evaluates code2vec-style AST-path models with Euclidean, L1,
-near-Euclidean, hyperbolic, and product-manifold structural channels. The main
-claim is not universal state-of-the-art performance on method-name prediction.
-The main supported claim is that representation geometry strongly affects
-structural fidelity of AST-label path contexts, while downstream F1 depends on
-the interaction between lexical signals, structural supervision, and the
-attention/decoder architecture.
+The current artifact package studies task-level source-code retrieval with abstract syntax tree (AST) path objects. The main representation is an LCA-anchored path object: a terminal-to-terminal AST path is represented by the product of its least common ancestor, source endpoint and target endpoint. Programs are compared either as finite path measures or through a validation-selected multiview kernel that combines a clean LCA-path view with lexical and AST-count views.
 
-## Repository contents
+The repository is not framed as a universal state-of-the-art benchmark. The supported claim is narrower: LCA anchoring is a useful AST path-object design principle, and its practical retrieval value is positive but corpus-dependent inside a validation-controlled multiview kernel.
 
-- `geometry_profile_research/` -- implementation of Code2Hyp variants, Euclidean controls, structural diagnostics, reporting utilities, and data loaders.
-- `scripts/` -- experiment runners, result aggregation scripts, paired-effect reports, and plotting scripts.
-- `tests/` -- unit and integration tests for the research code.
-- `outputs/` -- raw JSON outputs from the local-budget experiments.
-- `reports/` -- generated Markdown reports used to audit and interpret the results.
-- `manuscript_tools/build_manuscript_figures.py` -- script that generates the manuscript figures from JSON outputs.
-- `manuscript_figures/` -- PNG and PDF versions of the figures used in the manuscript.
-- `data/code2seq_java_small/DATASET_MANIFEST.md` -- dataset manifest and download information. The dataset itself is not included.
+## Repository Contents
 
-## Dataset
+- `geometry_profile_research/` contains the implementation of AST extraction, LCA-product path objects, structural distances, multiview retrieval, reporting utilities and the command-line tool.
+- `scripts/` contains experiment runners, summarizers and figure-building utilities.
+- `tests/` contains unit and integration tests for the public research code.
+- `outputs/` contains JSON result artifacts.
+- `reports/` contains generated Markdown reports used to audit and interpret the experiments.
+- `figures/` contains PNG and PDF versions of the generated figures.
+- `artifact_tools/build_figures.py` regenerates the figures from released JSON outputs.
+- `data_manifests/` contains materialization manifests for the BugNet Python and Digital Teaching Assistant subsets. The raw datasets are not stored in this repository.
 
-The experiments use the public code2seq Java-small preprocessed corpus:
+Some earlier Java/code2seq artifacts are retained for provenance, but they are not the primary evidence for the current artifact package.
 
-- source repository: <https://github.com/tech-srl/code2seq>
-- dataset archive: <https://s3.amazonaws.com/code2seq/datasets/java-small-preprocessed.tar.gz>
+## Datasets
 
-The archive is intentionally not stored in this repository. Place the extracted dataset under:
+The released experiments use two public Python corpora.
 
-```text
-data/code2seq_java_small/java-small/
-```
+1. BugNet Python slice.
 
-The expected split files are:
+   Source: Hugging Face dataset `alexjercan/bugnet`, Python train split. The materialized corpus used in the released experiments contains 32 task groups and 512 accepted Python programs. The manifest is stored in:
 
-```text
-data/code2seq_java_small/java-small/java-small.train.c2s
-data/code2seq_java_small/java-small/java-small.val.c2s
-data/code2seq_java_small/java-small/java-small.test.c2s
-```
+   ```text
+   data_manifests/bugnet_python_train_pass_16x32_manifest.json
+   ```
+
+2. Digital Teaching Assistant Python subset.
+
+   Source: Zenodo Digital Teaching Assistant dataset, DOI `10.5281/zenodo.7799971`. The materialized Python subset used in the released experiments contains 11 task groups. The manifest is stored in:
+
+   ```text
+   data_manifests/dta_zenodo_balanced64_manifest.json
+   ```
+
+The raw corpora are intentionally excluded from git. The released JSON outputs are sufficient to regenerate the reported result tables and figures.
 
 ## Environment
 
 The project was developed for Python 3.12.
 
-Install the minimal development environment:
-
 ```bash
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pip install -e .
+```
+
+Optional neural/legacy experiments require:
+
+```bash
 .venv/bin/python -m pip install -r requirements-ml.txt
 ```
 
-Run tests:
+## Quick Tool Check
+
+Run the core test suite:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_code2hyp_tool.py \
+  tests/test_raw_ast_geometry.py \
+  tests/test_code2hyp_hybrid_retrieval_script.py \
+  tests/test_summarize_path_sampling_sensitivity.py
+```
+
+Run all tests:
 
 ```bash
 .venv/bin/python -m pytest -q
 ```
 
-## Rebuild manuscript figures
-
-The manuscript figures can be regenerated from the released JSON outputs:
+Use the installed command-line entry point:
 
 ```bash
-.venv/bin/python manuscript_tools/build_manuscript_figures.py
+.venv/bin/code2hyp --help
 ```
 
-Generated files are written to `manuscript_figures/` when the script is run from this repository.
+## Main Result Files
 
-## Main result files
-
-The earlier manuscript tables and figures are based on the following JSON outputs:
+The main result tables and figures are based on these result objects:
 
 ```text
-outputs/code2hyp_test_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress.json
-outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_original_plus_euclidean_controls.json
-outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_record_obfuscated_resumable_with_stress.json
-outputs/code2hyp_test_benchmark_25k_5epochs_3seeds_structural_only_resumable_with_stress.json
+outputs/final_confirmatory_representation_benchmark_2026-06-28.json
+outputs/task_retrieval_simple_baselines_2026-06-28.json
+outputs/code2hyp_hybrid_task_retrieval_lca_kernel_nested_tokenast_margin001_2026-06-28.json
+outputs/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_2026-06-28.json
+outputs/code2hyp_path_sampling_sensitivity_2026-06-28.json
+outputs/code2hyp_label_mode_sensitivity_2026-06-28.json
+outputs/code2hyp_label_mode_task_level_contrasts_2026-06-28.json
+outputs/code2hyp_explainability_case_bugnet_2026-06-28.json
 ```
 
-The main interpretive report is:
+The corresponding interpretive reports are:
 
 ```text
-reports/code2hyp_final_research_summary.md
+reports/final_confirmatory_representation_benchmark_2026-06-28.md
+reports/task_retrieval_simple_baselines_2026-06-28.md
+reports/code2hyp_hybrid_task_retrieval_lca_kernel_nested_tokenast_margin001_2026-06-28.md
+reports/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_2026-06-28.md
+reports/code2hyp_path_sampling_sensitivity_2026-06-28.md
+reports/code2hyp_label_mode_sensitivity_2026-06-28.md
+reports/code2hyp_label_mode_task_level_contrasts_2026-06-28.md
+reports/code2hyp_explainability_case_bugnet_2026-06-28.md
 ```
 
-The current post-review and multi-metric artifacts are:
+## Rebuild Figures
 
-```text
-outputs/code2hyp_postreview_benchmark_25k_5epochs_5seeds_with_b49_l1_and_geometry_diagnostics.json
-outputs/code2hyp_b60_branch_sequence_validation_5k_3seeds.json
-outputs/code2hyp_b62_multi_metric_validation_5k_3seeds.json
-outputs/code2seq_path_geometry_audit_smoke_multi_metric.json
-reports/code2hyp_postreview_benchmark_25k_5epochs_5seeds_with_b49_l1_and_geometry_diagnostics.md
-reports/code2hyp_b62_multi_metric_validation_5k_3seeds_summary.md
-reports/code2seq_path_geometry_audit_smoke_multi_metric.md
-```
-
-## Main benchmark command
-
-Use `val` for model selection and exploratory comparisons. The `test` split is
-reserved for a frozen final configuration and should not be used for iterative
-variant selection. The main local-budget validation benchmark can be reproduced
-with:
+Regenerate the figures from the released outputs:
 
 ```bash
-.venv/bin/python scripts/run_code2hyp_resumable_benchmark.py \
-  --eval-split val \
-  --train-limit 25000 \
-  --val-limit 8192 \
-  --max-contexts 30 \
-  --max-path-length 8 \
-  --path-encoder gru \
-  --representation-transform identity \
-  --epochs 5 \
-  --batch-size 128 \
-  --model-seeds 101,202,303,404,505 \
-  --max-positive-weight 7.0 \
-  --variants B39_code2vec_context_transform_baseline,B36_code2hyp_product_frechet_neighbor,B40_code2hyp_context_transform_frechet,B44_code2hyp_context_transform_product_bias_frechet \
-  --output outputs/code2hyp_val_benchmark_25k_5epochs_5seeds_original_main_variants_with_stress_reproduced.json
+.venv/bin/python artifact_tools/build_figures.py
 ```
 
-For a quick executable check without the full benchmark cost:
+The script writes PNG and PDF files to:
+
+```text
+figures/
+```
+
+Current generated figures:
+
+```text
+figures/figure01_code2hyp_architecture.png
+figures/figure02_main_results.png
+figures/figure03_geometry_diagnostics.png
+figures/figure04_distance_levels.png
+```
+
+## Main Reproduction Commands
+
+The commands below assume that the raw corpora have been materialized under the paths recorded in `data_manifests/`. If the raw corpora are absent, use the released JSON files in `outputs/` to regenerate the figures and inspect the reported results.
+
+Structural-only representation benchmark:
 
 ```bash
-.venv/bin/python scripts/run_code2hyp_smoke.py \
-  --seed 17 \
-  --output outputs/code2hyp_smoke_report_reproduced.json
+.venv/bin/python scripts/summarize_confirmatory_benchmark.py \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260625.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260626.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260627.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260625.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260626.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260627.json \
+  --output reports/final_confirmatory_representation_benchmark_reproduced.md \
+  --json-output outputs/final_confirmatory_representation_benchmark_reproduced.json
 ```
 
-## Claim boundary
+Task-level lexical and AST baselines:
+
+```bash
+.venv/bin/python scripts/run_task_retrieval_baselines.py \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260625.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260626.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260627.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260625.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260626.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260627.json \
+  --output reports/task_retrieval_simple_baselines_reproduced.md \
+  --json-output outputs/task_retrieval_simple_baselines_reproduced.json
+```
+
+Validation-selected multiview retrieval:
+
+```bash
+.venv/bin/python scripts/run_code2hyp_hybrid_retrieval.py \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260625.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260626.json \
+  --input bugnet_python outputs/bugnet_python_32tasks_representation_ablation_euclidean_p1_seed20260627.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260625.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260626.json \
+  --input dta_zenodo outputs/dta_zenodo_balanced64_representation_ablation_euclidean_p1_seed20260627.json \
+  --path-selection-policy lca_depth_stratified \
+  --lca-view code2hyp_path_signature_kernel \
+  --weight-grid-mode expanded \
+  --lca-selection-margin 0.01 \
+  --output reports/code2hyp_hybrid_task_retrieval_reproduced.md \
+  --json-output outputs/code2hyp_hybrid_task_retrieval_reproduced.json
+```
+
+Task-level paired contrasts:
+
+```bash
+.venv/bin/python scripts/summarize_hybrid_baseline_contrasts.py \
+  --hybrid outputs/code2hyp_hybrid_task_retrieval_lca_kernel_nested_tokenast_margin001_2026-06-28.json \
+  --simple outputs/task_retrieval_simple_baselines_2026-06-28.json \
+  --output reports/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_reproduced.md \
+  --json-output outputs/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_reproduced.json
+```
+
+## Claim Boundary
 
 Safe claim:
 
-> Product/hyperbolic Code2Hyp variants improve structural fidelity of
-> AST-label path representations under controlled local-budget protocols.
+> LCA-anchored AST path objects are useful structural units, and a validation-selected multiview kernel can exploit the LCA-path view when it is supported by training folds.
 
 Unsafe claim:
 
-> Code2Hyp universally outperforms Euclidean structural baselines on method-name prediction.
+> Negative curvature or LCA anchoring universally improves all code retrieval settings.
 
-The released results show a trade-off. B60 is the strongest prefix-trie
-structural-fidelity model. B62 is the strongest multi-objective structural
-candidate among the currently tested variants. Held-out relation experiments
-are required before claiming cross-metric generalization. Some Euclidean or L1
-controls remain competitive on downstream F1, so downstream prediction and
-structural adequacy must be reported separately.
+The released results show a positive LCA-view contribution on BugNet Python and a zero-LCA fallback on the DTA subset. This is the intended interpretation: the method is useful as a controlled structural view, not as an unconditional replacement for lexical or pretrained semantic models.

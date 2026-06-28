@@ -11,10 +11,15 @@ from torch.nn import functional as F
 from .code2hyp_torch import (
     Code2HypBatch,
     Code2HypTorchModel,
+    StructuralTargetDistance,
     batch_structural_distance_regularizer,
     batch_structural_multi_metric_distance_regularizer,
     batch_structural_neighbor_distribution_regularizer,
     batch_structural_rank_regularizer,
+    batch_structural_relation_conditioned_distance_regularizer,
+    batch_method_transport_distance_regularizer,
+    batch_method_transport_multi_metric_distance_regularizer,
+    path_lca_axiom_loss,
     path_attention_tree_distance_loss,
     path_dual_attention_separation_loss,
 )
@@ -22,6 +27,16 @@ from .code2hyp_torch import (
 
 ADAPTIVE_RANK_MIN_WEIGHT = 0.10
 ADAPTIVE_RANK_MAX_WEIGHT = 0.50
+
+STRUCTURAL_DISTANCE_TARGETS: dict[str, tuple[StructuralTargetDistance, ...]] = {
+    "distance_prefix": ("prefix_tree",),
+    "distance_edit": ("edit",),
+    "distance_jaccard": ("jaccard_bigrams",),
+    "multi_metric_distance": ("prefix_tree", "edit", "jaccard_bigrams"),
+    "multi_metric_prefix_edit": ("prefix_tree", "edit"),
+    "multi_metric_prefix_jaccard": ("prefix_tree", "jaccard_bigrams"),
+    "multi_metric_edit_jaccard": ("edit", "jaccard_bigrams"),
+}
 
 
 @dataclass(frozen=True)
@@ -416,12 +431,31 @@ def _structural_regularizer_loss(
 ) -> Tensor:
     if structural_regularizer == "distance":
         return batch_structural_distance_regularizer(output, batch)
-    if structural_regularizer == "multi_metric_distance":
-        return batch_structural_multi_metric_distance_regularizer(output, batch)
+    if structural_regularizer in STRUCTURAL_DISTANCE_TARGETS:
+        return batch_structural_multi_metric_distance_regularizer(
+            output,
+            batch,
+            target_distances=STRUCTURAL_DISTANCE_TARGETS[structural_regularizer],
+        )
+    if structural_regularizer == "multi_metric_lca_axiom":
+        return batch_structural_multi_metric_distance_regularizer(
+            output,
+            batch,
+            target_distances=STRUCTURAL_DISTANCE_TARGETS["multi_metric_distance"],
+        ) + 0.25 * path_lca_axiom_loss(output, batch)
+    if structural_regularizer == "relation_conditioned_lca_axiom":
+        return batch_structural_relation_conditioned_distance_regularizer(output, batch) + 0.25 * path_lca_axiom_loss(
+            output,
+            batch,
+        )
     if structural_regularizer == "rank":
         return batch_structural_rank_regularizer(output, batch)
     if structural_regularizer == "neighbor_distribution":
         return batch_structural_neighbor_distribution_regularizer(output, batch)
+    if structural_regularizer == "method_transport":
+        return batch_method_transport_distance_regularizer(output, batch)
+    if structural_regularizer == "method_transport_multi_metric":
+        return batch_method_transport_multi_metric_distance_regularizer(output, batch)
     if structural_regularizer == "path_attention_monotone":
         if output.path_node_attention_monotonicity_loss is None:
             raise RuntimeError("path_attention_monotone requires a path-node attention model output")

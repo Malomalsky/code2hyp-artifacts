@@ -1,0 +1,2098 @@
+{
+  "bootstrap_samples": 5000,
+  "contrasts": [
+    {
+      "contrast": "multiview_minus_token_bag",
+      "dataset": "bugnet_python",
+      "delta_mean_rank": -0.9869791666666667,
+      "delta_mrr": 0.0507730301667488,
+      "delta_recall_at_1": 0.05208333333333333,
+      "delta_recall_at_5": 0.03645833333333333,
+      "label": "Code2Hyp multiview selected - token bag",
+      "paired_query_count": 384,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -1.4479166666666667,
+          -0.5182291666666666
+        ],
+        "delta_mrr": [
+          0.015947736943758107,
+          0.08705878699663264
+        ],
+        "delta_recall_at_1": [
+          0.0026041666666666665,
+          0.1015625
+        ],
+        "delta_recall_at_5": [
+          0.005208333333333332,
+          0.06510416666666666
+        ]
+      },
+      "task_count": 32,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": 0.05555555555555556,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-000_p02580"
+        },
+        {
+          "delta_mean_rank": -3.0833333333333335,
+          "delta_mrr": 0.1789242794618048,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-001_p02596"
+        },
+        {
+          "delta_mean_rank": -3.3333333333333335,
+          "delta_mrr": 0.037235374327765636,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-002_p02623"
+        },
+        {
+          "delta_mean_rank": -0.5833333333333334,
+          "delta_mrr": -0.05147714724079309,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-003_p02630"
+        },
+        {
+          "delta_mean_rank": -1.5,
+          "delta_mrr": 0.03130026291790997,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-004_p02641"
+        },
+        {
+          "delta_mean_rank": -2.0,
+          "delta_mrr": 0.13415890001034927,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-005_p02642"
+        },
+        {
+          "delta_mean_rank": -0.8333333333333334,
+          "delta_mrr": 0.030059523809523814,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-006_p02658"
+        },
+        {
+          "delta_mean_rank": -0.3333333333333333,
+          "delta_mrr": 0.009991859991859994,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-007_p02684"
+        },
+        {
+          "delta_mean_rank": -1.1666666666666667,
+          "delta_mrr": 0.24880651755651753,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-008_p02691"
+        },
+        {
+          "delta_mean_rank": -0.6666666666666666,
+          "delta_mrr": 0.04841778591778592,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-009_p02701"
+        },
+        {
+          "delta_mean_rank": -1.0833333333333333,
+          "delta_mrr": 0.19553872053872054,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-010_p02702"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.041666666666666664,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-011_p02707"
+        },
+        {
+          "delta_mean_rank": 0.4166666666666667,
+          "delta_mrr": -0.05125661375661376,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-012_p02713"
+        },
+        {
+          "delta_mean_rank": 1.25,
+          "delta_mrr": -0.04304777466542172,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-013_p02714"
+        },
+        {
+          "delta_mean_rank": -4.416666666666667,
+          "delta_mrr": 0.006193015901562365,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-014_p02719"
+        },
+        {
+          "delta_mean_rank": 0.6666666666666666,
+          "delta_mrr": 0.16272058823529412,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-015_p02727"
+        },
+        {
+          "delta_mean_rank": -2.8333333333333335,
+          "delta_mrr": 0.14654278956910535,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-016_p02732"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": -0.0744047619047619,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-017_p02756"
+        },
+        {
+          "delta_mean_rank": -2.6666666666666665,
+          "delta_mrr": -0.02679660753190165,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-018_p02773"
+        },
+        {
+          "delta_mean_rank": 0.3333333333333333,
+          "delta_mrr": -0.010353535353535356,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-019_p02791"
+        },
+        {
+          "delta_mean_rank": -1.1666666666666667,
+          "delta_mrr": 0.2555555555555556,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-020_p02831"
+        },
+        {
+          "delta_mean_rank": -1.3333333333333333,
+          "delta_mrr": -0.008949061793889386,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-021_p02844"
+        },
+        {
+          "delta_mean_rank": -0.5833333333333334,
+          "delta_mrr": 0.03840229580361159,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-022_p02888"
+        },
+        {
+          "delta_mean_rank": 0.8333333333333334,
+          "delta_mrr": -0.11662851037851037,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-023_p02899"
+        },
+        {
+          "delta_mean_rank": 0.16666666666666666,
+          "delta_mrr": 0.07677696078431372,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-024_p02912"
+        },
+        {
+          "delta_mean_rank": 1.5,
+          "delta_mrr": -0.15933048433048433,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-025_p02924"
+        },
+        {
+          "delta_mean_rank": -1.3333333333333333,
+          "delta_mrr": 0.14866372053872054,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-026_p02947"
+        },
+        {
+          "delta_mean_rank": -0.4166666666666667,
+          "delta_mrr": -0.09363934676434676,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-027_p02971"
+        },
+        {
+          "delta_mean_rank": -2.6666666666666665,
+          "delta_mrr": 0.1328703703703704,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-028_p02983"
+        },
+        {
+          "delta_mean_rank": -1.1666666666666667,
+          "delta_mrr": 0.15482862975679068,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-029_p02995"
+        },
+        {
+          "delta_mean_rank": -0.9166666666666666,
+          "delta_mrr": 0.07455657768157768,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-030_p03006"
+        },
+        {
+          "delta_mean_rank": -2.3333333333333335,
+          "delta_mrr": 0.051854858104858105,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-031_p03013"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.0021024015732109547,
+        "delta_mrr": 0.050102459732443094,
+        "delta_recall_at_1": 0.21003961563110352,
+        "delta_recall_at_5": 0.01690053939819336
+      }
+    },
+    {
+      "contrast": "multiview_minus_token_bag",
+      "dataset": "dta_zenodo",
+      "delta_mean_rank": -0.2537878787878788,
+      "delta_mrr": 0.03433004285277013,
+      "delta_recall_at_1": 0.026515151515151512,
+      "delta_recall_at_5": 0.022727272727272728,
+      "label": "Code2Hyp multiview selected - token bag",
+      "paired_query_count": 264,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.5606060606060607,
+          0.026515151515151516
+        ],
+        "delta_mrr": [
+          -0.0029187983733438283,
+          0.07646705146705148
+        ],
+        "delta_recall_at_1": [
+          -0.007575757575757575,
+          0.06818181818181818
+        ],
+        "delta_recall_at_5": [
+          -0.0037878787878787876,
+          0.056818181818181816
+        ]
+      },
+      "task_count": 11,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.20833333333333334,
+          "delta_mrr": 0.05162037037037037,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-00"
+        },
+        {
+          "delta_mean_rank": -0.9166666666666666,
+          "delta_mrr": 0.14641203703703706,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-01"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.005555555555555554,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-02"
+        },
+        {
+          "delta_mean_rank": 0.125,
+          "delta_mrr": -0.03125,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-03"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.010416666666666666,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-04"
+        },
+        {
+          "delta_mean_rank": -1.0833333333333333,
+          "delta_mrr": 0.11691468253968255,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 24,
+          "task": "task-05"
+        },
+        {
+          "delta_mean_rank": 0.2916666666666667,
+          "delta_mrr": -0.04773328523328523,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-06"
+        },
+        {
+          "delta_mean_rank": 0.125,
+          "delta_mrr": -0.007936507936507941,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-07"
+        },
+        {
+          "delta_mean_rank": -1.0416666666666667,
+          "delta_mrr": 0.14265873015873018,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.041666666666666664,
+          "query_count": 24,
+          "task": "task-08"
+        },
+        {
+          "delta_mean_rank": 0.08333333333333333,
+          "delta_mrr": -0.02777777777777778,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-09"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.01875,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-10"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.75390625,
+        "delta_mrr": 0.548828125,
+        "delta_recall_at_1": 0.7265625,
+        "delta_recall_at_5": 0.625
+      }
+    },
+    {
+      "contrast": "multiview_minus_ast_node_bag",
+      "dataset": "bugnet_python",
+      "delta_mean_rank": -1.9348958333333335,
+      "delta_mrr": 0.11840362624119002,
+      "delta_recall_at_1": 0.11197916666666666,
+      "delta_recall_at_5": 0.11458333333333333,
+      "label": "Code2Hyp multiview selected - AST node bag",
+      "paired_query_count": 384,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -3.2213541666666665,
+          -0.7057291666666667
+        ],
+        "delta_mrr": [
+          0.06511996881301894,
+          0.1728559759321588
+        ],
+        "delta_recall_at_1": [
+          0.0546875,
+          0.17708333333333331
+        ],
+        "delta_recall_at_5": [
+          0.03906249999999999,
+          0.19010416666666666
+        ]
+      },
+      "task_count": 32,
+      "task_rows": [
+        {
+          "delta_mean_rank": -7.0,
+          "delta_mrr": 0.6001984126984127,
+          "delta_recall_at_1": 0.6666666666666666,
+          "delta_recall_at_5": 0.5833333333333334,
+          "query_count": 12,
+          "task": "task-000_p02580"
+        },
+        {
+          "delta_mean_rank": -1.6666666666666667,
+          "delta_mrr": 0.06973220769789397,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-001_p02596"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": 0.0583994708994709,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-002_p02623"
+        },
+        {
+          "delta_mean_rank": -3.4166666666666665,
+          "delta_mrr": 0.27780074457706033,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-003_p02630"
+        },
+        {
+          "delta_mean_rank": -3.0,
+          "delta_mrr": 0.35175974123342546,
+          "delta_recall_at_1": 0.4166666666666667,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-004_p02641"
+        },
+        {
+          "delta_mean_rank": 5.333333333333333,
+          "delta_mrr": -0.05935405643738977,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-005_p02642"
+        },
+        {
+          "delta_mean_rank": 0.16666666666666666,
+          "delta_mrr": -0.042361111111111106,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-006_p02658"
+        },
+        {
+          "delta_mean_rank": -0.75,
+          "delta_mrr": 0.22384259259259262,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-007_p02684"
+        },
+        {
+          "delta_mean_rank": -1.75,
+          "delta_mrr": 0.15927579365079367,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-008_p02691"
+        },
+        {
+          "delta_mean_rank": -3.6666666666666665,
+          "delta_mrr": 0.17589193214193213,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-009_p02701"
+        },
+        {
+          "delta_mean_rank": -4.833333333333333,
+          "delta_mrr": 0.17137195533934665,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-010_p02702"
+        },
+        {
+          "delta_mean_rank": -3.4166666666666665,
+          "delta_mrr": 0.2278174603174603,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-011_p02707"
+        },
+        {
+          "delta_mean_rank": -0.75,
+          "delta_mrr": 0.17314814814814816,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-012_p02713"
+        },
+        {
+          "delta_mean_rank": -3.4166666666666665,
+          "delta_mrr": 0.07549130820869952,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-013_p02714"
+        },
+        {
+          "delta_mean_rank": 2.3333333333333335,
+          "delta_mrr": 0.053063759848627025,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-014_p02719"
+        },
+        {
+          "delta_mean_rank": -4.666666666666667,
+          "delta_mrr": 0.19961732416220246,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-015_p02727"
+        },
+        {
+          "delta_mean_rank": 0.16666666666666666,
+          "delta_mrr": 0.13628910076278497,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-016_p02732"
+        },
+        {
+          "delta_mean_rank": -8.083333333333334,
+          "delta_mrr": 0.24177921655991833,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.5,
+          "query_count": 12,
+          "task": "task-017_p02756"
+        },
+        {
+          "delta_mean_rank": 3.9166666666666665,
+          "delta_mrr": -0.24607172284868364,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": -0.4166666666666667,
+          "query_count": 12,
+          "task": "task-018_p02773"
+        },
+        {
+          "delta_mean_rank": 1.75,
+          "delta_mrr": -0.09641203703703705,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-019_p02791"
+        },
+        {
+          "delta_mean_rank": -2.25,
+          "delta_mrr": 0.11383928571428571,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-020_p02831"
+        },
+        {
+          "delta_mean_rank": -3.9166666666666665,
+          "delta_mrr": 0.12418501818820636,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-021_p02844"
+        },
+        {
+          "delta_mean_rank": 1.5833333333333333,
+          "delta_mrr": 0.10491506544138124,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-022_p02888"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": -0.14125534052004643,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": -0.3333333333333333,
+          "query_count": 12,
+          "task": "task-023_p02899"
+        },
+        {
+          "delta_mean_rank": -5.666666666666667,
+          "delta_mrr": 0.26059704184704185,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-024_p02912"
+        },
+        {
+          "delta_mean_rank": -14.083333333333334,
+          "delta_mrr": 0.16278393414200512,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.4166666666666667,
+          "query_count": 12,
+          "task": "task-025_p02924"
+        },
+        {
+          "delta_mean_rank": -0.9166666666666666,
+          "delta_mrr": 0.015046296296296302,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-026_p02947"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": 0.08449074074074074,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-027_p02971"
+        },
+        {
+          "delta_mean_rank": -1.5,
+          "delta_mrr": 0.19219576719576723,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-028_p02983"
+        },
+        {
+          "delta_mean_rank": 0.8333333333333334,
+          "delta_mrr": 0.07254646597633194,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-029_p02995"
+        },
+        {
+          "delta_mean_rank": -4.166666666666667,
+          "delta_mrr": 0.08793798793798795,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-030_p03006"
+        },
+        {
+          "delta_mean_rank": 0.4166666666666667,
+          "delta_mrr": -0.03964646464646465,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-031_p03013"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.14961278438568115,
+        "delta_mrr": 0.0005350527353584766,
+        "delta_recall_at_1": 0.0037191659212112427,
+        "delta_recall_at_5": 0.012540951371192932
+      }
+    },
+    {
+      "contrast": "multiview_minus_ast_node_bag",
+      "dataset": "dta_zenodo",
+      "delta_mean_rank": -0.3522727272727273,
+      "delta_mrr": 0.06226947505356597,
+      "delta_recall_at_1": 0.08712121212121211,
+      "delta_recall_at_5": 0.0303030303030303,
+      "label": "Code2Hyp multiview selected - AST node bag",
+      "paired_query_count": 264,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.5984848484848485,
+          -0.16287878787878787
+        ],
+        "delta_mrr": [
+          0.03086957234684508,
+          0.09433430626612446
+        ],
+        "delta_recall_at_1": [
+          0.03409090909090909,
+          0.14015151515151517
+        ],
+        "delta_recall_at_5": [
+          0.0,
+          0.06439393939393939
+        ]
+      },
+      "task_count": 11,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.7916666666666666,
+          "delta_mrr": 0.12035233285233286,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-00"
+        },
+        {
+          "delta_mean_rank": -0.20833333333333334,
+          "delta_mrr": 0.00029761904761905697,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-01"
+        },
+        {
+          "delta_mean_rank": -0.041666666666666664,
+          "delta_mrr": -0.01736111111111111,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.041666666666666664,
+          "query_count": 24,
+          "task": "task-02"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.02777777777777778,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-03"
+        },
+        {
+          "delta_mean_rank": -0.20833333333333334,
+          "delta_mrr": 0.0763888888888889,
+          "delta_recall_at_1": 0.125,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-04"
+        },
+        {
+          "delta_mean_rank": -0.3333333333333333,
+          "delta_mrr": 0.14692460317460318,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-05"
+        },
+        {
+          "delta_mean_rank": -1.3333333333333333,
+          "delta_mrr": 0.1324359668109668,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.125,
+          "query_count": 24,
+          "task": "task-06"
+        },
+        {
+          "delta_mean_rank": -0.4583333333333333,
+          "delta_mrr": 0.0416005291005291,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-07"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-08"
+        },
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": 0.052083333333333336,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-09"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": 0.10446428571428572,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-10"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.001953125,
+        "delta_mrr": 0.021484375,
+        "delta_recall_at_1": 0.109375,
+        "delta_recall_at_5": 0.453125
+      }
+    },
+    {
+      "contrast": "multiview_minus_path_signature",
+      "dataset": "bugnet_python",
+      "delta_mean_rank": -2.1640625,
+      "delta_mrr": 0.11782821400102907,
+      "delta_recall_at_1": 0.11458333333333333,
+      "delta_recall_at_5": 0.10677083333333333,
+      "label": "Code2Hyp multiview selected - LCA path signature",
+      "paired_query_count": 384,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -3.4609375,
+          -1.015625
+        ],
+        "delta_mrr": [
+          0.06722980354901613,
+          0.16828917106359795
+        ],
+        "delta_recall_at_1": [
+          0.05208333333333333,
+          0.1796875
+        ],
+        "delta_recall_at_5": [
+          0.04427083333333333,
+          0.16927083333333334
+        ]
+      },
+      "task_count": 32,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.4166666666666667,
+          "delta_mrr": 0.029761904761904764,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-000_p02580"
+        },
+        {
+          "delta_mean_rank": 1.1666666666666667,
+          "delta_mrr": 0.19547583135818433,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-001_p02596"
+        },
+        {
+          "delta_mean_rank": -7.916666666666667,
+          "delta_mrr": 0.19105089157530042,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.4166666666666667,
+          "query_count": 12,
+          "task": "task-002_p02623"
+        },
+        {
+          "delta_mean_rank": -1.6666666666666667,
+          "delta_mrr": 0.1375870231133389,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-003_p02630"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": -0.03340455840455841,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-004_p02641"
+        },
+        {
+          "delta_mean_rank": -2.75,
+          "delta_mrr": 0.1712430763149154,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-005_p02642"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": 0.04560185185185186,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-006_p02658"
+        },
+        {
+          "delta_mean_rank": -2.1666666666666665,
+          "delta_mrr": 0.3652497964997965,
+          "delta_recall_at_1": 0.4166666666666667,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-007_p02684"
+        },
+        {
+          "delta_mean_rank": -4.666666666666667,
+          "delta_mrr": 0.3386796890473361,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.5,
+          "query_count": 12,
+          "task": "task-008_p02691"
+        },
+        {
+          "delta_mean_rank": -1.75,
+          "delta_mrr": -0.04708333333333334,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-009_p02701"
+        },
+        {
+          "delta_mean_rank": 0.16666666666666666,
+          "delta_mrr": 0.2489117364117364,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-010_p02702"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": -0.027777777777777773,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-011_p02707"
+        },
+        {
+          "delta_mean_rank": 1.1666666666666667,
+          "delta_mrr": -0.1343915343915344,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-012_p02713"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.11559009209744504,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-013_p02714"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": 0.005454124669810943,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-014_p02719"
+        },
+        {
+          "delta_mean_rank": -0.9166666666666666,
+          "delta_mrr": 0.14773203838840923,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-015_p02727"
+        },
+        {
+          "delta_mean_rank": -8.75,
+          "delta_mrr": 0.18013807092022652,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-016_p02732"
+        },
+        {
+          "delta_mean_rank": -1.6666666666666667,
+          "delta_mrr": 0.14279609279609282,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-017_p02756"
+        },
+        {
+          "delta_mean_rank": -8.5,
+          "delta_mrr": 0.06501827887346912,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-018_p02773"
+        },
+        {
+          "delta_mean_rank": -12.5,
+          "delta_mrr": 0.20641097831315222,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.5833333333333334,
+          "query_count": 12,
+          "task": "task-019_p02791"
+        },
+        {
+          "delta_mean_rank": -2.5833333333333335,
+          "delta_mrr": 0.2924242424242424,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-020_p02831"
+        },
+        {
+          "delta_mean_rank": 3.8333333333333335,
+          "delta_mrr": -0.005871719973086477,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-021_p02844"
+        },
+        {
+          "delta_mean_rank": -4.083333333333333,
+          "delta_mrr": 0.09273100206604044,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-022_p02888"
+        },
+        {
+          "delta_mean_rank": -1.0,
+          "delta_mrr": -0.09882821486082356,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-023_p02899"
+        },
+        {
+          "delta_mean_rank": -0.6666666666666666,
+          "delta_mrr": 0.1831427015250545,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-024_p02912"
+        },
+        {
+          "delta_mean_rank": 2.3333333333333335,
+          "delta_mrr": -0.20595746845746846,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": -0.16666666666666666,
+          "query_count": 12,
+          "task": "task-025_p02924"
+        },
+        {
+          "delta_mean_rank": -4.416666666666667,
+          "delta_mrr": 0.16415343915343913,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-026_p02947"
+        },
+        {
+          "delta_mean_rank": -0.6666666666666666,
+          "delta_mrr": 0.27357295482295485,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-027_p02971"
+        },
+        {
+          "delta_mean_rank": -0.75,
+          "delta_mrr": -0.06752645502645502,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-028_p02983"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.27483312983312985,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-029_p02995"
+        },
+        {
+          "delta_mean_rank": -6.916666666666667,
+          "delta_mrr": 0.09136102164119404,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-030_p03006"
+        },
+        {
+          "delta_mean_rank": -2.9166666666666665,
+          "delta_mrr": 0.4324239417989418,
+          "delta_recall_at_1": 0.5833333333333334,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-031_p03013"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.0008779102936387062,
+        "delta_mrr": 0.0070003666914999485,
+        "delta_recall_at_1": 0.005924612283706665,
+        "delta_recall_at_5": 0.004077315330505371
+      }
+    },
+    {
+      "contrast": "multiview_minus_path_signature",
+      "dataset": "dta_zenodo",
+      "delta_mean_rank": -0.42424242424242425,
+      "delta_mrr": 0.07889022803795531,
+      "delta_recall_at_1": 0.10606060606060605,
+      "delta_recall_at_5": 0.03409090909090909,
+      "label": "Code2Hyp multiview selected - LCA path signature",
+      "paired_query_count": 264,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.8446969696969696,
+          -0.06439393939393939
+        ],
+        "delta_mrr": [
+          0.022464225589225596,
+          0.14437680375180376
+        ],
+        "delta_recall_at_1": [
+          0.022727272727272728,
+          0.19318181818181818
+        ],
+        "delta_recall_at_5": [
+          -0.01515151515151515,
+          0.08712121212121211
+        ]
+      },
+      "task_count": 11,
+      "task_rows": [
+        {
+          "delta_mean_rank": 0.08333333333333333,
+          "delta_mrr": 0.030555555555555558,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-00"
+        },
+        {
+          "delta_mean_rank": -0.375,
+          "delta_mrr": 0.03333333333333333,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.041666666666666664,
+          "query_count": 24,
+          "task": "task-01"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.05555555555555555,
+          "delta_recall_at_1": 0.125,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-02"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-03"
+        },
+        {
+          "delta_mean_rank": -0.5416666666666666,
+          "delta_mrr": 0.19305555555555556,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-04"
+        },
+        {
+          "delta_mean_rank": 0.5416666666666666,
+          "delta_mrr": -0.08640873015873014,
+          "delta_recall_at_1": -0.125,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 24,
+          "task": "task-05"
+        },
+        {
+          "delta_mean_rank": -0.875,
+          "delta_mrr": 0.10962451899951901,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 24,
+          "task": "task-06"
+        },
+        {
+          "delta_mean_rank": -1.375,
+          "delta_mrr": 0.1279596560846561,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 24,
+          "task": "task-07"
+        },
+        {
+          "delta_mean_rank": 0.041666666666666664,
+          "delta_mrr": -0.006944444444444445,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-08"
+        },
+        {
+          "delta_mean_rank": -1.8333333333333333,
+          "delta_mrr": 0.3079861111111111,
+          "delta_recall_at_1": 0.375,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 24,
+          "task": "task-09"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": 0.10307539682539683,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-10"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.34375,
+        "delta_mrr": 0.109375,
+        "delta_recall_at_1": 0.0703125,
+        "delta_recall_at_5": 1.0
+      }
+    },
+    {
+      "contrast": "multiview_minus_no_lca",
+      "dataset": "bugnet_python",
+      "delta_mean_rank": -0.4036458333333333,
+      "delta_mrr": 0.0211724679846896,
+      "delta_recall_at_1": 0.015625,
+      "delta_recall_at_5": 0.013020833333333332,
+      "label": "Code2Hyp multiview selected - multiview without LCA path view",
+      "paired_query_count": 384,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.8098958333333334,
+          -0.023437500000000014
+        ],
+        "delta_mrr": [
+          -0.007869531319505125,
+          0.051510150276505386
+        ],
+        "delta_recall_at_1": [
+          -0.026041666666666664,
+          0.05989583333333333
+        ],
+        "delta_recall_at_5": [
+          -0.026041666666666668,
+          0.049479166666666664
+        ]
+      },
+      "task_count": 32,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.8333333333333334,
+          "delta_mrr": 0.19861111111111115,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-000_p02580"
+        },
+        {
+          "delta_mean_rank": -1.3333333333333333,
+          "delta_mrr": 0.009719029374201783,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-001_p02596"
+        },
+        {
+          "delta_mean_rank": -1.3333333333333333,
+          "delta_mrr": 0.010917785917785916,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-002_p02623"
+        },
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": -0.04505548058179637,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-003_p02630"
+        },
+        {
+          "delta_mean_rank": -0.5833333333333334,
+          "delta_mrr": 0.02096927446192152,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-004_p02641"
+        },
+        {
+          "delta_mean_rank": 0.75,
+          "delta_mrr": 0.042445237176919316,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-005_p02642"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": -0.034821428571428566,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-006_p02658"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.05672514619883041,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-007_p02684"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.22476851851851853,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-008_p02691"
+        },
+        {
+          "delta_mean_rank": -0.3333333333333333,
+          "delta_mrr": 0.01960678210678211,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-009_p02701"
+        },
+        {
+          "delta_mean_rank": -0.5833333333333334,
+          "delta_mrr": 0.09764734176498883,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-010_p02702"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.041666666666666664,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-011_p02707"
+        },
+        {
+          "delta_mean_rank": 1.25,
+          "delta_mrr": -0.10383597883597884,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-012_p02713"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": -0.04526086250350956,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-013_p02714"
+        },
+        {
+          "delta_mean_rank": -2.5833333333333335,
+          "delta_mrr": 0.008537815847598456,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-014_p02719"
+        },
+        {
+          "delta_mean_rank": -1.5833333333333333,
+          "delta_mrr": 0.2060303689354257,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-015_p02727"
+        },
+        {
+          "delta_mean_rank": -1.6666666666666667,
+          "delta_mrr": 0.09397972930676973,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-016_p02732"
+        },
+        {
+          "delta_mean_rank": -1.5833333333333333,
+          "delta_mrr": 0.059854497354497355,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-017_p02756"
+        },
+        {
+          "delta_mean_rank": 0.3333333333333333,
+          "delta_mrr": -0.052479735248698096,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-018_p02773"
+        },
+        {
+          "delta_mean_rank": 1.5833333333333333,
+          "delta_mrr": -0.02640033577533578,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-019_p02791"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": 0.125,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-020_p02831"
+        },
+        {
+          "delta_mean_rank": -1.4166666666666667,
+          "delta_mrr": 0.009307138164774095,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-021_p02844"
+        },
+        {
+          "delta_mean_rank": 0.75,
+          "delta_mrr": 0.023394502670818454,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-022_p02888"
+        },
+        {
+          "delta_mean_rank": 1.4166666666666667,
+          "delta_mrr": -0.12751623376623378,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-023_p02899"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.014739923747276692,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-024_p02912"
+        },
+        {
+          "delta_mean_rank": -3.4166666666666665,
+          "delta_mrr": -0.03158704721204721,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-025_p02924"
+        },
+        {
+          "delta_mean_rank": 1.0833333333333333,
+          "delta_mrr": -0.08802609427609427,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.16666666666666666,
+          "query_count": 12,
+          "task": "task-026_p02947"
+        },
+        {
+          "delta_mean_rank": 0.9166666666666666,
+          "delta_mrr": -0.14375000000000002,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-027_p02971"
+        },
+        {
+          "delta_mean_rank": -1.1666666666666667,
+          "delta_mrr": 0.04451566951566952,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-028_p02983"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-029_p02995"
+        },
+        {
+          "delta_mean_rank": -1.6666666666666667,
+          "delta_mrr": 0.048004426129426125,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-030_p03006"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": 0.019811207311207318,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-031_p03013"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.04277394525706768,
+        "delta_mrr": 0.07075554598122835,
+        "delta_recall_at_1": 1.0,
+        "delta_recall_at_5": 0.5034446716308594
+      }
+    },
+    {
+      "contrast": "multiview_minus_no_lca",
+      "dataset": "dta_zenodo",
+      "delta_mean_rank": -0.04924242424242424,
+      "delta_mrr": 0.009979256854256853,
+      "delta_recall_at_1": 0.01515151515151515,
+      "delta_recall_at_5": 0.011363636363636364,
+      "label": "Code2Hyp multiview selected - multiview without LCA path view",
+      "paired_query_count": 264,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.12878787878787878,
+          0.01515151515151515
+        ],
+        "delta_mrr": [
+          -0.001695526695526696,
+          0.024210858585858586
+        ],
+        "delta_recall_at_1": [
+          -0.0037878787878787876,
+          0.03409090909090909
+        ],
+        "delta_recall_at_5": [
+          -0.007575757575757575,
+          0.03409090909090909
+        ]
+      },
+      "task_count": 11,
+      "task_rows": [
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-00"
+        },
+        {
+          "delta_mean_rank": -0.375,
+          "delta_mrr": 0.062152777777777786,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-01"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-02"
+        },
+        {
+          "delta_mean_rank": 0.041666666666666664,
+          "delta_mrr": -0.020833333333333332,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-03"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.02777777777777778,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-04"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": 0.024305555555555552,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-05"
+        },
+        {
+          "delta_mean_rank": -0.125,
+          "delta_mrr": 0.004861111111111112,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-06"
+        },
+        {
+          "delta_mean_rank": 0.125,
+          "delta_mrr": -0.009325396825396829,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": -0.041666666666666664,
+          "query_count": 24,
+          "task": "task-07"
+        },
+        {
+          "delta_mean_rank": -0.041666666666666664,
+          "delta_mrr": 0.020833333333333332,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-08"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-09"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": 0.0,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-10"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.453125,
+        "delta_mrr": 0.453125,
+        "delta_recall_at_1": 0.375,
+        "delta_recall_at_5": 1.0
+      }
+    },
+    {
+      "contrast": "multiview_minus_token_ast",
+      "dataset": "bugnet_python",
+      "delta_mean_rank": -0.609375,
+      "delta_mrr": 0.044689440049097834,
+      "delta_recall_at_1": 0.033854166666666664,
+      "delta_recall_at_5": 0.049479166666666664,
+      "label": "Code2Hyp multiview selected - token+AST selected",
+      "paired_query_count": 384,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -1.2916666666666667,
+          0.02083333333333334
+        ],
+        "delta_mrr": [
+          0.0034192558525772557,
+          0.0879812732802093
+        ],
+        "delta_recall_at_1": [
+          -0.020833333333333332,
+          0.09114583333333333
+        ],
+        "delta_recall_at_5": [
+          -0.005208333333333334,
+          0.11197916666666666
+        ]
+      },
+      "task_count": 32,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": -0.020833333333333332,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-000_p02580"
+        },
+        {
+          "delta_mean_rank": 1.9166666666666667,
+          "delta_mrr": -0.10634803921568627,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-001_p02596"
+        },
+        {
+          "delta_mean_rank": -3.8333333333333335,
+          "delta_mrr": 0.09625386187886187,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-002_p02623"
+        },
+        {
+          "delta_mean_rank": 0.3333333333333333,
+          "delta_mrr": 0.016717614743930537,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-003_p02630"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": -0.06312678062678063,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-004_p02641"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": 0.15082693223624596,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-005_p02642"
+        },
+        {
+          "delta_mean_rank": -0.3333333333333333,
+          "delta_mrr": 0.006845238095238096,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-006_p02658"
+        },
+        {
+          "delta_mean_rank": 0.5,
+          "delta_mrr": 0.05753968253968255,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-007_p02684"
+        },
+        {
+          "delta_mean_rank": -2.6666666666666665,
+          "delta_mrr": 0.2984758297258297,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.3333333333333333,
+          "query_count": 12,
+          "task": "task-008_p02691"
+        },
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": -0.06455804544039838,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-009_p02701"
+        },
+        {
+          "delta_mean_rank": -3.5833333333333335,
+          "delta_mrr": 0.24534539534539535,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-010_p02702"
+        },
+        {
+          "delta_mean_rank": 0.0,
+          "delta_mrr": -0.027777777777777773,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-011_p02707"
+        },
+        {
+          "delta_mean_rank": 1.25,
+          "delta_mrr": -0.18716931216931218,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": -0.16666666666666666,
+          "query_count": 12,
+          "task": "task-012_p02713"
+        },
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": -0.040519768586691,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-013_p02714"
+        },
+        {
+          "delta_mean_rank": 0.8333333333333334,
+          "delta_mrr": 0.03799585397689113,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-014_p02719"
+        },
+        {
+          "delta_mean_rank": 0.08333333333333333,
+          "delta_mrr": 0.12504776722913977,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-015_p02727"
+        },
+        {
+          "delta_mean_rank": -3.75,
+          "delta_mrr": 0.07161223083952702,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.16666666666666666,
+          "query_count": 12,
+          "task": "task-016_p02732"
+        },
+        {
+          "delta_mean_rank": 0.25,
+          "delta_mrr": -0.023674242424242417,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-017_p02756"
+        },
+        {
+          "delta_mean_rank": -2.1666666666666665,
+          "delta_mrr": 0.03630921213999353,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-018_p02773"
+        },
+        {
+          "delta_mean_rank": -5.333333333333333,
+          "delta_mrr": 0.17497241320770732,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.5833333333333334,
+          "query_count": 12,
+          "task": "task-019_p02791"
+        },
+        {
+          "delta_mean_rank": -0.9166666666666666,
+          "delta_mrr": 0.22420634920634921,
+          "delta_recall_at_1": 0.3333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-020_p02831"
+        },
+        {
+          "delta_mean_rank": -0.25,
+          "delta_mrr": -0.04015737394999378,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-021_p02844"
+        },
+        {
+          "delta_mean_rank": -0.3333333333333333,
+          "delta_mrr": 0.06771476574108153,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-022_p02888"
+        },
+        {
+          "delta_mean_rank": 0.9166666666666666,
+          "delta_mrr": -0.11865079365079366,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": -0.25,
+          "query_count": 12,
+          "task": "task-023_p02899"
+        },
+        {
+          "delta_mean_rank": 1.0,
+          "delta_mrr": 0.043096405228758176,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 12,
+          "task": "task-024_p02912"
+        },
+        {
+          "delta_mean_rank": 0.3333333333333333,
+          "delta_mrr": -0.13115588115588117,
+          "delta_recall_at_1": -0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-025_p02924"
+        },
+        {
+          "delta_mean_rank": -2.4166666666666665,
+          "delta_mrr": 0.1315776815776816,
+          "delta_recall_at_1": 0.08333333333333333,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-026_p02947"
+        },
+        {
+          "delta_mean_rank": 0.4166666666666667,
+          "delta_mrr": 0.1439814814814815,
+          "delta_recall_at_1": 0.16666666666666666,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-027_p02971"
+        },
+        {
+          "delta_mean_rank": -0.08333333333333333,
+          "delta_mrr": -0.11637205387205386,
+          "delta_recall_at_1": -0.25,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 12,
+          "task": "task-028_p02983"
+        },
+        {
+          "delta_mean_rank": 3.5,
+          "delta_mrr": 0.14515891675374434,
+          "delta_recall_at_1": 0.25,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-029_p02995"
+        },
+        {
+          "delta_mean_rank": -3.8333333333333335,
+          "delta_mrr": 0.03776320536188957,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.25,
+          "query_count": 12,
+          "task": "task-030_p03006"
+        },
+        {
+          "delta_mean_rank": -1.0833333333333333,
+          "delta_mrr": 0.2589646464646465,
+          "delta_recall_at_1": 0.4166666666666667,
+          "delta_recall_at_5": 0.0,
+          "query_count": 12,
+          "task": "task-031_p03013"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 0.47312965989112854,
+        "delta_mrr": 0.21532714972272515,
+        "delta_recall_at_1": 0.8450189828872681,
+        "delta_recall_at_5": 0.237884521484375
+      }
+    },
+    {
+      "contrast": "multiview_minus_token_ast",
+      "dataset": "dta_zenodo",
+      "delta_mean_rank": -0.10227272727272728,
+      "delta_mrr": 0.0026557512352966897,
+      "delta_recall_at_1": -0.003787878787878787,
+      "delta_recall_at_5": 0.018939393939393936,
+      "label": "Code2Hyp multiview selected - token+AST selected",
+      "paired_query_count": 264,
+      "task_bootstrap_ci": {
+        "delta_mean_rank": [
+          -0.32575757575757575,
+          0.07575757575757577
+        ],
+        "delta_mrr": [
+          -0.021619605142332417,
+          0.03397188880143426
+        ],
+        "delta_recall_at_1": [
+          -0.03787878787878787,
+          0.03409090909090909
+        ],
+        "delta_recall_at_5": [
+          -0.01515151515151515,
+          0.053030303030303025
+        ]
+      },
+      "task_count": 11,
+      "task_rows": [
+        {
+          "delta_mean_rank": -0.16666666666666666,
+          "delta_mrr": 0.014267676767676768,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-00"
+        },
+        {
+          "delta_mean_rank": -0.041666666666666664,
+          "delta_mrr": 0.004861111111111108,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-01"
+        },
+        {
+          "delta_mean_rank": 0.041666666666666664,
+          "delta_mrr": 0.010416666666666666,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-02"
+        },
+        {
+          "delta_mean_rank": 0.08333333333333333,
+          "delta_mrr": -0.024305555555555552,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-03"
+        },
+        {
+          "delta_mean_rank": -0.041666666666666664,
+          "delta_mrr": 0.006944444444444445,
+          "delta_recall_at_1": 0.0,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-04"
+        },
+        {
+          "delta_mean_rank": -0.875,
+          "delta_mrr": 0.12504960317460317,
+          "delta_recall_at_1": 0.125,
+          "delta_recall_at_5": 0.08333333333333333,
+          "query_count": 24,
+          "task": "task-05"
+        },
+        {
+          "delta_mean_rank": -0.6666666666666666,
+          "delta_mrr": 0.044757094757094766,
+          "delta_recall_at_1": 0.041666666666666664,
+          "delta_recall_at_5": 0.125,
+          "query_count": 24,
+          "task": "task-06"
+        },
+        {
+          "delta_mean_rank": 0.041666666666666664,
+          "delta_mrr": -0.024305555555555563,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-07"
+        },
+        {
+          "delta_mean_rank": 0.125,
+          "delta_mrr": -0.04861111111111111,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-08"
+        },
+        {
+          "delta_mean_rank": 0.08333333333333333,
+          "delta_mrr": -0.041666666666666664,
+          "delta_recall_at_1": -0.08333333333333333,
+          "delta_recall_at_5": 0.0,
+          "query_count": 24,
+          "task": "task-09"
+        },
+        {
+          "delta_mean_rank": 0.2916666666666667,
+          "delta_mrr": -0.03819444444444445,
+          "delta_recall_at_1": -0.041666666666666664,
+          "delta_recall_at_5": -0.08333333333333333,
+          "query_count": 24,
+          "task": "task-10"
+        }
+      ],
+      "task_sign_test_p": {
+        "delta_mean_rank": 1.0,
+        "delta_mrr": 1.0,
+        "delta_recall_at_1": 1.0,
+        "delta_recall_at_5": 0.625
+      }
+    }
+  ],
+  "hybrid_path": "outputs/code2hyp_hybrid_task_retrieval_lca_kernel_nested_2026-06-28.json",
+  "seed": 20260628,
+  "simple_path": "outputs/task_retrieval_simple_baselines_2026-06-28.json"
+}

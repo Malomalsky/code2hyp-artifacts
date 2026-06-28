@@ -19,6 +19,7 @@ from .code2hyp_synthetic import SyntheticCode2HypConfig, make_synthetic_code2hyp
 from .code2hyp_torch import (
     Code2HypTorchConfig,
     Code2HypTorchModel,
+    batch_method_transport_diagnostics,
     batch_poincare_frechet_diagnostics,
     batch_poincare_radius_utilization,
     batch_structural_distance_level_summary,
@@ -27,6 +28,7 @@ from .code2hyp_torch import (
     batch_structural_neighbor_overlap_at_k,
     batch_structural_normalized_stress,
     batch_structural_rank_regularizer,
+    batch_structural_relation_conditioned_diagnostics,
     batch_structural_spearman_correlation,
 )
 from .code2hyp_training import (
@@ -37,6 +39,13 @@ from .code2hyp_training import (
     fit_supervised,
     slice_batch,
 )
+
+
+METHOD_TRANSPORT_DIAGNOSTIC_TARGETS = {
+    "prefix": "prefix_tree",
+    "edit": "edit",
+    "jaccard": "jaccard_bigrams",
+}
 
 
 @dataclass(frozen=True)
@@ -245,8 +254,45 @@ def _run_multilabel_variant(
         )
         validation_poincare_frechet_diagnostics = batch_poincare_frechet_diagnostics(output)
         validation_poincare_radius_utilization = batch_poincare_radius_utilization(output, diagnostic_batch)
+        validation_relation_conditioned_diagnostics = batch_structural_relation_conditioned_diagnostics(
+            output,
+            diagnostic_batch,
+        )
+        validation_method_transport_diagnostics = batch_method_transport_diagnostics(output, diagnostic_batch)
+        validation_method_transport_target_diagnostics = {
+            label: batch_method_transport_diagnostics(
+                output,
+                diagnostic_batch,
+                target_distance=target_distance,  # type: ignore[arg-type]
+            )
+            for label, target_distance in METHOD_TRANSPORT_DIAGNOSTIC_TARGETS.items()
+        }
     frechet_diagnostics = validation_poincare_frechet_diagnostics or {}
     radius_utilization = validation_poincare_radius_utilization or {}
+    relation_conditioned_diagnostics = validation_relation_conditioned_diagnostics or {}
+    method_transport_diagnostics = validation_method_transport_diagnostics or {}
+    method_transport_target_diagnostics = validation_method_transport_target_diagnostics or {}
+    method_transport_target_fields: dict[str, float | int | None] = {}
+    for label, diagnostics in method_transport_target_diagnostics.items():
+        method_transport_target_fields[f"validation_method_transport_{label}_pair_count"] = (
+            int(diagnostics["method_pair_count"].detach()) if "method_pair_count" in diagnostics else None
+        )
+        method_transport_target_fields[f"validation_method_transport_{label}_spearman"] = (
+            float(diagnostics["transport_spearman"].detach()) if "transport_spearman" in diagnostics else None
+        )
+        method_transport_target_fields[f"validation_method_transport_{label}_normalized_stress"] = (
+            float(diagnostics["transport_normalized_stress"].detach())
+            if "transport_normalized_stress" in diagnostics
+            else None
+        )
+        method_transport_target_fields[f"validation_method_aggregate_{label}_spearman"] = (
+            float(diagnostics["aggregate_spearman"].detach()) if "aggregate_spearman" in diagnostics else None
+        )
+        method_transport_target_fields[f"validation_method_aggregate_{label}_normalized_stress"] = (
+            float(diagnostics["aggregate_normalized_stress"].detach())
+            if "aggregate_normalized_stress" in diagnostics
+            else None
+        )
     return {
         "variant": variant_name,
         "model_seed": model_seed,
@@ -298,6 +344,62 @@ def _run_multilabel_variant(
         "validation_structural_neighbor_recall_at_1": float(validation_structural_neighbor_overlap_at_1.detach()),
         "validation_structural_neighbor_recall_at_3": float(validation_structural_neighbor_overlap_at_3.detach()),
         "validation_structural_prefix_distance_level_summary": validation_structural_prefix_distance_level_summary,
+        "validation_relation_conditioned_prefix_spearman": (
+            float(relation_conditioned_diagnostics["prefix_spearman"].detach())
+            if "prefix_spearman" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_relation_conditioned_prefix_normalized_stress": (
+            float(relation_conditioned_diagnostics["prefix_normalized_stress"].detach())
+            if "prefix_normalized_stress" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_relation_conditioned_edit_spearman": (
+            float(relation_conditioned_diagnostics["edit_spearman"].detach())
+            if "edit_spearman" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_relation_conditioned_edit_normalized_stress": (
+            float(relation_conditioned_diagnostics["edit_normalized_stress"].detach())
+            if "edit_normalized_stress" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_relation_conditioned_jaccard_spearman": (
+            float(relation_conditioned_diagnostics["jaccard_spearman"].detach())
+            if "jaccard_spearman" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_relation_conditioned_jaccard_normalized_stress": (
+            float(relation_conditioned_diagnostics["jaccard_normalized_stress"].detach())
+            if "jaccard_normalized_stress" in relation_conditioned_diagnostics
+            else None
+        ),
+        "validation_method_transport_pair_count": (
+            int(method_transport_diagnostics["method_pair_count"].detach())
+            if "method_pair_count" in method_transport_diagnostics
+            else None
+        ),
+        "validation_method_transport_spearman": (
+            float(method_transport_diagnostics["transport_spearman"].detach())
+            if "transport_spearman" in method_transport_diagnostics
+            else None
+        ),
+        "validation_method_transport_normalized_stress": (
+            float(method_transport_diagnostics["transport_normalized_stress"].detach())
+            if "transport_normalized_stress" in method_transport_diagnostics
+            else None
+        ),
+        "validation_method_aggregate_spearman": (
+            float(method_transport_diagnostics["aggregate_spearman"].detach())
+            if "aggregate_spearman" in method_transport_diagnostics
+            else None
+        ),
+        "validation_method_aggregate_normalized_stress": (
+            float(method_transport_diagnostics["aggregate_normalized_stress"].detach())
+            if "aggregate_normalized_stress" in method_transport_diagnostics
+            else None
+        ),
+        **method_transport_target_fields,
         "validation_poincare_frechet_residual_mean": (
             float(frechet_diagnostics["residual_mean"].detach()) if "residual_mean" in frechet_diagnostics else None
         ),
@@ -685,6 +787,141 @@ def _real_variant_specs(config: RealCode2HypPilotConfig) -> dict[str, dict[str, 
             "structural_loss_weight": config.structural_loss_weight,
             "structural_loss_schedule": "delayed_linear",
             "structural_regularizer": "multi_metric_distance",
+        },
+        "B66_branch_sequence_euclidean_product_l2_multi_metric_control": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_euclidean_product_l2",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B67_branch_sequence_euclidean_product_l1_multi_metric_control": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_euclidean_product_l1",
+            "trainable_curvature": False,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B68_branch_sequence_product_bias_near_euclidean_multi_metric": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": False,
+            "curvature": 1e-4,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B69_branch_sequence_product_bias_fixed_curvature_multi_metric": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": False,
+            "curvature": 1.0,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B70_branch_sequence_single_hyperbolic_multi_metric_control": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_single_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B80_geocodepath_endpoint_geodesic_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_endpoint_geodesic_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B81_geocodepath_endpoint_lca_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_endpoint_lca_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B82_geocodepath_endpoint_lca_prior_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_endpoint_lca_prior_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_distance",
+        },
+        "B83_geocodepath_endpoint_lca_axiom_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_endpoint_lca_axiom_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_lca_axiom",
+        },
+        "B84_geocodepath_relation_conditioned_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_relation_conditioned_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "relation_conditioned_lca_axiom",
+        },
+        "B85_geocodepath_relation_conditioned_aux_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "relation_conditioned_lca_axiom",
+        },
+        "B86_geocodepath_method_transport_aux_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "method_transport",
+        },
+        "B87_geocodepath_multi_metric_method_transport_aux_product_proxy": {
+            "torch_variant": "code2hyp_context_transform_relation_conditioned_aux_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "method_transport_multi_metric",
+        },
+        "B71_branch_sequence_product_bias_prefix_only": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance_prefix",
+        },
+        "B72_branch_sequence_product_bias_edit_only": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance_edit",
+        },
+        "B73_branch_sequence_product_bias_jaccard_only": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "distance_jaccard",
+        },
+        "B74_branch_sequence_product_bias_prefix_edit": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_prefix_edit",
+        },
+        "B75_branch_sequence_product_bias_prefix_jaccard": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_prefix_jaccard",
+        },
+        "B76_branch_sequence_product_bias_edit_jaccard": {
+            "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",
+            "trainable_curvature": True,
+            "structural_loss_weight": config.structural_loss_weight,
+            "structural_loss_schedule": "delayed_linear",
+            "structural_regularizer": "multi_metric_edit_jaccard",
         },
         "B61_code2hyp_context_transform_branch_sequence_product_bias_no_struct": {
             "torch_variant": "code2hyp_context_transform_branch_sequence_product_bias_frechet",

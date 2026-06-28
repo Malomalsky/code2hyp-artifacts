@@ -5,6 +5,7 @@ description = "Isolated Code2Hyp research workspace for geometry-aware source-co
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "numpy>=1.26",
+  "torch>=2.3",
 ]
 
 [project.scripts]
@@ -16,12 +17,21 @@ ml = [
 ]
 dev = [
   "pytest>=8.0",
+  "javalang>=0.13.0",
+]
+raw-ast = [
+  "javalang>=0.13.0",
 ]
 viz = [
   "matplotlib>=3.8",
+  "pandas>=2.2",
+  "plotnine>=0.13",
   "seaborn>=0.13",
   "pillow>=10",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["code2hyp*", "geometry_profile_research*"]

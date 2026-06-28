@@ -433,6 +433,113 @@ class Code2HypExperimentTests(unittest.TestCase):
         b20_run = result["runs"][1]
         self.assertEqual([round(row["structural_loss_weight"], 4) for row in b20_run["history"]], [0.0, 0.05])
 
+    def test_real_code2hyp_pilot_reports_relation_conditioned_diagnostics_for_b84(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            train_path = root / "train.c2v"
+            val_path = root / "val.c2v"
+            train_path.write_text(
+                "\n".join(
+                    [
+                        "to|lower|case obj,Name|Call,value",
+                        "to|string obj,Name|Call,value",
+                        "hash|code self,Name|Call,result",
+                        "hash|map self,Name|Call,result",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            val_path.write_text(
+                "\n".join(
+                    [
+                        "to|lower|case obj,Name|Call,value",
+                        "hash|code self,Name|Call,result",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = run_real_code2hyp_pilot(
+                train_path,
+                val_path,
+                RealCode2HypPilotConfig(
+                    train_limit=4,
+                    val_limit=2,
+                    epochs=1,
+                    batch_size=2,
+                    token_dim=8,
+                    structural_dim=8,
+                    curvature=0.3,
+                    model_seeds=(7,),
+                    variant_filter=("B84_geocodepath_relation_conditioned_product_proxy",),
+                ),
+            )
+
+        run = result["runs"][0]
+        self.assertIsNotNone(run["validation_relation_conditioned_prefix_spearman"])
+        self.assertIsNotNone(run["validation_relation_conditioned_prefix_normalized_stress"])
+        self.assertIsNotNone(run["validation_relation_conditioned_edit_spearman"])
+        self.assertIsNotNone(run["validation_relation_conditioned_edit_normalized_stress"])
+        self.assertIsNotNone(run["validation_relation_conditioned_jaccard_spearman"])
+        self.assertIsNotNone(run["validation_relation_conditioned_jaccard_normalized_stress"])
+        self.assertIn("validation_method_transport_pair_count", run)
+        self.assertIn("validation_method_transport_spearman", run)
+        self.assertIn("validation_method_transport_normalized_stress", run)
+        self.assertIn("validation_method_aggregate_spearman", run)
+        self.assertIn("validation_method_aggregate_normalized_stress", run)
+
+    def test_real_code2hyp_pilot_reports_method_transport_diagnostics_for_each_target_relation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            train_path = root / "train.c2v"
+            val_path = root / "val.c2v"
+            train_path.write_text(
+                "\n".join(
+                    [
+                        "to|lower|case obj,Name|Call,value",
+                        "to|string obj,Name|Call,value",
+                        "hash|code self,Name|Call,result",
+                        "hash|map self,Name|Call,result",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            val_path.write_text(
+                "\n".join(
+                    [
+                        "to|lower|case obj,Name|Call,value",
+                        "hash|code self,Name|Call,result",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = run_real_code2hyp_pilot(
+                train_path,
+                val_path,
+                RealCode2HypPilotConfig(
+                    train_limit=4,
+                    val_limit=2,
+                    epochs=1,
+                    batch_size=2,
+                    token_dim=8,
+                    structural_dim=8,
+                    curvature=0.3,
+                    structural_loss_weight=0.005,
+                    model_seeds=(7,),
+                    variant_filter=("B87_geocodepath_multi_metric_method_transport_aux_product_proxy",),
+                ),
+            )
+
+        run = result["runs"][0]
+        for relation in ("prefix", "edit", "jaccard"):
+            self.assertIn(f"validation_method_transport_{relation}_spearman", run)
+            self.assertIn(f"validation_method_transport_{relation}_normalized_stress", run)
+            self.assertIn(f"validation_method_aggregate_{relation}_spearman", run)
+            self.assertIn(f"validation_method_aggregate_{relation}_normalized_stress", run)
+            self.assertIsNotNone(run[f"validation_method_transport_{relation}_spearman"])
+            self.assertIsNotNone(run[f"validation_method_transport_{relation}_normalized_stress"])
+
     def test_real_code2hyp_pilot_reports_product_attention_bias_controls_for_b44_and_b48(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -26,6 +26,17 @@ from geometry_profile_research.code2hyp_real_dataset import (
     java_small_preprocessed_spec,
     write_dataset_manifest,
 )
+from geometry_profile_research.code2hyp_training import STRUCTURAL_DISTANCE_TARGETS
+
+
+STRUCTURAL_REGULARIZER_CHOICES = (
+    "distance",
+    "rank",
+    "neighbor_distribution",
+    "multi_metric_lca_axiom",
+    "relation_conditioned_lca_axiom",
+    *STRUCTURAL_DISTANCE_TARGETS.keys(),
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -62,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--structural-loss-weight", type=float, default=0.05)
     parser.add_argument(
         "--structural-regularizer",
-        choices=("distance", "rank", "neighbor_distribution"),
+        choices=STRUCTURAL_REGULARIZER_CHOICES,
         default="distance",
     )
     parser.add_argument(
