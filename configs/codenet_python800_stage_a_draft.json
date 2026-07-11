@@ -1,0 +1,62 @@
+{
+  "schema_version": "code2hyp-stage-a-design-v1",
+  "status": "draft_not_registered",
+  "registration_doi": null,
+  "dataset": {
+    "name": "Project CodeNet Python800",
+    "revision": "1.0.0",
+    "official_url": "https://codait-cos-dax.s3.us.cloud-object-storage.appdomain.cloud/dax-project-codenet/1.0.0/Project_CodeNet_Python800.tar.gz",
+    "official_bytes": 30641525,
+    "official_etag_md5": "45563153eee38855ab14e727b870ec61",
+    "sha256": "39297d11df8030ce0b6619e678547a738d74c4715c5c9a5be0af83941a5587b0"
+  },
+  "eligibility": {
+    "required_parse_rate": 0.95,
+    "parse_rate_unit": "language",
+    "minimum_programs_per_problem_cluster": 64,
+    "minimum_clusters_for_practical_claim": 764,
+    "official_identical_problem_map_required": true,
+    "d3": {
+      "representation": "set_of_consecutive_D1_token_5grams",
+      "num_perm": 256,
+      "bands": 32,
+      "rows_per_band": 8,
+      "minhash_scheme": "affine32",
+      "seed": 20260711,
+      "exact_set_jaccard_threshold": 0.9
+    }
+  },
+  "split": {
+    "assignment_unit": "duplicate_closed_problem_cluster",
+    "weights_train_validation_test": [3, 1, 4],
+    "integer_quota_rule": "hamilton_train_validation_test_tie_order",
+    "ordering": "HMAC-SHA256(beacon, dataset_revision_NUL_cluster_id)",
+    "seed_source": "first_NIST_randomness_beacon_pulse_after_registration",
+    "generated": false
+  },
+  "sampling": {
+    "user_distinct_within_problem_cluster": true,
+    "train_programs_per_cluster": 64,
+    "validation_queries_per_cluster": 8,
+    "validation_gallery_per_cluster": 8,
+    "test_queries_per_cluster": 8,
+    "test_gallery_per_cluster": 8,
+    "paths_per_program": 64,
+    "paths_sensitivity": [32, 128]
+  },
+  "inference": {
+    "primary_metric": "problem_macro_MAP_at_R",
+    "R": 8,
+    "model_seeds": [20260711, 20260712, 20260713, 20260714, 20260715, 20260716, 20260717, 20260718, 20260719, 20260720],
+    "bootstrap_resamples": 20000,
+    "cluster_unit": "problem_cluster",
+    "two_sided_confidence": 0.95,
+    "sequential_one_sided_alpha": 0.025,
+    "minimum_practically_significant_delta_MAP_at_R": 0.01
+  },
+  "test_policy": {
+    "test_labels_opened": false,
+    "single_unseal": true,
+    "unseal_requires_registration_commit_container_and_analysis_hashes": true
+  }
+}

@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.run_dta_factor_matrix import TaskSource, run_dta_factor_matrix
+import torch
+
+from geometry_profile_research.constant_curvature import ProductMeasure
+from scripts.run_dta_factor_matrix import TaskSource, _normalized_factor_weights, _train_factor_cost_scales, run_dta_factor_matrix
 
 
 def test_factor_matrix_runs_all_requested_cells_with_disjoint_split(tmp_path: Path) -> None:
@@ -141,7 +144,11 @@ def test_factor_matrix_can_audit_prespecified_cost_modes(tmp_path: Path) -> None
     by_mode = {run["cost_mode"]: run for run in loaded["runs"]}
     assert set(by_mode) == {"point_only", "side_only", "unnormalized_combined", "train_normalized_combined"}
     assert by_mode["point_only"]["side_weight"] == 0.0
-    assert all(weight > 0.0 for weight in by_mode["train_normalized_combined"]["factor_weights"])
+    normalized = by_mode["train_normalized_combined"]
+    assert all(weight >= 0.0 for weight in normalized["factor_weights"])
+    assert normalized["cost_normalization"]["active_factor_count"] == sum(
+        weight > 0.0 for weight in normalized["factor_weights"]
+    )
     assert by_mode["train_normalized_combined"]["side_weight"] > 0.0
     assert "cost_normalization" in by_mode["train_normalized_combined"]
     assert by_mode["train_normalized_combined"]["cost_normalization"]["source"] == "train_split"
@@ -150,6 +157,27 @@ def test_factor_matrix_can_audit_prespecified_cost_modes(tmp_path: Path) -> None
     assert "total_distance_point_expected_cost_spearman" in diagnostics
     assert "transport_entropy_mean" in diagnostics
     assert diagnostics["transport_entropy_pair_count"] > 0
+
+
+def test_factor_normalization_matches_block_budget_and_suppresses_degenerate_factors() -> None:
+    weights, diagnostics = _normalized_factor_weights((2.0, 1e-16, 4.0))
+
+    assert weights == (0.25, 0.0, 0.125)
+    assert diagnostics["active_factor_indices"] == [0, 2]
+    assert diagnostics["degenerate_factor_indices"] == [1]
+    assert diagnostics["active_factor_count"] == 2
+    assert sum(weight * scale for weight, scale in zip(weights, (2.0, 1e-16, 4.0))) == 1.0
+
+
+def test_factor_scale_reports_zero_for_a_constant_factor() -> None:
+    left = ProductMeasure(points=torch.tensor([[[0.0], [0.5], [0.0]]]), mass=torch.ones(1))
+    right = ProductMeasure(points=torch.tensor([[[1.0], [0.5], [2.0]]]), mass=torch.ones(1))
+
+    scales = _train_factor_cost_scales((left, right), curvature=0.0)
+
+    assert scales[0] > 0.0
+    assert scales[1] == 0.0
+    assert scales[2] > 0.0
 
 
 def test_factor_matrix_can_select_product_cost_weight_on_train_split(tmp_path: Path) -> None:

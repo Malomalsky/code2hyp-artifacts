@@ -197,6 +197,47 @@ Task-level paired contrasts:
   --json-output outputs/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_reproduced.json
 ```
 
+## CodeNet Python800 Pre-Split Audit
+
+The repository now includes the fail-closed data pipeline prepared for a
+future preregistered evaluation on Project CodeNet Python800:
+
+- global D0-D2 source/token/alpha-AST duplicate components;
+- D3 MinHash/LSH candidate generation with exact token-5-gram Jaccard checks;
+- statement-based D4 problem checks;
+- privacy-preserving author metadata and D5 attrition diagnostics;
+- a machine-readable Stage A design draft and readiness checker.
+
+The official Python800 object was verified by byte count, MD5/ETag and
+SHA-256. The full audit covers 240,000 accepted Python programs. It retains
+213,550 programs in 773 duplicate-closed problem clusters after the current
+D0-D4 precheck. No CodeNet split has been generated and no CodeNet retrieval
+metric has been computed.
+
+Run the released data tests:
+
+```bash
+uv sync --frozen --extra dev
+uv run pytest -q \
+  tests/test_codenet_eligibility.py \
+  tests/test_codenet_d3.py \
+  tests/test_codenet_statement_d4.py \
+  tests/test_codenet_d5_metadata.py \
+  tests/test_codenet_d5_attrition.py \
+  tests/test_codenet_stage_a_readiness.py
+```
+
+The readiness command is expected to fail closed until the official CodeNet
+identical-problem map has been applied and a final immutable release commit
+has been sealed:
+
+```bash
+uv run python scripts/check_codenet_stage_a_readiness.py
+```
+
+The complete audit narrative is in
+`reports/codenet_python800_pre_split_eligibility_2026-07-11.md`.
+
 ## Claim Boundary
 
 Safe claim:
@@ -208,3 +249,8 @@ Unsafe claim:
 > Negative curvature or LCA anchoring universally improves all code retrieval settings.
 
 The released results show a positive LCA-view contribution on BugNet Python and a zero-LCA fallback on the DTA subset. This is the intended interpretation: the method is useful as a controlled structural view, not as an unconditional replacement for lexical or pretrained semantic models.
+
+The five-seed BugNet Gate A matrix is exploratory. It supports an LCA-role
+signal under the pilot budget, while active hyperbolic curvature does not
+improve the matched Euclidean control. It is not a substitute for the sealed
+CodeNet experiment.

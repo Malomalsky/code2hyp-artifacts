@@ -1,6 +1,6 @@
 -r requirements.txt
 pytest>=8.0
-javalang>=0.13.0
+psutil>=6.0
 matplotlib>=3.8
 pandas>=2.2
 plotnine>=0.13

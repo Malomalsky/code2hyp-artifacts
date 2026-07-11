@@ -79,8 +79,9 @@ def run_audit(
         "audit": "constant_curvature_euclidean_limit",
         "interpretation": (
             "Mechanistic audit of the metric and Sinkhorn layer. This is not a downstream benchmark. "
-            "The Poincare distance is normalized by 1/2 so that fixed-coordinate distances converge "
-            "to the Euclidean metric as curvature tends to zero."
+            "The Poincare branch uses the standard curvature -c distance. Positive-curvature rows are "
+            "compared after the fixed coordinate-limit scale is removed: distances are divided by 2 and "
+            "squared-cost gradients by 4."
         ),
         "config": {
             "seed": seed,
@@ -113,10 +114,11 @@ def write_report(payload: dict[str, Any], path: Path) -> None:
         "Sinkhorn divergences, transport plans, rankings and embedding gradients change smoothly as",
         "curvature increases from zero.",
         "",
-        "The Poincare geodesic is normalized by `1/2`, so fixed-coordinate distances satisfy",
-        "`D_c(x, y) -> ||x-y||` as `c -> 0`. Sinkhorn regularization is scaled as",
-        "`epsilon(c) = kappa * median_positive_train_cost(c)` and then held fixed for all pairs at",
-        "the same curvature.",
+        "The Poincare branch uses the standard curvature `-c` geodesic. For fixed coordinates,",
+        "`d_c(x, y) -> 2 ||x-y||` as `c -> 0`, so this audit removes the fixed coordinate-limit",
+        "scale before comparing positive-curvature rows with the Euclidean branch. Sinkhorn",
+        "regularization is scaled as `epsilon(c) = kappa * median_positive_train_cost(c)` and then",
+        "held fixed for all pairs at the same curvature.",
         "",
         "## Results",
         "",
@@ -247,15 +249,22 @@ def _probe_gradient(
 
 
 def _compare_to_baseline(current: dict[str, Any], baseline: dict[str, Any]) -> dict[str, float]:
-    distance_error = _matrix_error(current["distance_matrix"], baseline["distance_matrix"])
-    sinkhorn_error = _matrix_error(current["sinkhorn_matrix"], baseline["sinkhorn_matrix"])
-    ranking = _ranking_diagnostics(current["sinkhorn_matrix"], baseline["sinkhorn_matrix"])
-    gradient = _gradient_diagnostics(current["gradient"], baseline["gradient"])
+    distance_scale = _coordinate_limit_distance_scale(float(current["curvature"]))
+    squared_cost_scale = distance_scale * distance_scale
+    scaled_distance_matrix = current["distance_matrix"] / distance_scale
+    scaled_sinkhorn_matrix = current["sinkhorn_matrix"] / distance_scale
+    scaled_gradient = current["gradient"] / squared_cost_scale
+    distance_error = _matrix_error(scaled_distance_matrix, baseline["distance_matrix"])
+    sinkhorn_error = _matrix_error(scaled_sinkhorn_matrix, baseline["sinkhorn_matrix"])
+    ranking = _ranking_diagnostics(scaled_sinkhorn_matrix, baseline["sinkhorn_matrix"])
+    gradient = _gradient_diagnostics(scaled_gradient, baseline["gradient"])
     plan_l1 = torch.mean(torch.abs(current["transport_plan"] - baseline["transport_plan"]))
     return {
         "curvature": float(current["curvature"]),
         "cost_scale": float(current["cost_scale"]),
         "epsilon": float(current["epsilon"]),
+        "coordinate_limit_distance_scale": float(distance_scale),
+        "coordinate_limit_squared_cost_scale": float(squared_cost_scale),
         "distance_matrix_max_abs_error": float(distance_error["max_abs"]),
         "distance_matrix_mean_abs_error": float(distance_error["mean_abs"]),
         "distance_matrix_relative_frobenius_error": float(distance_error["relative_frobenius"]),
@@ -269,6 +278,10 @@ def _compare_to_baseline(current: dict[str, Any], baseline: dict[str, Any]) -> d
         "ranking_top3_jaccard": float(ranking["top3_jaccard"]),
         "ranking_spearman": float(ranking["spearman"]),
     }
+
+
+def _coordinate_limit_distance_scale(curvature: float) -> float:
+    return 1.0 if curvature == 0.0 else 2.0
 
 
 def _matrix_error(current: Tensor, baseline: Tensor) -> dict[str, float]:

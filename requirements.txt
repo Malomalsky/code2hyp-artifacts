@@ -1,2 +1,2 @@
+datasketch>=1.6
 numpy>=1.26
-torch>=2.3

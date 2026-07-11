@@ -108,6 +108,38 @@ class RawASTCode2HypTests(unittest.TestCase):
         self.assertEqual(measure.points.shape[1], 1)
         self.assertEqual(measure.path_object_mode, "single_point")
 
+    def test_anchor_modes_change_only_the_lca_role(self) -> None:
+        tree = self._tree()
+        vocab = build_raw_ast_token_vocab((tree,))
+        model = RawASTCode2Hyp(vocab, dim=4, manifold="euclidean", max_paths=4, anchor_mode="true_lca")
+
+        true_lca = model.encode_method(tree)
+        model.anchor_mode = "zero_anchor"
+        zero_anchor = model.encode_method(tree)
+        model.anchor_mode = "root_anchor"
+        root_anchor = model.encode_method(tree)
+
+        torch.testing.assert_close(true_lca.points[:, 1:], zero_anchor.points[:, 1:])
+        torch.testing.assert_close(true_lca.points[:, 1:], root_anchor.points[:, 1:])
+        torch.testing.assert_close(zero_anchor.points[:, 0], torch.zeros_like(zero_anchor.points[:, 0]))
+        torch.testing.assert_close(root_anchor.points[:, 0], root_anchor.points[0, 0].expand_as(root_anchor.points[:, 0]))
+
+    def test_depth_matched_shuffled_anchor_is_deterministic(self) -> None:
+        tree = self._tree()
+        vocab = build_raw_ast_token_vocab((tree,))
+        model = RawASTCode2Hyp(
+            vocab,
+            dim=4,
+            manifold="euclidean",
+            max_paths=4,
+            anchor_mode="depth_matched_shuffled",
+        )
+
+        first = model.encode_method(tree)
+        second = model.encode_method(tree)
+
+        torch.testing.assert_close(first.points, second.points)
+
     def test_method_distance_is_symmetric_and_zero_on_identical_measure(self) -> None:
         tree = self._tree()
         vocab = build_raw_ast_token_vocab((tree,))
@@ -242,9 +274,30 @@ class RawASTCode2HypTests(unittest.TestCase):
         self.assertIn("retrieval", loss)
         self.assertIn("edge", loss)
         self.assertIn("gromov_lca", loss)
+        self.assertIn("gromov_lca_mean_abs_residual", loss)
         self.assertIn("branch_length", loss)
         self.assertIn("reversal", loss)
         self.assertTrue(torch.isfinite(loss["loss"]))
+        self.assertTrue(torch.isfinite(loss["gromov_lca_mean_abs_residual"]))
+
+        neutral = model.training_loss(
+            ((tree, tree, tree),),
+            margin=0.1,
+            sinkhorn_iterations=20,
+            lambda_retrieval=0.0,
+        )
+        expected_neutral = 0.1 * (
+            neutral["edge"]
+            + neutral["gromov_lca"]
+            + neutral["branch_length"]
+            + neutral["reversal"]
+        )
+        torch.testing.assert_close(neutral["loss"], expected_neutral.to(neutral["loss"].dtype))
+
+        diagnostics = model.gromov_lca_diagnostics(tree)
+        self.assertGreaterEqual(diagnostics["path_count"], 1.0)
+        self.assertGreaterEqual(diagnostics["mean_abs_residual"], 0.0)
+        self.assertGreaterEqual(diagnostics["max_abs_residual"], diagnostics["mean_abs_residual"])
 
 
 if __name__ == "__main__":

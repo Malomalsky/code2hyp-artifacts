@@ -16,3 +16,10 @@ data/code2seq_java_small_raw/java-small.tar.gz
 data/external_raw/
 data/external_task_corpus/
 data/dta_zenodo_7799972/
+data/codenet_python800_eligibility_d0_d2/file_inventory.jsonl
+data/codenet_python800_eligibility_d0_d3/d3_index.jsonl
+data/codenet_python800_eligibility_d0_d3/minhash_signatures.npy
+data/codenet_python800_eligibility_d0_d3/shingle_counts.npy
+data/codenet_python800_d5_metadata/d5_metadata_index.jsonl
+data/codenet_python800_d5_metadata/d5_user_cluster_summary.jsonl
+reports/codenet_stage_a_readiness.json

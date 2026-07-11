@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from typing import Literal, Mapping, Sequence
 
@@ -21,6 +22,7 @@ Manifold = Literal["poincare", "euclidean"]
 TerminalPolicy = Literal["type", "class", "value"]
 NodeInputMode = Literal["label_only", "label_depth", "label_depth_prefix"]
 PathObjectMode = Literal["single_point", "lca_product"]
+AnchorMode = Literal["true_lca", "zero_anchor", "root_anchor", "depth_matched_shuffled"]
 MethodAggregation = Literal["centroid", "measure"]
 PathCostOrientation = Literal["directed", "unoriented"]
 
@@ -129,6 +131,8 @@ class RawASTCode2Hyp(nn.Module):
         path_object_mode: PathObjectMode = "lca_product",
         method_aggregation: MethodAggregation = "measure",
         path_cost_orientation: PathCostOrientation = "directed",
+        path_selection_policy: str = "preorder_first",
+        anchor_mode: AnchorMode = "true_lca",
     ) -> None:
         super().__init__()
         if manifold not in {"poincare", "euclidean"}:
@@ -143,6 +147,10 @@ class RawASTCode2Hyp(nn.Module):
             raise ValueError(f"unknown method_aggregation: {method_aggregation!r}")
         if path_cost_orientation not in {"directed", "unoriented"}:
             raise ValueError(f"unknown path_cost_orientation: {path_cost_orientation!r}")
+        if path_selection_policy not in {"preorder_first", "hash_sorted", "lca_depth_stratified"}:
+            raise ValueError(f"unknown path_selection_policy: {path_selection_policy!r}")
+        if anchor_mode not in {"true_lca", "zero_anchor", "root_anchor", "depth_matched_shuffled"}:
+            raise ValueError(f"unknown anchor_mode: {anchor_mode!r}")
         if dim <= 0:
             raise ValueError("dim must be positive")
         if curvature <= 0:
@@ -158,6 +166,8 @@ class RawASTCode2Hyp(nn.Module):
         self.path_object_mode = path_object_mode
         self.method_aggregation = method_aggregation
         self.path_cost_orientation = path_cost_orientation
+        self.path_selection_policy = path_selection_policy
+        self.anchor_mode = anchor_mode
         self.embedding = nn.Embedding(len(self.token_to_id), self.token_dim, padding_idx=0)
         self.node_gru = nn.GRU(self.token_dim, self.dim, batch_first=True)
         self.branch_gru = nn.GRU(self.token_dim, self.dim, batch_first=True)
@@ -166,7 +176,15 @@ class RawASTCode2Hyp(nn.Module):
     def encode_method(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> RawASTMethodMeasure:
         """Encode one raw-AST callable scope as a uniform measure over path objects."""
 
-        raw_paths = tuple(paths) if paths is not None else terminal_to_terminal_paths(tree, max_paths=self.max_paths)
+        raw_paths = (
+            tuple(paths)
+            if paths is not None
+            else terminal_to_terminal_paths(
+                tree,
+                max_paths=self.max_paths,
+                selection_policy=self.path_selection_policy,
+            )
+        )
         if not raw_paths:
             raise ValueError("encode_method requires at least one terminal-to-terminal path")
         node_points = self.encode_nodes(tree)
@@ -175,7 +193,8 @@ class RawASTCode2Hyp(nn.Module):
         right_branches = []
         for path in raw_paths:
             lca = path.lca(tree)
-            lca_product = torch.stack([node_points[lca], node_points[path.start], node_points[path.end]], dim=0)
+            anchor = self._anchor_point(tree, path, node_points=node_points, true_lca=lca)
+            lca_product = torch.stack([anchor, node_points[path.start], node_points[path.end]], dim=0)
             if self.path_object_mode == "lca_product":
                 triples.append(lca_product)
             else:
@@ -193,6 +212,29 @@ class RawASTCode2Hyp(nn.Module):
             curvature=self.curvature,
             path_object_mode=self.path_object_mode,
         )
+
+    def _anchor_point(self, tree: RawAstTree, path: RawAstPath, *, node_points: Tensor, true_lca: NodeId) -> Tensor:
+        if self.anchor_mode == "true_lca":
+            return node_points[true_lca]
+        if self.anchor_mode == "zero_anchor":
+            return torch.zeros_like(node_points[true_lca])
+        if self.anchor_mode == "root_anchor":
+            return node_points[tree.root_id]
+
+        depth = tree.depth(true_lca)
+        candidates = [node for node in tree.preorder() if tree.depth(node) == depth and node != true_lca]
+        if not candidates:
+            return torch.zeros_like(node_points[true_lca])
+        candidates.sort(key=lambda node: (_node_structural_signature(tree, node), node))
+        payload = "|".join(
+            (
+                _node_structural_signature(tree, path.start),
+                _node_structural_signature(tree, path.end),
+                str(depth),
+            )
+        ).encode("utf-8")
+        index = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big") % len(candidates)
+        return node_points[candidates[index]]
 
     def encode_nodes(self, tree: RawAstTree) -> Tensor:
         """Encode every node id in the tree into the selected manifold."""
@@ -226,14 +268,16 @@ class RawASTCode2Hyp(nn.Module):
         *,
         epsilon: float = 0.05,
         sinkhorn_iterations: int = 80,
-        normalize_cost: bool = True,
+        normalize_cost: bool = False,
     ) -> Tensor:
         """Distance between two method representations.
 
         ``method_aggregation="measure"`` uses debiased Sinkhorn divergence over
         path measures. ``method_aggregation="centroid"`` collapses each method
         to a weighted path-object centroid and gives the matched control needed
-        for the reviewer-recommended factor matrix.
+        for the reviewer-recommended factor matrix. ``normalize_cost=True`` is
+        a legacy exploratory mode; confirmatory runs should use a train-split
+        scale for ``epsilon`` instead of pair-local cost normalization.
         """
 
         if self.method_aggregation == "centroid":
@@ -267,6 +311,7 @@ class RawASTCode2Hyp(nn.Module):
         lambda_gromov: float = 0.1,
         lambda_branch: float = 0.1,
         lambda_reversal: float = 0.1,
+        lambda_retrieval: float = 1.0,
         sinkhorn_epsilon: float = 0.05,
         sinkhorn_iterations: int = 40,
     ) -> dict[str, Tensor]:
@@ -307,16 +352,30 @@ class RawASTCode2Hyp(nn.Module):
                     unique_trees.append(tree)
         edge = torch.stack([self.edge_length_loss(tree) for tree in unique_trees]).mean()
         gromov = torch.stack([self.gromov_lca_loss(tree) for tree in unique_trees]).mean()
+        gromov_residuals = tuple(self.gromov_lca_residuals(tree) for tree in unique_trees)
+        nonempty_residuals = tuple(residual for residual in gromov_residuals if residual.numel() > 0)
+        if nonempty_residuals:
+            gromov_abs_residual = torch.cat(nonempty_residuals).abs().mean()
+        else:
+            gromov_abs_residual = gromov.new_tensor(0.0)
         branch = torch.stack([self.branch_length_loss(tree) for tree in unique_trees]).mean()
         reversal = torch.stack([self.reversal_equivariance_loss(tree) for tree in unique_trees]).mean()
-        total = retrieval + lambda_edge * edge + lambda_gromov * gromov + lambda_branch * branch + lambda_reversal * reversal
+        total = (
+            lambda_retrieval * retrieval
+            + lambda_edge * edge
+            + lambda_gromov * gromov
+            + lambda_branch * branch
+            + lambda_reversal * reversal
+        )
         return {
             "loss": total,
             "retrieval": retrieval,
             "edge": edge,
             "gromov_lca": gromov,
+            "gromov_lca_mean_abs_residual": gromov_abs_residual,
             "branch_length": branch,
             "reversal": reversal,
+            "retrieval_weight": retrieval.new_tensor(lambda_retrieval),
         }
 
     def edge_length_loss(self, tree: RawAstTree) -> Tensor:
@@ -331,12 +390,26 @@ class RawASTCode2Hyp(nn.Module):
         return torch.stack(losses).mean()
 
     def gromov_lca_loss(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> Tensor:
+        residuals = self.gromov_lca_residuals(tree, paths)
+        if residuals.numel() == 0:
+            return torch.zeros(())
+        return residuals.square().mean()
+
+    def gromov_lca_residuals(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> Tensor:
+        """Return soft Gromov-product residuals against raw LCA depths.
+
+        These residuals are a distortion diagnostic, not a hard isometry
+        certificate. A strict zero target is impossible for simple branching
+        configurations in negatively curved space, so experiments should report
+        residual magnitudes instead of claiming exact tree embedding.
+        """
+
         raw_paths = tuple(paths) if paths is not None else terminal_to_terminal_paths(tree, max_paths=self.max_paths)
         if not raw_paths:
-            return torch.zeros(())
+            return torch.empty(0)
         points = self.encode_nodes(tree)
         root = points[tree.root_id]
-        losses = []
+        residuals = []
         for path in raw_paths:
             lca_depth = float(tree.depth(path.lca(tree)))
             start = points[path.start]
@@ -346,8 +419,28 @@ class RawASTCode2Hyp(nn.Module):
                 + self._point_distance(root.unsqueeze(0), end.unsqueeze(0)).squeeze()
                 - self._point_distance(start.unsqueeze(0), end.unsqueeze(0)).squeeze()
             )
-            losses.append((product - lca_depth).square())
-        return torch.stack(losses).mean()
+            residuals.append(product - lca_depth)
+        return torch.stack(residuals)
+
+    def gromov_lca_diagnostics(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> dict[str, float]:
+        """Summarize LCA/Gromov residuals for reporting."""
+
+        with torch.no_grad():
+            residuals = self.gromov_lca_residuals(tree, paths)
+            if residuals.numel() == 0:
+                return {
+                    "path_count": 0.0,
+                    "mean_abs_residual": 0.0,
+                    "max_abs_residual": 0.0,
+                    "mse": 0.0,
+                }
+            absolute = residuals.abs()
+            return {
+                "path_count": float(residuals.numel()),
+                "mean_abs_residual": float(absolute.mean().detach()),
+                "max_abs_residual": float(absolute.max().detach()),
+                "mse": float(residuals.square().mean().detach()),
+            }
 
     def branch_length_loss(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> Tensor:
         """Match LCA-to-endpoint geodesic lengths to raw AST branch lengths."""
@@ -505,6 +598,17 @@ def _node_token(tree: RawAstTree, node: NodeId, *, terminal_policy: TerminalPoli
         if terminal_policy == "class":
             return f"terminal_class:{_terminal_class(terminal)}"
     return f"node:{tree.labels.get(node, '')}"
+
+
+def _node_structural_signature(tree: RawAstTree, node: NodeId) -> str:
+    return "/".join(
+        _root_to_node_tokens(
+            tree,
+            node,
+            terminal_policy="class",
+            input_mode="label_depth_prefix",
+        )
+    )
 
 
 def _edge_token(tree: RawAstTree, node: NodeId) -> str:

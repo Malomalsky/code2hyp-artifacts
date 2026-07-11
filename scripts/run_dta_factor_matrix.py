@@ -119,6 +119,7 @@ def run_dta_factor_matrix(
     max_ball_fraction: float = 0.35,
     hard_negatives_per_query: int = 6,
     encoder_policy: EncoderPolicy = "shared_euclidean",
+    path_selection_policy: str = "lca_depth_stratified",
 ) -> dict[str, Any]:
     """Run the reviewer-directed 3 x 2 x 2 frozen DTA factor matrix.
 
@@ -161,6 +162,7 @@ def run_dta_factor_matrix(
             min_structural_gap=min_structural_gap,
             positive_mode=positive_mode,
             sinkhorn_iterations=sinkhorn_iterations,
+            path_selection_policy=path_selection_policy,
         )
         encoded_by_mode = {
             mode: {
@@ -229,6 +231,7 @@ def run_dta_factor_matrix(
                         reproducibility=reproducibility,
                         item_scope=item_scope,
                         encoder_policy=encoder_policy,
+                        path_selection_policy=path_selection_policy,
                     ),
                 )
     else:
@@ -246,6 +249,7 @@ def run_dta_factor_matrix(
                 curvature=_cell_model_curvature(cell),
                 path_object_mode=cell.path_object_mode,
                 method_aggregation=cell.method_aggregation,
+                path_selection_policy=path_selection_policy,
             )
             mode_payload = {
                 "train": _encode_split(model, split.train, path_object_mode=cell.path_object_mode, max_paths=max_paths),
@@ -297,6 +301,7 @@ def run_dta_factor_matrix(
                         reproducibility=reproducibility,
                         item_scope=item_scope,
                         encoder_policy=encoder_policy,
+                        path_selection_policy=path_selection_policy,
                     ),
                 )
     payload = _payload(
@@ -315,6 +320,7 @@ def run_dta_factor_matrix(
         reproducibility=reproducibility,
         item_scope=item_scope,
         encoder_policy=encoder_policy,
+        path_selection_policy=path_selection_policy,
     )
     _write_payload(output_path, payload)
     return payload
@@ -495,6 +501,8 @@ def _train_shared_encoder(
     curvature: float = 1.0,
     path_object_mode: PathObjectMode = "lca_product",
     method_aggregation: MethodAggregation = "measure",
+    path_selection_policy: str = "lca_depth_stratified",
+    lambda_retrieval: float = 1.0,
 ) -> tuple[RawASTCode2Hyp, list[dict[str, float]]]:
     raw_items = tuple(item.item for item in train_items)
     vocab = build_raw_ast_token_vocab(tuple(item.tree for item in raw_items), terminal_policy="class", node_input_mode="label_only")
@@ -509,6 +517,7 @@ def _train_shared_encoder(
         method_aggregation=method_aggregation,
         path_cost_orientation="directed",
         curvature=curvature,
+        path_selection_policy=path_selection_policy,
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     triples = build_retrieval_triples(raw_items, min_structural_gap=min_structural_gap, positive_mode=positive_mode)
@@ -519,6 +528,7 @@ def _train_shared_encoder(
             triples,
             sinkhorn_epsilon=0.05,
             sinkhorn_iterations=sinkhorn_iterations,
+            lambda_retrieval=lambda_retrieval,
         )
         loss["loss"].backward()
         optimizer.step()
@@ -529,6 +539,8 @@ def _train_shared_encoder(
                 "retrieval": float(loss["retrieval"].detach()),
                 "edge": float(loss["edge"].detach()),
                 "gromov_lca": float(loss["gromov_lca"].detach()),
+                "gromov_lca_mean_abs_residual": float(loss["gromov_lca_mean_abs_residual"].detach()),
+                "retrieval_weight": float(loss["retrieval_weight"].detach()),
             }
         )
     return model, history
@@ -550,9 +562,22 @@ def _encode_split(
 
 
 def _encode_labeled_item(model: RawASTCode2Hyp, item: LabeledItem, *, max_paths: int) -> ProductMeasure:
-    raw = model.encode_method(item.item.tree, paths=terminal_to_terminal_paths(item.item.tree, max_paths=max_paths))
+    raw = model.encode_method(
+        item.item.tree,
+        paths=terminal_to_terminal_paths(
+            item.item.tree,
+            max_paths=max_paths,
+            selection_policy=model.path_selection_policy,
+        ),
+    )
     side = torch.cat((raw.left_branch, raw.right_branch), dim=-1)
-    return ProductMeasure(points=raw.points.detach(), mass=raw.mass.detach(), side_features=side.detach())
+    reversed_side = torch.cat((raw.right_branch, raw.left_branch), dim=-1)
+    return ProductMeasure(
+        points=raw.points.detach(),
+        mass=raw.mass.detach(),
+        side_features=side.detach(),
+        reversed_side_features=reversed_side.detach(),
+    )
 
 
 def _aggregate_measures(
@@ -576,12 +601,20 @@ def _centroid_measure(measure: ProductMeasure, *, curvature: float) -> ProductMe
     else:
         point_centroid = torch.sum(weights * measure.points, dim=0)
     side_centroid = None
+    reversed_side_centroid = None
     if measure.side_features is not None:
         side_centroid = torch.sum(measure.mass.view(-1, 1) * measure.side_features, dim=0, keepdim=True)
+    if measure.reversed_side_features is not None:
+        reversed_side_centroid = torch.sum(
+            measure.mass.view(-1, 1) * measure.reversed_side_features,
+            dim=0,
+            keepdim=True,
+        )
     return ProductMeasure(
         points=point_centroid.unsqueeze(0),
         mass=measure.mass.new_ones((1,)),
         side_features=side_centroid,
+        reversed_side_features=reversed_side_centroid,
     )
 
 
@@ -696,19 +729,21 @@ def _geometry_for_cost_mode(
         raise ValueError(f"unknown cost mode: {cost_spec.mode!r}")
 
     factor_scales = _train_factor_cost_scales(train_measures, curvature=curvature)
+    unit_factor_weights, factor_diagnostics = _normalized_factor_weights(factor_scales)
     side_scale = _train_side_cost_scale(train_measures, curvature=curvature)
     if cost_spec.mode == "train_weighted_combined":
         if cost_spec.point_weight is None:
             raise ValueError("train_weighted_combined requires point_weight")
         point_weight = float(cost_spec.point_weight)
         side_block_weight = 1.0 - point_weight
-        factor_weights = tuple(point_weight / scale for scale in factor_scales)
+        factor_weights = tuple(point_weight * weight for weight in unit_factor_weights)
         normalized_side_weight = side_block_weight * cost_spec.side_weight / side_scale
         return (
             ConstantCurvatureProduct(curvature=curvature, factor_weights=factor_weights, side_weight=normalized_side_weight),
             {
                 "source": "train_split_fixed_weight",
                 "factor_scales": list(factor_scales),
+                **factor_diagnostics,
                 "side_scale": side_scale,
                 "base_side_weight": cost_spec.side_weight,
                 "point_weight": point_weight,
@@ -721,33 +756,35 @@ def _geometry_for_cost_mode(
             train_items=train_items,
             train_measures=train_measures,
             curvature=curvature,
-            factor_scales=factor_scales,
+            unit_factor_weights=unit_factor_weights,
             side_scale=side_scale,
             base_side_weight=cost_spec.side_weight,
             point_weight_grid=VALIDATION_POINT_WEIGHT_GRID,
         )
         point_weight = float(selection["selected_point_weight"])
         side_block_weight = float(selection["selected_side_weight"])
-        factor_weights = tuple(point_weight / scale for scale in factor_scales)
+        factor_weights = tuple(point_weight * weight for weight in unit_factor_weights)
         normalized_side_weight = side_block_weight * cost_spec.side_weight / side_scale
         return (
             ConstantCurvatureProduct(curvature=curvature, factor_weights=factor_weights, side_weight=normalized_side_weight),
             {
                 "source": "train_split_internal_validation",
                 "factor_scales": list(factor_scales),
+                **factor_diagnostics,
                 "side_scale": side_scale,
                 "base_side_weight": cost_spec.side_weight,
                 **selection,
             },
         )
 
-    factor_weights = tuple(1.0 / scale for scale in factor_scales)
+    factor_weights = unit_factor_weights
     normalized_side_weight = cost_spec.side_weight / side_scale
     return (
         ConstantCurvatureProduct(curvature=curvature, factor_weights=factor_weights, side_weight=normalized_side_weight),
         {
             "source": "train_split",
             "factor_scales": list(factor_scales),
+            **factor_diagnostics,
             "side_scale": side_scale,
             "base_side_weight": cost_spec.side_weight,
         },
@@ -761,8 +798,54 @@ def _train_factor_cost_scales(measures: Sequence[ProductMeasure], *, curvature: 
         weights = tuple(1.0 if index == factor_index else 0.0 for index in range(factor_count))
         geometry = ConstantCurvatureProduct(curvature=curvature, factor_weights=weights, side_weight=0.0)
         costs = [geometry.path_cost_matrix(left, right) for left in measures for right in measures]
-        scales.append(median_positive_cost_scale(costs))
+        scales.append(_median_positive_or_zero(costs))
     return tuple(scales)
+
+
+def _normalized_factor_weights(
+    factor_scales: Sequence[float],
+    *,
+    relative_floor: float = 1e-6,
+    absolute_floor: float = 1e-12,
+) -> tuple[tuple[float, ...], dict[str, Any]]:
+    """Normalize the whole point block while suppressing degenerate factors.
+
+    Every active factor receives an equal share of the point-block budget after
+    scale normalization. This keeps single-point and product-path cells matched
+    despite their different factor counts. Near-constant factors are assigned
+    zero weight instead of amplifying floating-point noise.
+    """
+
+    if not factor_scales:
+        raise ValueError("factor_scales must not be empty")
+    if relative_floor < 0.0 or absolute_floor <= 0.0:
+        raise ValueError("factor scale floors must be non-negative and positive, respectively")
+    scales = tuple(float(scale) for scale in factor_scales)
+    if any(not math.isfinite(scale) or scale < 0.0 for scale in scales):
+        raise ValueError("factor_scales must be finite and non-negative")
+    threshold = max(absolute_floor, max(scales) * relative_floor)
+    active = tuple(index for index, scale in enumerate(scales) if scale > threshold)
+    if not active:
+        return (
+            tuple(0.0 for _ in scales),
+            {
+                "factor_scale_floor": threshold,
+                "active_factor_indices": [],
+                "degenerate_factor_indices": list(range(len(scales))),
+                "active_factor_count": 0,
+            },
+        )
+    active_count = len(active)
+    weights = tuple((1.0 / (active_count * scale)) if index in active else 0.0 for index, scale in enumerate(scales))
+    return (
+        weights,
+        {
+            "factor_scale_floor": threshold,
+            "active_factor_indices": list(active),
+            "degenerate_factor_indices": [index for index in range(len(scales)) if index not in active],
+            "active_factor_count": active_count,
+        },
+    )
 
 
 def _train_side_cost_scale(measures: Sequence[ProductMeasure], *, curvature: float) -> float:
@@ -777,7 +860,7 @@ def _select_validation_product_weight(
     train_items: Sequence[LabeledItem],
     train_measures: Sequence[ProductMeasure],
     curvature: float,
-    factor_scales: Sequence[float],
+    unit_factor_weights: Sequence[float],
     side_scale: float,
     base_side_weight: float,
     point_weight_grid: Sequence[float],
@@ -792,7 +875,7 @@ def _select_validation_product_weight(
     factor_count = train_measures[0].points.shape[1]
     normalized_point = ConstantCurvatureProduct(
         curvature=curvature,
-        factor_weights=tuple(1.0 / scale for scale in factor_scales),
+        factor_weights=tuple(unit_factor_weights),
         side_weight=0.0,
     )
     normalized_side = ConstantCurvatureProduct(
@@ -1263,6 +1346,7 @@ def _payload(
     reproducibility: dict[str, Any],
     item_scope: ItemScope,
     encoder_policy: EncoderPolicy,
+    path_selection_policy: str,
 ) -> dict[str, Any]:
     expected_runs = len(cells) * len(cost_modes)
     return {
@@ -1286,6 +1370,7 @@ def _payload(
             "reproducibility": reproducibility,
             "item_scope": item_scope,
             "encoder_policy": encoder_policy,
+            "path_selection_policy": path_selection_policy,
             "split_policy": "disjoint train/query/gallery methods within every task",
             "representation_policy": (
                 "one shared frozen Euclidean encoder; cells vary only geometry, path object, and method aggregation"
@@ -1406,6 +1491,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="shared_euclidean",
         help="Use the frozen shared Euclidean encoder or train a matched geometry-aware encoder per factor cell.",
     )
+    parser.add_argument(
+        "--path-selection-policy",
+        choices=("preorder_first", "hash_sorted", "lca_depth_stratified"),
+        default="lca_depth_stratified",
+    )
     return parser
 
 
@@ -1442,6 +1532,7 @@ def main() -> None:
         max_ball_fraction=args.max_ball_fraction,
         hard_negatives_per_query=args.hard_negatives_per_query,
         encoder_policy=args.encoder_policy,
+        path_selection_policy=args.path_selection_policy,
     )
     print(f"status={payload['status']} completed={payload['completed_runs']}/{payload['expected_runs']} output={args.output}")
 
