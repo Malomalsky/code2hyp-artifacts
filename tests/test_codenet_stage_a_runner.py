@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import torch
 
 from geometry_profile_research.codenet_stage_a import StageAProgram, StageASplit
@@ -133,16 +134,24 @@ def test_validation_curvature_selection_uses_mean_then_smallest_tie() -> None:
     payloads = [
         {
             "status": "complete",
+            "seed": 1,
             "cells": {
-                "HEE_c0p1_true_LCA": {"metrics": {"problem_macro_map_at_r": 0.4}},
-                "HEE_c0p3_true_LCA": {"metrics": {"problem_macro_map_at_r": 0.5}},
+                "EEE_true_LCA": {"metrics": {"task_scores": {"A": 0.4, "B": 0.6}}},
+                "EEE_zero_anchor": {"metrics": {"task_scores": {"A": 0.3, "B": 0.5}}},
+                "HEE_near_zero_true_LCA": {"metrics": {"task_scores": {"A": 0.4, "B": 0.6}}},
+                "HEE_c0p1_true_LCA": {"metrics": {"task_scores": {"A": 0.3, "B": 0.5}}},
+                "HEE_c0p3_true_LCA": {"metrics": {"task_scores": {"A": 0.4, "B": 0.6}}},
             },
         },
         {
             "status": "complete",
+            "seed": 2,
             "cells": {
-                "HEE_c0p1_true_LCA": {"metrics": {"problem_macro_map_at_r": 0.6}},
-                "HEE_c0p3_true_LCA": {"metrics": {"problem_macro_map_at_r": 0.5}},
+                "EEE_true_LCA": {"metrics": {"task_scores": {"A": 0.5, "B": 0.7}}},
+                "EEE_zero_anchor": {"metrics": {"task_scores": {"A": 0.4, "B": 0.6}}},
+                "HEE_near_zero_true_LCA": {"metrics": {"task_scores": {"A": 0.5, "B": 0.7}}},
+                "HEE_c0p1_true_LCA": {"metrics": {"task_scores": {"A": 0.5, "B": 0.7}}},
+                "HEE_c0p3_true_LCA": {"metrics": {"task_scores": {"A": 0.4, "B": 0.6}}},
             },
         },
     ]
@@ -150,6 +159,13 @@ def test_validation_curvature_selection_uses_mean_then_smallest_tie() -> None:
     result = select_active_curvature(payloads, active_curvatures=(0.1, 0.3))
 
     assert result["selected_active_curvature"] == 0.1
+    assert result["problem_count"] == 2
+    assert (
+        result["descriptive_validation_contrasts"]["H1_EEE_true_LCA_minus_EEE_zero_anchor"][
+            "mean_delta_problem_macro_MAP_at_8"
+        ]
+        == pytest.approx(0.1)
+    )
     assert result["test_relevance_labels_opened"] is False
 
 

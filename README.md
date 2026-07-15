@@ -349,6 +349,19 @@ not tracked. The validation selection record is produced only after all ten
 registered seeds complete. This command does not materialize test program IDs
 or test relevance labels.
 
+Verify and seal each completed validation seed before aggregating the ten-seed
+selection record:
+
+```bash
+uv run python scripts/seal_codenet_stage_a_validation_seed.py \
+  outputs/codenet_python800_stage_a_validation_v1/seed_20260711_validation.json
+```
+
+The seal checks the frozen protocol and calibration hashes, numerical Gate 0,
+the exact seven-cell design, validation cardinalities, checkpoint and distance
+matrix hashes, and the three fail-closed test-access flags. It records the
+immutable validation-runner commit and does not read the official source tree.
+
 ## Claim Boundary
 
 Safe claim:

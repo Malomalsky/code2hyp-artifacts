@@ -528,27 +528,60 @@ def select_active_curvature(
 
     if not seed_payloads or any(payload.get("status") != "complete" for payload in seed_payloads):
         raise ValueError("all registered seed payloads must be complete")
+    seed_ids = [int(payload["seed"]) for payload in seed_payloads]
+    if len(seed_ids) != len(set(seed_ids)):
+        raise ValueError("validation selection received duplicate model seeds")
     candidate_scores: dict[float, float] = {}
+    candidate_task_scores: dict[float, dict[str, float]] = {}
     for curvature in active_curvatures:
         cell_id = curvature_cell_id(curvature)
-        scores = [
-            float(payload["cells"][cell_id]["metrics"]["problem_macro_map_at_r"])
-            for payload in seed_payloads
-        ]
-        candidate_scores[float(curvature)] = sum(scores) / len(scores)
+        task_scores = _seed_averaged_task_scores(seed_payloads, cell_id=cell_id)
+        candidate_task_scores[float(curvature)] = task_scores
+        candidate_scores[float(curvature)] = sum(task_scores.values()) / len(task_scores)
     selected = min(
         candidate_scores,
         key=lambda curvature: (-candidate_scores[curvature], curvature),
     )
+    selected_cell = curvature_cell_id(selected)
+    cell_ids = (
+        "EEE_true_LCA",
+        "EEE_zero_anchor",
+        "HEE_near_zero_true_LCA",
+        *(curvature_cell_id(curvature) for curvature in active_curvatures),
+    )
+    cell_scores = {
+        cell_id: _seed_averaged_task_scores(seed_payloads, cell_id=cell_id)
+        for cell_id in cell_ids
+    }
+    contrasts = {
+        "H1_EEE_true_LCA_minus_EEE_zero_anchor": _task_score_contrast(
+            cell_scores["EEE_true_LCA"],
+            cell_scores["EEE_zero_anchor"],
+        ),
+        "H3_selected_active_minus_EEE_true_LCA": _task_score_contrast(
+            cell_scores[selected_cell],
+            cell_scores["EEE_true_LCA"],
+        ),
+        "H3_selected_active_minus_HEE_near_zero_true_LCA": _task_score_contrast(
+            cell_scores[selected_cell],
+            cell_scores["HEE_near_zero_true_LCA"],
+        ),
+    }
     return {
         "selection_rule": "maximum_mean_validation_problem_macro_MAP_at_8_across_model_seeds_then_smallest_curvature",
         "selected_active_curvature": selected,
-        "selected_cell_id": curvature_cell_id(selected),
+        "selected_cell_id": selected_cell,
         "candidate_mean_validation_problem_macro_MAP_at_8": {
             str(curvature): candidate_scores[curvature]
             for curvature in sorted(candidate_scores)
         },
+        "cell_mean_validation_problem_macro_MAP_at_8": {
+            cell_id: sum(task_scores.values()) / len(task_scores)
+            for cell_id, task_scores in cell_scores.items()
+        },
+        "descriptive_validation_contrasts": contrasts,
         "seed_count": len(seed_payloads),
+        "problem_count": len(next(iter(candidate_task_scores.values()))),
         "test_program_ids_materialized": False,
         "test_relevance_labels_opened": False,
         "test_retrieval_metrics_computed": False,
@@ -582,6 +615,52 @@ def matched_role_weights(
 def curvature_cell_id(curvature: float) -> str:
     token = f"{float(curvature):g}".replace(".", "p")
     return f"HEE_c{token}_true_LCA"
+
+
+def _seed_averaged_task_scores(
+    seed_payloads: Sequence[Mapping[str, Any]],
+    *,
+    cell_id: str,
+) -> dict[str, float]:
+    per_task: dict[str, list[float]] = {}
+    reference_tasks: set[str] | None = None
+    for payload in seed_payloads:
+        try:
+            task_scores = payload["cells"][cell_id]["metrics"]["task_scores"]
+        except KeyError as error:
+            raise ValueError(f"validation seed is missing cell {cell_id!r}") from error
+        tasks = set(task_scores)
+        if reference_tasks is None:
+            reference_tasks = tasks
+        elif tasks != reference_tasks:
+            raise ValueError(f"task set differs across seeds for cell {cell_id!r}")
+        for task, value in task_scores.items():
+            per_task.setdefault(str(task), []).append(float(value))
+    return {
+        task: sum(values) / len(values)
+        for task, values in sorted(per_task.items())
+    }
+
+
+def _task_score_contrast(
+    treatment: Mapping[str, float],
+    control: Mapping[str, float],
+) -> dict[str, Any]:
+    if set(treatment) != set(control):
+        raise ValueError("contrast cells do not contain the same validation tasks")
+    differences = {
+        task: float(treatment[task]) - float(control[task])
+        for task in sorted(treatment)
+    }
+    values = tuple(differences.values())
+    return {
+        "mean_delta_problem_macro_MAP_at_8": sum(values) / len(values),
+        "positive_problem_count": sum(value > 0.0 for value in values),
+        "zero_problem_count": sum(value == 0.0 for value in values),
+        "negative_problem_count": sum(value < 0.0 for value in values),
+        "task_deltas": differences,
+        "inference_status": "validation_descriptive_only",
+    }
 
 
 def iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
