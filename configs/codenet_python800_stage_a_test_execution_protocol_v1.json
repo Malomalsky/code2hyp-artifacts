@@ -1,0 +1,98 @@
+{
+  "schema_version": "code2hyp-stage-a-test-execution-protocol-v1",
+  "status": "frozen_during_validation_before_validation_selection_or_test_unseal",
+  "role": "fail_closed_execution_detail_for_the_single_registered_test_opening",
+  "inputs": {
+    "registration": {
+      "path": "registrations/codenet_python800_stage_a_registration_v1.json",
+      "sha256": "4dafbe10ac4d97ba2e37b4b63ede6b40df24f5bf8ac6d68f1fcbbac787184a18"
+    },
+    "sampling_protocol": {
+      "path": "configs/codenet_python800_stage_a_sampling_protocol_v1.json",
+      "sha256": "183ddfcd6fdb7b98b46ce1d324ebec86cdc53dbf864974faffe8907eb15cef2e"
+    },
+    "ast_path_protocol": {
+      "path": "configs/codenet_python800_stage_a_ast_path_protocol_v1.json",
+      "sha256": "76e1e711ab902bf561e4d27150120c6b913ff98f48cb9604216e21eec44e467c"
+    },
+    "model_analysis_protocol": {
+      "path": "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
+      "sha256": "e88154923be3f6511161f2ed99caae444019c1aeb7b9c497a38ca1d4864d2573"
+    },
+    "test_inference_protocol": {
+      "path": "configs/codenet_python800_stage_a_test_inference_protocol_v1.json",
+      "sha256": "b0f37e940d64d47aadf307c1e2b19762326b583d3759b90197adea1103ed3d81"
+    },
+    "split_manifest": {
+      "path": "data/codenet_python800_stage_a_split/split_manifest.json",
+      "sha256": "1a49245dad8f92f5f384f5bf6099e8b36104b618a92c95383c01f65865fb71ed"
+    },
+    "cluster_assignments": {
+      "path": "data/codenet_python800_stage_a_split/cluster_assignments.jsonl",
+      "sha256": "5d8456569a11673ab2705b3606de358a26249b9fb1fc447f7c07cdce1b7b8f58"
+    },
+    "d5_metadata_manifest": {
+      "path": "data/codenet_python800_d5_metadata/d5_metadata_manifest.json",
+      "sha256": "d4ff77c8c7034a9dfdf6306de4760483edf6e0790b8eadc91760b846778ac927"
+    },
+    "d5_metadata_index": {
+      "path": "data/codenet_python800_d5_metadata/d5_metadata_index.jsonl",
+      "sha256": "ba02ccb21efba3d3ab4a5a1fb26b5809a3250584ec0bc14a95b093e720f9630b"
+    },
+    "validation_selection_requirement": "one_valid_code2hyp-stage-a-validation-selection-seal-v1"
+  },
+  "single_opening_transaction": {
+    "opening_count": 1,
+    "precondition": "all_ten_validation_seed_results_and_seals_and_the_validation_selection_seal_are_valid",
+    "receipt": "write_once_before_reading_any_test_metadata_row",
+    "receipt_identity": "hashes_of_all_frozen_inputs_and_the_validation_selection_seal_plus_the_immutable_test_runner_commit",
+    "crash_policy": "resume_only_the_transaction_identified_by_the_existing_receipt",
+    "second_receipt_policy": "stop",
+    "overwrite_policy": "stop_if_any_existing_test_artifact_differs"
+  },
+  "test_sampling": {
+    "clusters": 386,
+    "queries_per_cluster": 8,
+    "gallery_per_cluster": 8,
+    "program_count": 6176,
+    "representative_and_order_rule": "exactly_the_frozen_program_sampling_HMAC_rule",
+    "roles": "first_8_user_representatives_query_next_8_gallery",
+    "user_hashes_in_output": false,
+    "expected_relevant_gallery_items_per_query": 8
+  },
+  "test_source_audit": {
+    "timing": "inside_the_single_opening_transaction_before_any_test_metric",
+    "source_processing": "exactly_the_frozen_AST_path_protocol",
+    "parse_or_path_failure": "stop_before_test_metrics",
+    "selected_path_count": "min_64_and_available_unique_terminal_pairs"
+  },
+  "test_evaluation": {
+    "model_seeds": [
+      20260711,
+      20260712,
+      20260713,
+      20260714,
+      20260715,
+      20260716,
+      20260717,
+      20260718,
+      20260719,
+      20260720
+    ],
+    "checkpoint_source": "the_exact_checkpoint_bound_to_each_sealed_validation_seed_result",
+    "calibration_source": "the_role_scales_role_weights_cost_scale_and_epsilon_bound_to_each_sealed_validation_seed_result",
+    "recalibration_on_test": false,
+    "planned_cells": "all_seven_frozen_cells",
+    "selection_on_test": false,
+    "ranking_and_metrics": "exactly_the_frozen_model_analysis_protocol",
+    "inference": "exactly_the_frozen_test_inference_protocol",
+    "report_all_cells_regardless_of_sign": true
+  },
+  "state_at_freeze": {
+    "validation_started": true,
+    "validation_selection_complete": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
