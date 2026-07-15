@@ -1,0 +1,62 @@
+{
+  "schema_version": "code2hyp-stage-a-relevance-identity-addendum-v1",
+  "status": "frozen_after_pre_metric_metadata_identity_halt_and_before_any_validation_retrieval_metric",
+  "role": "align_relevance_and_macro_aggregation_identity_with_the_registered_duplicate_closed_problem_cluster",
+  "registration": {
+    "doi": "10.5281/zenodo.21371188",
+    "registered_independent_unit": "duplicate_closed_problem_cluster",
+    "registered_relevant_gallery_count_per_query": 8
+  },
+  "incident": {
+    "path": "reports/codenet_python800_stage_a_relevance_identity_incident_2026-07-15.json",
+    "sha256": "5aade81edd24dcdb9059b45ebc72f1193a993cef5f707464d99de5fbce3f5184"
+  },
+  "correction": {
+    "relevance_key_before": "problem_id",
+    "relevance_key_after": "cluster_id",
+    "problem_macro_aggregation_key_before": "problem_id",
+    "problem_macro_aggregation_key_after": "cluster_id",
+    "reason": "one_registered_duplicate_closed_validation_cluster_contains_source_problem_ids_p02388_and_p02859",
+    "applies_to": [
+      "validation_runner",
+      "test_runner",
+      "independent_test_seed_sealer"
+    ]
+  },
+  "unchanged_contract": {
+    "program_ids": "unchanged",
+    "train_validation_test_cluster_assignment": "unchanged",
+    "query_gallery_assignment": "unchanged",
+    "model_and_checkpoint": "unchanged",
+    "geometry_cells": "unchanged",
+    "transport_solver": "unchanged",
+    "distance_matrices": "unchanged",
+    "ranking_and_tie_break": "unchanged",
+    "retrieval_cutoff_r": 8,
+    "bootstrap_unit": "duplicate_closed_problem_cluster",
+    "hypotheses_and_decision_thresholds": "unchanged"
+  },
+  "restart_policy": {
+    "failed_seed": 20260711,
+    "checkpoint_reuse": "forbidden_across_runner_provenance_even_though_training_and_model_are_unaffected",
+    "training_restart": "same_registered_seed_from_scratch_under_the_corrected_immutable_runner",
+    "distance_matrix_reuse": "impossible_because_the_failed_runner_did_not_persist_it",
+    "new_seed_introduced": false,
+    "validation_metric_observed_before_restart": false,
+    "test_opened_before_restart": false
+  },
+  "acceptance_gates": [
+    "all_97_validation_clusters_have_exactly_8_queries_and_8_gallery_items",
+    "mixed_source_problem_id_duplicate_cluster_is_evaluated_as_one_cluster",
+    "all_existing_stage_a_tests",
+    "independent_test_sealer_uses_cluster_id"
+  ],
+  "state_at_freeze": {
+    "validation_distance_matrices_persisted": 0,
+    "validation_retrieval_metrics_persisted": false,
+    "active_curvature_selected": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}

@@ -270,19 +270,19 @@ def summarize_problem_macro_retrieval(
     distances: Tensor,
     *,
     query_ids: Sequence[str],
-    query_problem_ids: Sequence[str],
+    query_cluster_ids: Sequence[str],
     gallery_ids: Sequence[str],
-    gallery_problem_ids: Sequence[str],
+    gallery_cluster_ids: Sequence[str],
     r: int = 8,
     require_exact_relevant_count: bool = True,
 ) -> RetrievalSummary:
-    """Summarize lower-is-better distances with equal weight per problem."""
+    """Summarize distances with equal weight per duplicate-closed problem cluster."""
 
     values = torch.as_tensor(distances, dtype=torch.float64, device="cpu")
     if values.shape != (len(query_ids), len(gallery_ids)):
         raise ValueError("distance matrix shape does not match query/gallery metadata")
-    if len(query_ids) != len(query_problem_ids) or len(gallery_ids) != len(gallery_problem_ids):
-        raise ValueError("each item must have one problem ID")
+    if len(query_ids) != len(query_cluster_ids) or len(gallery_ids) != len(gallery_cluster_ids):
+        raise ValueError("each item must have one duplicate-closed problem-cluster ID")
     if len(query_ids) != len(set(query_ids)) or len(gallery_ids) != len(set(gallery_ids)):
         raise ValueError("query and gallery IDs must be unique")
     if not torch.isfinite(values).all():
@@ -293,8 +293,12 @@ def summarize_problem_macro_retrieval(
     task_ap: dict[str, list[float]] = {}
     query_scores: dict[str, float] = {}
     first_ranks: list[int] = []
-    for query_index, (query_id, problem_id) in enumerate(zip(query_ids, query_problem_ids)):
-        relevant = [index for index, candidate_problem in enumerate(gallery_problem_ids) if candidate_problem == problem_id]
+    for query_index, (query_id, cluster_id) in enumerate(zip(query_ids, query_cluster_ids)):
+        relevant = [
+            index
+            for index, candidate_cluster in enumerate(gallery_cluster_ids)
+            if candidate_cluster == cluster_id
+        ]
         if not relevant:
             raise ValueError(f"query {query_id!r} has no relevant gallery item")
         if require_exact_relevant_count and len(relevant) != r:
@@ -313,13 +317,13 @@ def summarize_problem_macro_retrieval(
             r=r,
         )
         first_rank = next(rank for rank, is_relevant in enumerate(ranked_relevance, start=1) if is_relevant)
-        task_ap.setdefault(problem_id, []).append(average_precision)
+        task_ap.setdefault(cluster_id, []).append(average_precision)
         query_scores[query_id] = average_precision
         first_ranks.append(first_rank)
 
     task_scores = {
-        problem_id: sum(scores) / len(scores)
-        for problem_id, scores in sorted(task_ap.items())
+        cluster_id: sum(scores) / len(scores)
+        for cluster_id, scores in sorted(task_ap.items())
     }
     return RetrievalSummary(
         problem_macro_map_at_r=sum(task_scores.values()) / len(task_scores),

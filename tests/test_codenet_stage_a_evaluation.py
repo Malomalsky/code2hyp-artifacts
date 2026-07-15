@@ -171,9 +171,9 @@ def test_problem_macro_map_weights_problems_not_queries() -> None:
     summary = summarize_problem_macro_retrieval(
         distances,
         query_ids=("qa1", "qa2", "qb1"),
-        query_problem_ids=("A", "A", "B"),
+        query_cluster_ids=("A", "A", "B"),
         gallery_ids=("ga1", "ga2", "gb1", "gb2"),
-        gallery_problem_ids=("A", "A", "B", "B"),
+        gallery_cluster_ids=("A", "A", "B", "B"),
         r=2,
     )
 
@@ -189,10 +189,27 @@ def test_retrieval_ties_are_broken_by_gallery_id() -> None:
     summary = summarize_problem_macro_retrieval(
         distances,
         query_ids=("q",),
-        query_problem_ids=("A",),
+        query_cluster_ids=("A",),
         gallery_ids=("z-b", "a-a", "y-b", "b-a"),
-        gallery_problem_ids=("B", "A", "B", "A"),
+        gallery_cluster_ids=("B", "A", "B", "A"),
         r=2,
     )
 
     assert summary.query_scores["q"] == 1.0
+
+
+def test_relevance_uses_duplicate_closed_cluster_not_source_problem_id() -> None:
+    distances = torch.arange(64, dtype=torch.float64).reshape(1, 64)
+    gallery_clusters = ("duplicate-cluster",) * 8 + tuple(f"negative-{index}" for index in range(56))
+
+    summary = summarize_problem_macro_retrieval(
+        distances,
+        query_ids=("p02388/query.py",),
+        query_cluster_ids=("duplicate-cluster",),
+        gallery_ids=tuple(f"gallery-{index:02d}.py" for index in range(64)),
+        gallery_cluster_ids=gallery_clusters,
+        r=8,
+    )
+
+    assert summary.problem_count == 1
+    assert summary.task_scores == {"duplicate-cluster": 1.0}

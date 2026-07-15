@@ -1,0 +1,49 @@
+{
+  "schema_version": "code2hyp-stage-a-relevance-identity-incident-v1",
+  "observed_utc_date": "2026-07-15",
+  "registration_doi": "10.5281/zenodo.21371188",
+  "runner": {
+    "tag": "codenet-stage-a-validation-runner-v3",
+    "commit": "469cbabc66c9de4ff9403fa19f84b38f45b59d47",
+    "seed": 20260711
+  },
+  "halt": {
+    "phase": "after_computing_the_first_EEE_true_LCA_distance_matrix_and_before_persisting_that_matrix_or_any_retrieval_metric",
+    "exception": "query 'p02388/s309552185.py' has 3 relevant items; the frozen protocol requires exactly 8",
+    "distance_matrices_persisted": 0,
+    "validation_retrieval_metrics_persisted": false,
+    "active_curvature_selected": false,
+    "test_opened": false
+  },
+  "root_cause": {
+    "registered_relevance_unit": "duplicate_closed_problem_cluster",
+    "implemented_relevance_key": "source_problem_id",
+    "correct_relevance_key": "cluster_id",
+    "affected_validation_cluster_count": 1,
+    "affected_cluster": {
+      "cluster_id": "problem-f2ab32afee2ae401f5d1",
+      "source_problem_ids": [
+        "p02388",
+        "p02859"
+      ],
+      "query_count": 8,
+      "gallery_count": 8
+    },
+    "validation_contract": {
+      "row_count": 1552,
+      "cluster_count": 97,
+      "clusters_with_non_8_plus_8_role_counts": 0
+    }
+  },
+  "correction_scope": {
+    "replace": "problem_id_as_relevance_and_macro_aggregation_key",
+    "with": "cluster_id_as_relevance_and_macro_aggregation_key",
+    "model": "unchanged",
+    "training": "unchanged",
+    "split": "unchanged",
+    "distances": "unchanged",
+    "ranking_tie_break": "unchanged",
+    "r": 8,
+    "statistical_estimand": "problem_cluster_macro_MAP_at_8_as_registered"
+  }
+}

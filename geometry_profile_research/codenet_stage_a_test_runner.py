@@ -240,9 +240,9 @@ def run_stage_a_test_seed(
         summary = summarize_problem_macro_retrieval(
             distances,
             query_ids=tuple(item.item_id for item in test_split.query),
-            query_problem_ids=tuple(item.problem_id for item in test_split.query),
+            query_cluster_ids=tuple(item.cluster_id for item in test_split.query),
             gallery_ids=tuple(item.item_id for item in test_split.gallery),
-            gallery_problem_ids=tuple(item.problem_id for item in test_split.gallery),
+            gallery_cluster_ids=tuple(item.cluster_id for item in test_split.gallery),
             r=8,
         )
         distance_path = output_dir / f"seed_{seed}_{cell_id}_test_distances.pt"

@@ -121,9 +121,9 @@ def seal_test_seed_result(
     if len({str(row["cluster_id"]) for row in rows}) != expected_problem_count:
         raise ValueError("test problem-cluster count differs from the registered design")
     query_ids = tuple(str(row["source_relpath"]) for row in query_rows)
-    query_problems = tuple(str(row["problem_id"]) for row in query_rows)
+    query_clusters = tuple(str(row["cluster_id"]) for row in query_rows)
     gallery_ids = tuple(str(row["source_relpath"]) for row in gallery_rows)
-    gallery_problems = tuple(str(row["problem_id"]) for row in gallery_rows)
+    gallery_clusters = tuple(str(row["cluster_id"]) for row in gallery_rows)
     if len(set(query_ids)) != len(query_ids) or len(set(gallery_ids)) != len(gallery_ids):
         raise ValueError("test query or gallery identifiers are not unique")
 
@@ -158,9 +158,9 @@ def seal_test_seed_result(
         recomputed = summarize_problem_macro_retrieval(
             distances,
             query_ids=query_ids,
-            query_problem_ids=query_problems,
+            query_cluster_ids=query_clusters,
             gallery_ids=gallery_ids,
-            gallery_problem_ids=gallery_problems,
+            gallery_cluster_ids=gallery_clusters,
             r=relevant_count,
         )
         if canonical_json_bytes(asdict(recomputed)) != canonical_json_bytes(cell["metrics"]):
