@@ -1,0 +1,60 @@
+{
+  "schema_version": "code2hyp-codenet-stage-a-registration-v1",
+  "registration": {
+    "artifact_type": "preregistered_evaluation_design",
+    "doi": "10.5281/zenodo.21371188",
+    "record_id": 21371188,
+    "record_url": "https://zenodo.org/records/21371188",
+    "api_url": "https://zenodo.org/api/records/21371188",
+    "created_utc": "2026-07-15T07:53:27.528133+00:00",
+    "api_response_sha256": "6efb8e2d2f6c6e8511945cbd600d6bf646d6a5494e34288302b88b31bc8629ae",
+    "archive": {
+      "filename": "Malomalsky/code2hyp-artifacts-codenet-stage-a-registration-v1.zip",
+      "bytes": 6240355,
+      "md5": "52af841ed10c6a5b99d1ac9e9c5f0f07"
+    }
+  },
+  "git": {
+    "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
+    "design_tag": "codenet-stage-a-design-v1",
+    "design_commit": "ce9cb8746c331d5d6685337b5b0789f46f37f0d2",
+    "registration_tag": "codenet-stage-a-registration-v1",
+    "registration_commit": "e663d2e9ea760c0694c649ec8da4d01bfadcc693",
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/codenet-stage-a-registration-v1",
+    "release_published_utc": "2026-07-15T07:53:23Z"
+  },
+  "design": {
+    "path": "configs/codenet_python800_stage_a_draft.json",
+    "sha256": "ddbf576ecf9add93bc9ceadd62e730962a54ec7f6f9e27b9f4f1ae898f2d49a5",
+    "dataset_revision": "1.0.0",
+    "eligible_problem_clusters": 773,
+    "quotas_train_validation_test": [290, 97, 386]
+  },
+  "nist_randomness_beacon": {
+    "api_version": "2.0",
+    "selection_rule": "first pulse strictly after the Zenodo record creation timestamp",
+    "query_timestamp_unix_milliseconds": 1784102007528,
+    "query_url": "https://beacon.nist.gov/beacon/2.0/pulse/time/next/1784102007528",
+    "response_sha256": "7a39a39d103840551ab6f0c8bfbee97b72a9bca68e0b0f9f6dc0dd2d45895f58",
+    "uri": "https://beacon.nist.gov/beacon/2.0/chain/2/pulse/1860323",
+    "chain_index": 2,
+    "pulse_index": 1860323,
+    "timestamp_utc": "2026-07-15T07:54:00.000Z",
+    "period_milliseconds": 60000,
+    "status_code": 0,
+    "certificate_id": "528943a555f5f8ca54423be6dfb95925a35c7b552046420e7d7cd072058a14d6536ad3a8e9754b6582f164a90b0cd86a65d659f5426a2659a947595d1c816c8c",
+    "output_value_hex": "0A47545F4FF35ED377DD4CEA6C4D12AF75C3D9F08343076BFFBC868F56C7CFF99A82359E31BA0F5C68111BF73BC80C6DCBACD3C85C11AA71D8241330C6C14512"
+  },
+  "split_derivation": {
+    "algorithm": "HMAC-SHA256",
+    "key_encoding": "hex-decode nist_randomness_beacon.output_value_hex to 64 bytes",
+    "message_encoding": "UTF-8(dataset_revision + NUL + cluster_id)",
+    "ordering": "ascending unsigned digest bytes, then ascending UTF-8 cluster_id as a collision tie-breaker",
+    "assignment": "first 290 train, next 97 validation, final 386 test"
+  },
+  "state_at_registration": {
+    "split_generated": false,
+    "test_labels_opened": false,
+    "codenet_retrieval_metrics_computed": false
+  }
+}
