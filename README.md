@@ -382,6 +382,14 @@ uv run python scripts/audit_codenet_stage_a_representation_identifiability.py \
 This diagnostic is descriptive, reads no validation manifest or test IDs, and
 does not modify the registered curvature-selection rule.
 
+Across the 18,560 training programs, the frozen `label_only` input maps 90.15%
+of additional node identities, 61.90% of additional true-LCA identities and
+45.44% of additional selected path objects onto already observed signatures
+(micro collision rates). These values measure input equivalence, not learned
+embedding quality. They narrow the Stage A interpretation and motivate a
+separately controlled context-aware encoder in a future stage; they do not
+authorize changing the registered Stage A model after validation begins.
+
 ## Claim Boundary
 
 Safe claim:
