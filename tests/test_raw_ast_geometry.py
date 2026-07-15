@@ -117,6 +117,64 @@ class RawAstGeometryTests(unittest.TestCase):
         self.assertEqual(lca_depths.count(1), 2)
         self.assertEqual(lca_depths.count(2), 2)
 
+    def test_affine_lca_sampler_is_deterministic_unique_and_depth_stratified(self) -> None:
+        tree = _toy_java_method_tree()
+
+        first = terminal_to_terminal_paths(tree, max_paths=4, selection_policy="lca_depth_affine_sampled")
+        second = terminal_to_terminal_paths(tree, max_paths=4, selection_policy="lca_depth_affine_sampled")
+        endpoint_pairs = [(path.start, path.end) for path in first]
+        lca_depths = [tree.depth(path.lca(tree)) for path in first]
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 4)
+        self.assertEqual(len(set(endpoint_pairs)), 4)
+        self.assertEqual(lca_depths.count(1), 2)
+        self.assertEqual(lca_depths.count(2), 2)
+
+    def test_affine_lca_sampler_returns_all_pairs_when_capacity_is_smaller_than_k(self) -> None:
+        tree = _toy_java_method_tree()
+
+        paths = terminal_to_terminal_paths(tree, max_paths=64, selection_policy="lca_depth_affine_sampled")
+        endpoint_pairs = {frozenset((path.start, path.end)) for path in paths}
+
+        self.assertEqual(len(paths), 6)
+        self.assertEqual(len(endpoint_pairs), 6)
+
+    def test_affine_lca_sampler_ignores_terminal_values(self) -> None:
+        edges = [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
+        labels = {0: "Module", 1: "TerminalToken", 2: "TerminalToken", 3: "TerminalToken", 4: "TerminalToken", 5: "TerminalToken"}
+        first_tree = RawAstTree.from_edges(
+            root_id=0,
+            edges=edges,
+            labels=labels,
+            attributes={node: {"terminal_token": f"name_{node}"} for node in range(1, 6)},
+        )
+        renamed_tree = RawAstTree.from_edges(
+            root_id=0,
+            edges=edges,
+            labels=labels,
+            attributes={node: {"terminal_token": f"renamed_{node}"} for node in range(1, 6)},
+        )
+
+        first = terminal_to_terminal_paths(first_tree, max_paths=6, selection_policy="lca_depth_affine_sampled")
+        renamed = terminal_to_terminal_paths(renamed_tree, max_paths=6, selection_policy="lca_depth_affine_sampled")
+
+        self.assertEqual([(path.start, path.end) for path in first], [(path.start, path.end) for path in renamed])
+
+    def test_affine_lca_sampler_scales_without_materializing_all_leaf_pairs(self) -> None:
+        leaf_count = 5_000
+        tree = RawAstTree.from_edges(
+            root_id=0,
+            edges=[(0, node) for node in range(1, leaf_count + 1)],
+            labels={0: "Module", **{node: "TerminalToken" for node in range(1, leaf_count + 1)}},
+        )
+
+        paths = terminal_to_terminal_paths(tree, max_paths=64, selection_policy="lca_depth_affine_sampled")
+
+        self.assertEqual(len(paths), 64)
+        self.assertEqual(len({(path.start, path.end) for path in paths}), 64)
+        self.assertTrue(all(path.nodes[1] == 0 for path in paths))
+
     def test_terminal_to_terminal_paths_can_be_restricted_to_a_subtree(self) -> None:
         tree = _toy_java_method_tree()
 

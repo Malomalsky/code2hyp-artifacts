@@ -1493,7 +1493,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--path-selection-policy",
-        choices=("preorder_first", "hash_sorted", "lca_depth_stratified"),
+        choices=("preorder_first", "hash_sorted", "lca_depth_stratified", "lca_depth_affine_sampled"),
         default="lca_depth_stratified",
     )
     return parser

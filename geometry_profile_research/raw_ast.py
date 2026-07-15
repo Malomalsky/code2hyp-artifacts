@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from math import sqrt
+from math import gcd, sqrt
 from typing import Mapping, Sequence
 
 
@@ -349,15 +349,24 @@ def terminal_to_terminal_paths(
     ``preorder_first`` keeps the historical behavior and returns the first
     leaf pairs in preorder. ``hash_sorted`` ranks all leaf pairs by a stable
     digest before truncation, which is useful as a sensitivity check against
-    first-K preorder bias. ``lca_depth_stratified`` groups pairs by LCA depth
-    and selects them round-robin across depth strata, with stable hash order
-    inside each stratum.
+    first-K preorder bias. ``lca_depth_stratified`` groups explicitly
+    materialized pairs by LCA depth. ``lca_depth_affine_sampled`` preserves
+    that round-robin stratification but indexes exact-LCA pair spaces
+    combinatorially, avoiding quadratic pair materialization.
     """
 
     if max_paths is not None and max_paths < 0:
         raise ValueError("max_paths must be non-negative or None")
-    if selection_policy not in {"preorder_first", "hash_sorted", "lca_depth_stratified"}:
+    if selection_policy not in {
+        "preorder_first",
+        "hash_sorted",
+        "lca_depth_stratified",
+        "lca_depth_affine_sampled",
+    }:
         raise ValueError(f"unknown path selection policy: {selection_policy!r}")
+    if selection_policy == "lca_depth_affine_sampled":
+        pairs = _lca_depth_affine_sampled_pairs(tree, max_paths=max_paths, root_id=root_id)
+        return tuple(tree.path_between(left, right) for left, right in pairs)
     leaves = leaf_node_ids(tree, root_id=root_id)
     pairs = [(left, right) for left_index, left in enumerate(leaves) for right in leaves[left_index + 1 :]]
     if selection_policy == "hash_sorted":
@@ -406,6 +415,191 @@ def _lca_depth_stratified_pairs(
         if not added:
             break
     return selected
+
+
+@dataclass(frozen=True)
+class _ExactLcaPairBlock:
+    """Implicit leaf-pair block whose members have one exact LCA node."""
+
+    node: NodeId
+    child_leaf_intervals: tuple[tuple[int, int], ...]
+    pair_count: int
+
+
+def _lca_depth_affine_sampled_pairs(
+    tree: RawAstTree,
+    *,
+    max_paths: int | None,
+    root_id: NodeId | None,
+) -> tuple[tuple[NodeId, NodeId], ...]:
+    """Select unique leaf pairs without materializing the quadratic pair set.
+
+    For an internal node with child-subtree leaf counts ``n_i``, exactly
+    ``sum_{i<j} n_i n_j`` unordered leaf pairs have that node as their LCA.
+    These implicit pair blocks are grouped by LCA depth. Within every depth
+    stratum an affine permutation visits every rank exactly once, while the
+    outer round-robin preserves coverage of shallow and deep LCA strata.
+    """
+
+    subtree_root = tree.root_id if root_id is None else root_id
+    nodes = _subtree_preorder(tree, root_id=subtree_root)
+    leaves = tuple(node for node in nodes if not tree.children_by_node.get(node))
+    if len(leaves) < 2 or max_paths == 0:
+        return ()
+
+    leaf_position = {leaf: index for index, leaf in enumerate(leaves)}
+    leaf_interval: dict[NodeId, tuple[int, int]] = {}
+    for node in reversed(nodes):
+        children = tree.children_by_node.get(node, ())
+        if not children:
+            position = leaf_position[node]
+            leaf_interval[node] = (position, position + 1)
+            continue
+        leaf_interval[node] = (leaf_interval[children[0]][0], leaf_interval[children[-1]][1])
+
+    blocks_by_depth: dict[int, list[_ExactLcaPairBlock]] = {}
+    for node in nodes:
+        children = tree.children_by_node.get(node, ())
+        if len(children) < 2:
+            continue
+        intervals = tuple(leaf_interval[child] for child in children)
+        counts = tuple(stop - start for start, stop in intervals)
+        total = sum(counts)
+        pair_count = (total * total - sum(count * count for count in counts)) // 2
+        if pair_count == 0:
+            continue
+        block = _ExactLcaPairBlock(node=node, child_leaf_intervals=intervals, pair_count=pair_count)
+        blocks_by_depth.setdefault(tree.depth(node), []).append(block)
+
+    if not blocks_by_depth:
+        return ()
+    tree_fingerprint = _structural_subtree_fingerprint(tree, subtree_root)
+    stratum_sizes = {
+        depth: sum(block.pair_count for block in blocks)
+        for depth, blocks in blocks_by_depth.items()
+    }
+    total_pairs = sum(stratum_sizes.values())
+    target_count = total_pairs if max_paths is None else min(max_paths, total_pairs)
+    affine_parameters = {
+        depth: _affine_permutation_parameters(
+            stratum_sizes[depth],
+            tree_fingerprint=tree_fingerprint,
+            depth=depth,
+        )
+        for depth in blocks_by_depth
+    }
+    offsets = {depth: 0 for depth in blocks_by_depth}
+    selected: list[tuple[NodeId, NodeId]] = []
+    depth_order = sorted(blocks_by_depth)
+    while len(selected) < target_count:
+        added = False
+        for depth in depth_order:
+            offset = offsets[depth]
+            stratum_size = stratum_sizes[depth]
+            if offset >= stratum_size:
+                continue
+            multiplier, shift = affine_parameters[depth]
+            rank = (multiplier * offset + shift) % stratum_size
+            selected.append(
+                _pair_at_stratum_rank(
+                    leaves,
+                    blocks_by_depth[depth],
+                    rank,
+                )
+            )
+            offsets[depth] = offset + 1
+            added = True
+            if len(selected) >= target_count:
+                break
+        if not added:
+            break
+    return tuple(selected)
+
+
+def _pair_at_stratum_rank(
+    leaves: Sequence[NodeId],
+    blocks: Sequence[_ExactLcaPairBlock],
+    rank: int,
+) -> tuple[NodeId, NodeId]:
+    for block in blocks:
+        if rank >= block.pair_count:
+            rank -= block.pair_count
+            continue
+        intervals = block.child_leaf_intervals
+        suffix_counts = [0] * len(intervals)
+        running = 0
+        for index in range(len(intervals) - 1, -1, -1):
+            suffix_counts[index] = running
+            start, stop = intervals[index]
+            running += stop - start
+        for child_index, (start, stop) in enumerate(intervals[:-1]):
+            left_count = stop - start
+            right_count = suffix_counts[child_index]
+            child_pair_count = left_count * right_count
+            if rank >= child_pair_count:
+                rank -= child_pair_count
+                continue
+            left_offset, right_offset = divmod(rank, right_count)
+            right_start = intervals[child_index + 1][0]
+            return leaves[start + left_offset], leaves[right_start + right_offset]
+        raise RuntimeError("exact-LCA pair rank did not map to a child pair")
+    raise IndexError("LCA-depth stratum rank is out of range")
+
+
+def _affine_permutation_parameters(
+    size: int,
+    *,
+    tree_fingerprint: bytes,
+    depth: int,
+) -> tuple[int, int]:
+    if size <= 0:
+        raise ValueError("affine permutation size must be positive")
+    if size == 1:
+        return 0, 0
+    digest = hashlib.blake2b(
+        b"code2hyp:lca-depth-affine-sampled:v1|"
+        + tree_fingerprint
+        + b"|"
+        + str(depth).encode("ascii"),
+        digest_size=32,
+    ).digest()
+    multiplier = int.from_bytes(digest[:16], "big") % size
+    if multiplier == 0:
+        multiplier = 1
+    while gcd(multiplier, size) != 1:
+        multiplier = (multiplier + 1) % size
+        if multiplier == 0:
+            multiplier = 1
+    shift = int.from_bytes(digest[16:], "big") % size
+    return multiplier, shift
+
+
+def _structural_subtree_fingerprint(tree: RawAstTree, root_id: NodeId) -> bytes:
+    """Hash ordered AST structure while excluding identifier/literal values."""
+
+    digest = hashlib.blake2b(digest_size=32)
+    root_depth = tree.depth(root_id)
+    for node in _subtree_preorder(tree, root_id=root_id):
+        parent = tree.parent(node)
+        attributes = tree.attributes.get(node, {})
+        if parent is None or node == root_id:
+            edge_type = "root"
+            child_index = 0
+        else:
+            edge_type = attributes.get("edge_type", "child")
+            child_index = int(attributes.get("child_index", tree.children_by_node[parent].index(node)))
+        fields = (
+            str(tree.depth(node) - root_depth),
+            tree.labels.get(node, ""),
+            edge_type,
+            str(child_index),
+            str(len(tree.children_by_node.get(node, ()))),
+        )
+        for field_value in fields:
+            encoded = field_value.encode("utf-8")
+            digest.update(len(encoded).to_bytes(4, "big"))
+            digest.update(encoded)
+    return digest.digest()
 
 
 def _stable_leaf_pair_digest(tree: RawAstTree, left: NodeId, right: NodeId) -> bytes:

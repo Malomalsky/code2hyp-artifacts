@@ -147,7 +147,12 @@ class RawASTCode2Hyp(nn.Module):
             raise ValueError(f"unknown method_aggregation: {method_aggregation!r}")
         if path_cost_orientation not in {"directed", "unoriented"}:
             raise ValueError(f"unknown path_cost_orientation: {path_cost_orientation!r}")
-        if path_selection_policy not in {"preorder_first", "hash_sorted", "lca_depth_stratified"}:
+        if path_selection_policy not in {
+            "preorder_first",
+            "hash_sorted",
+            "lca_depth_stratified",
+            "lca_depth_affine_sampled",
+        }:
             raise ValueError(f"unknown path_selection_policy: {path_selection_policy!r}")
         if anchor_mode not in {"true_lca", "zero_anchor", "root_anchor", "depth_matched_shuffled"}:
             raise ValueError(f"unknown anchor_mode: {anchor_mode!r}")

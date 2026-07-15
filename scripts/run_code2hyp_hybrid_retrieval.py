@@ -763,7 +763,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-paths", type=int, default=128)
     parser.add_argument(
         "--path-selection-policy",
-        choices=("preorder_first", "hash_sorted", "lca_depth_stratified"),
+        choices=("preorder_first", "hash_sorted", "lca_depth_stratified", "lca_depth_affine_sampled"),
         default="preorder_first",
         help="How terminal leaf pairs are selected before max-path truncation.",
     )
