@@ -228,6 +228,13 @@ This release contains cluster assignments only. Program-level sampling has
 not yet been generated, test relevance labels remain unopened and no CodeNet
 retrieval metric has been computed.
 
+The registered design fixes user-distinct sample sizes but does not specify
+how to order multiple programs submitted by the same user. Before sampling or
+computing validation metrics, that execution detail was frozen in
+`configs/codenet_python800_stage_a_sampling_protocol_v1.json`. It uses
+domain-separated HMAC-SHA256 ordering and explicitly forbids materializing
+test program identifiers before the single test unseal.
+
 Run the released data tests:
 
 ```bash

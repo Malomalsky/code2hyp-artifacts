@@ -1,0 +1,98 @@
+{
+  "schema_version": "code2hyp-stage-a-program-sampling-protocol-v1",
+  "status": "frozen_before_program_sampling_or_validation_metrics",
+  "role": "post_registration_execution_clarification",
+  "scope": "deterministic_user_distinct_program_sampling_after_registered_cluster_randomization",
+  "registered_design": {
+    "doi": "10.5281/zenodo.21371188",
+    "path": "configs/codenet_python800_stage_a_draft.json",
+    "sha256": "ddbf576ecf9add93bc9ceadd62e730962a54ec7f6f9e27b9f4f1ae898f2d49a5"
+  },
+  "registration_record": {
+    "path": "registrations/codenet_python800_stage_a_registration_v1.json",
+    "sha256": "4dafbe10ac4d97ba2e37b4b63ede6b40df24f5bf8ac6d68f1fcbbac787184a18"
+  },
+  "cluster_split": {
+    "commit": "d99e99f2674fe38446518ffe69db754dede4e741",
+    "tag": "codenet-stage-a-cluster-split-v1",
+    "manifest_path": "data/codenet_python800_stage_a_split/split_manifest.json",
+    "manifest_sha256": "1a49245dad8f92f5f384f5bf6099e8b36104b618a92c95383c01f65865fb71ed",
+    "assignment_sha256": "5d8456569a11673ab2705b3606de358a26249b9fb1fc447f7c07cdce1b7b8f58"
+  },
+  "metadata_input": {
+    "manifest_path": "data/codenet_python800_d5_metadata/d5_metadata_manifest.json",
+    "manifest_sha256": "d4ff77c8c7034a9dfdf6306de4760483edf6e0790b8eadc91760b846778ac927",
+    "index_path": "data/codenet_python800_d5_metadata/d5_metadata_index.jsonl",
+    "index_sha256": "ba02ccb21efba3d3ab4a5a1fb26b5809a3250584ec0bc14a95b093e720f9630b"
+  },
+  "randomness": {
+    "key_source": "hex_decoded_output_value_of_registered_NIST_beacon_pulse",
+    "digest": "HMAC-SHA256",
+    "text_encoding": "UTF-8",
+    "field_separator": "NUL",
+    "program_domain": "code2hyp/codenet-python800/stage-a/program-representative/v1",
+    "user_domain": "code2hyp/codenet-python800/stage-a/user-order/v1"
+  },
+  "selection": {
+    "eligible_rows": "all D5 rows retained after D0-D4 and joined to accepted metadata",
+    "representative_per_user": {
+      "message_fields": [
+        "program_domain",
+        "dataset_revision",
+        "problem_cluster_id",
+        "user_id_sha256",
+        "source_relpath"
+      ],
+      "ordering": "ascending_hmac_digest_then_source_relpath",
+      "take": 1
+    },
+    "user_representative_order": {
+      "message_fields": [
+        "user_domain",
+        "dataset_revision",
+        "problem_cluster_id",
+        "user_id_sha256"
+      ],
+      "ordering": "ascending_hmac_digest_then_user_id_sha256_then_source_relpath"
+    },
+    "train": {
+      "programs_per_cluster": 64,
+      "roles": "first_64_user_representatives_are_training_programs"
+    },
+    "validation": {
+      "queries_per_cluster": 8,
+      "gallery_per_cluster": 8,
+      "roles": "first_8_are_queries_and_next_8_are_gallery"
+    },
+    "test": {
+      "queries_per_cluster": 8,
+      "gallery_per_cluster": 8,
+      "roles": "same_rule_as_validation_only_after_single_unseal",
+      "materialize_before_unseal": false
+    }
+  },
+  "public_outputs_before_test_unseal": {
+    "train_program_ids": true,
+    "validation_program_ids_and_roles": true,
+    "test_program_ids": false,
+    "test_relevance_labels": false,
+    "test_metrics": false,
+    "user_hashes_in_selected_program_artifact": false
+  },
+  "invariants": {
+    "one_selected_program_per_user_within_cluster": true,
+    "train_validation_test_problem_clusters_disjoint": true,
+    "validation_query_gallery_programs_disjoint": true,
+    "validation_query_gallery_users_disjoint_within_cluster": true,
+    "global_cross_cluster_author_removal": false,
+    "selection_independent_of_source_content_outcomes_and_model_scores": true
+  },
+  "state_at_freeze": {
+    "cluster_split_generated": true,
+    "program_sampling_generated": false,
+    "validation_retrieval_metrics_computed": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
