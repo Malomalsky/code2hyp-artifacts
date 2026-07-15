@@ -1,0 +1,52 @@
+{
+  "schema_version": "code2hyp-stage-a-test-runtime-addendum-v1",
+  "status": "frozen_during_validation_before_validation_selection_or_test_unseal",
+  "role": "pre_unseal_reproducibility_correction",
+  "superseded_runner": {
+    "commit": "a1c7ebd9db4081c4913f45ace9f2b009fa4e4168",
+    "tag": "codenet-stage-a-test-runner-v1",
+    "used_for_test_opening": false,
+    "test_program_ids_materialized": false,
+    "test_retrieval_metrics_computed": false
+  },
+  "identified_issue": {
+    "description": "the_fresh_test_process_did_not_explicitly_apply_the_torch_thread_count_and_deterministic_algorithm_mode_bound_to_the_sealed_validation_execution",
+    "scientific_parameters_changed": false,
+    "validation_results_accessed_to_choose_the_correction": false,
+    "test_data_accessed": false
+  },
+  "required_correction": {
+    "torch_num_threads": "read_from_each_sealed_validation_seed_execution_config_and_require_the_frozen_value_1",
+    "deterministic_algorithms": "call_torch_use_deterministic_algorithms_true_before_test_encoding_or_distance_computation",
+    "runtime_record": [
+      "torch_version",
+      "python_version",
+      "platform",
+      "torch_num_threads",
+      "deterministic_algorithms"
+    ],
+    "failure_policy": "stop_before_any_test_metric_if_the_runtime_cannot_apply_the_frozen_configuration"
+  },
+  "unchanged": [
+    "registered_hypotheses",
+    "cluster_split",
+    "program_sampling_rule",
+    "AST_path_selection",
+    "encoder_architecture_and_checkpoints",
+    "coordinate_scales",
+    "role_weights",
+    "Sinkhorn_epsilon_iterations_rounding_and_tolerance",
+    "seven_geometry_cells",
+    "ranking_rule",
+    "MAP_at_8_estimand",
+    "bootstrap_and_decision_rules"
+  ],
+  "state_at_freeze": {
+    "validation_in_progress": true,
+    "validation_selection_complete": false,
+    "test_opening_receipt_exists": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
