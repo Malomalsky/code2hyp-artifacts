@@ -1,0 +1,114 @@
+{
+  "schema_version": "code2hyp-stage-a-ast-path-protocol-v1",
+  "status": "frozen_before_selected_source_audit_or_validation_metrics",
+  "role": "post_registration_execution_clarification",
+  "scope": "whole_program_python_ast_parsing_and_bounded_terminal_path_selection",
+  "registered_design": {
+    "doi": "10.5281/zenodo.21371188",
+    "path": "configs/codenet_python800_stage_a_draft.json",
+    "sha256": "ddbf576ecf9add93bc9ceadd62e730962a54ec7f6f9e27b9f4f1ae898f2d49a5"
+  },
+  "registration_record": {
+    "path": "registrations/codenet_python800_stage_a_registration_v1.json",
+    "sha256": "4dafbe10ac4d97ba2e37b4b63ede6b40df24f5bf8ac6d68f1fcbbac787184a18"
+  },
+  "program_sampling": {
+    "manifest_path": "data/codenet_python800_stage_a_program_sampling/program_sampling_manifest.json",
+    "manifest_sha256": "122ea0555fbaba74b3fa9ab1deb0022bf82062922265ec3568167a99e29dcffb",
+    "train_path": "data/codenet_python800_stage_a_program_sampling/train_programs.jsonl",
+    "train_sha256": "ccd6b17f56130c78a34345091e7935d58682c4d149df316cbf555dc3fe3b3c3b",
+    "validation_path": "data/codenet_python800_stage_a_program_sampling/validation_programs.jsonl",
+    "validation_sha256": "19ab821c1c64f7ed0babc27064feec5e001901e3f7d69d1de6a907fcf1456c14",
+    "test_program_ids_materialized": false
+  },
+  "implementation": {
+    "commit": "e1f12b6452a9fb09b651125a3569643a0030febe",
+    "tag": "codenet-stage-a-path-sampler-v1",
+    "raw_ast_path": "geometry_profile_research/raw_ast.py",
+    "raw_ast_sha256": "151901ae4f091eb1b969a877fa9615553e4d924e9884a5a1bf8319243a539d1e",
+    "encoder_path": "geometry_profile_research/raw_ast_code2hyp.py",
+    "encoder_sha256": "b0a22832d5f1bf9a5b2ff37a30bb142f969261f51b50c733f480cc1b92d5a644",
+    "policy_name": "lca_depth_affine_sampled"
+  },
+  "source_processing": {
+    "unit": "one_complete_source_file_parsed_as_one_Python_module",
+    "normalization": "registered_D0_decode_newline_and_trailing_whitespace_normalization",
+    "parser": "Python_standard_library_ast.parse",
+    "tree": "ordered_rooted_raw_AST_with_explicit_supported_terminal_values",
+    "terminal": "raw_AST_leaf_node",
+    "parse_failure_action": "fail_closed_and_stop_before_validation_metrics",
+    "fewer_than_two_terminals_action": "fail_closed_and_stop_before_validation_metrics"
+  },
+  "path_selection": {
+    "maximum_paths_per_program": 64,
+    "replacement": false,
+    "small_program_rule": "if_binomial_leaf_pair_capacity_is_below_64_use_every_available_pair_once",
+    "small_program_exclusion": false,
+    "small_program_resampling": false,
+    "stratum": "absolute_depth_of_the_exact_lowest_common_ancestor_from_the_module_root",
+    "stratum_order": "ascending_depth_round_robin_until_K_or_exhaustion",
+    "exact_lca_pair_count": "W_v=((sum_i n_i)^2-sum_i n_i^2)/2=sum_{i<j}n_i*n_j",
+    "within_stratum_order": {
+      "mapping": "rank_k=(a*k+b)_mod_N",
+      "coprimality": "gcd(a,N)=1_so_the_mapping_is_a_permutation",
+      "digest": "BLAKE2b-256",
+      "domain": "code2hyp:lca-depth-affine-sampled:v1",
+      "seed_material": "structural_subtree_fingerprint_and_LCA_depth",
+      "excluded_seed_material": [
+        "node_identifiers",
+        "identifier_values",
+        "literal_values",
+        "source_spans",
+        "task_labels",
+        "model_scores"
+      ]
+    },
+    "structural_fingerprint_fields": [
+      "relative_depth",
+      "raw_AST_node_label",
+      "edge_type",
+      "child_index",
+      "child_count"
+    ],
+    "endpoint_orientation": "left_then_right_in_ordered_leaf_preorder",
+    "complexity": "linear_tree_index_construction_plus_O(K_times_number_of_implicit_blocks_in_the_reference_implementation)"
+  },
+  "audit_outputs": {
+    "per_program_fields": [
+      "source_relpath",
+      "split",
+      "role",
+      "cluster_id",
+      "raw_source_sha256",
+      "canonical_source_sha256",
+      "node_count",
+      "leaf_count",
+      "available_terminal_pair_count",
+      "selected_path_count",
+      "selected_endpoint_pairs_sha256"
+    ],
+    "aggregate_fields": [
+      "program_count",
+      "parse_failure_count",
+      "programs_below_K_count",
+      "node_count_distribution",
+      "leaf_count_distribution",
+      "terminal_pair_capacity_distribution"
+    ]
+  },
+  "invariants": {
+    "selected_pairs_are_unique_within_program": true,
+    "each_selected_pair_has_the_reported_true_LCA": true,
+    "selection_is_invariant_to_terminal_value_renaming": true,
+    "all_selected_train_and_validation_programs_are_retained": true,
+    "validation_relevance_and_model_scores_are_not_used": true,
+    "test_program_ids_remain_sealed": true
+  },
+  "state_at_freeze": {
+    "selected_source_AST_audit_generated": false,
+    "validation_retrieval_metrics_computed": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
