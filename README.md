@@ -240,6 +240,15 @@ problem clusters. This is reported as an authorship-confounding diagnostic;
 the registered primary estimand does not remove users globally because that
 operation would eliminate most eligible training data.
 
+Whole-program AST parsing and bounded path selection are frozen separately in
+`configs/codenet_python800_stage_a_ast_path_protocol_v1.json`. The protocol
+uses at most 64 unique terminal-to-terminal paths per program, stratified by
+the exact LCA depth. It indexes the implicit pair space without constructing
+all leaf pairs. Programs with fewer than 64 possible pairs are retained and
+contribute every available pair once; they are neither excluded nor padded by
+duplicate paths. The implementation was tagged before the selected-source
+audit as `codenet-stage-a-path-sampler-v1`.
+
 Run the released data tests:
 
 ```bash
@@ -251,7 +260,9 @@ uv run pytest -q \
   tests/test_codenet_d5_metadata.py \
   tests/test_codenet_d5_attrition.py \
   tests/test_codenet_stage_a_readiness.py \
-  tests/test_codenet_split.py
+  tests/test_codenet_split.py \
+  tests/test_codenet_sampling.py \
+  tests/test_codenet_ast_audit.py
 ```
 
 The official-map and power gates now pass. The readiness command still fails
@@ -280,12 +291,26 @@ uv run python scripts/build_codenet_python800_program_sampling.py
 uv run python scripts/check_codenet_stage_a_program_sampling.py
 ```
 
+After placing the official Python800 source tree locally, reproduce the
+selected-source and AST path audit:
+
+```bash
+uv run python scripts/audit_codenet_stage_a_selected_sources.py \
+  --source-root data/external_raw/codenet_python800_extracted/Project_CodeNet_Python800
+```
+
 The split manifest is in
 `data/codenet_python800_stage_a_split/split_manifest.json`; the independent
 audit result is in `reports/codenet_stage_a_split_audit.json`.
 The program sample manifest is in
 `data/codenet_python800_stage_a_program_sampling/program_sampling_manifest.json`;
 its audit is in `reports/codenet_stage_a_program_sampling_audit.json`.
+The selected-source audit covers 20,112 programs with no decode or parse
+failure. The median AST contains 184 nodes and 106 leaves; the largest contains
+2,750 nodes and 1,652 leaves, corresponding to 1,363,726 possible terminal
+pairs. Nine programs have fewer than 64 possible pairs and follow the frozen
+small-program rule. The portable per-program index and manifest are in
+`data/codenet_python800_stage_a_selected_source_ast/`.
 
 ## Claim Boundary
 
