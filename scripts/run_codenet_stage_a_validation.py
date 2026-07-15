@@ -15,9 +15,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256
 from geometry_profile_research.codenet_stage_a import load_stage_a_split
 from geometry_profile_research.codenet_stage_a_runner import (
+    build_validation_selection_record,
     iter_jsonl,
     run_stage_a_validation_seed,
-    select_active_curvature,
 )
 
 
@@ -169,14 +169,10 @@ def main() -> None:
         if payload.get("status") == "complete":
             complete_payloads.append(payload)
     if len(complete_payloads) == len(registered_seeds):
-        selection = select_active_curvature(complete_payloads)
-        selection.update(
-            {
-                "schema_version": "code2hyp-stage-a-validation-selection-v1",
-                "protocol_sha256": protocol_sha256,
-                "calibration_manifest_sha256": stable_sha256(calibration_manifest_bytes),
-                "registered_seeds": list(registered_seeds),
-            }
+        selection = build_validation_selection_record(
+            complete_payloads,
+            protocol_bytes=protocol_bytes,
+            calibration_manifest_bytes=calibration_manifest_bytes,
         )
         selection_path = args.output_dir / "validation_selection_record.json"
         selection_path.write_bytes(canonical_json_bytes(selection))

@@ -362,6 +362,14 @@ the exact seven-cell design, validation cardinalities, checkpoint and distance
 matrix hashes, and the three fail-closed test-access flags. It records the
 immutable validation-runner commit and does not read the official source tree.
 
+After all ten seed seals exist, verify the frozen curvature-selection rule and
+bind the selection record to every sealed input:
+
+```bash
+uv run python scripts/seal_codenet_stage_a_validation_selection.py \
+  outputs/codenet_python800_stage_a_validation_v1/validation_selection_record.json
+```
+
 ## Claim Boundary
 
 Safe claim:

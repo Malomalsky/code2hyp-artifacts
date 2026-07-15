@@ -523,6 +523,7 @@ def select_active_curvature(
     seed_payloads: Sequence[Mapping[str, Any]],
     *,
     active_curvatures: Sequence[float] = ACTIVE_CURVATURES,
+    expected_seeds: Sequence[int] | None = None,
 ) -> dict[str, Any]:
     """Apply the frozen validation rule and write no test-facing conclusion."""
 
@@ -531,6 +532,8 @@ def select_active_curvature(
     seed_ids = [int(payload["seed"]) for payload in seed_payloads]
     if len(seed_ids) != len(set(seed_ids)):
         raise ValueError("validation selection received duplicate model seeds")
+    if expected_seeds is not None and set(seed_ids) != {int(seed) for seed in expected_seeds}:
+        raise ValueError("validation selection does not contain the registered model seed set")
     candidate_scores: dict[float, float] = {}
     candidate_task_scores: dict[float, dict[str, float]] = {}
     for curvature in active_curvatures:
@@ -586,6 +589,36 @@ def select_active_curvature(
         "test_relevance_labels_opened": False,
         "test_retrieval_metrics_computed": False,
     }
+
+
+def build_validation_selection_record(
+    seed_payloads: Sequence[Mapping[str, Any]],
+    *,
+    protocol_bytes: bytes,
+    calibration_manifest_bytes: bytes,
+) -> dict[str, Any]:
+    """Recompute the complete validation-only curvature selection record."""
+
+    protocol = json.loads(protocol_bytes)
+    registered_seeds = tuple(int(seed) for seed in protocol["encoder_training"]["model_seeds"])
+    active_curvatures = tuple(
+        float(cell["factor_curvatures"][0])
+        for cell in protocol["geometry_cells"]["gate_C_active_candidates"]
+    )
+    selection = select_active_curvature(
+        seed_payloads,
+        active_curvatures=active_curvatures,
+        expected_seeds=registered_seeds,
+    )
+    selection.update(
+        {
+            "schema_version": "code2hyp-stage-a-validation-selection-v1",
+            "protocol_sha256": stable_sha256(protocol_bytes),
+            "calibration_manifest_sha256": stable_sha256(calibration_manifest_bytes),
+            "registered_seeds": list(registered_seeds),
+        }
+    )
+    return selection
 
 
 def scale_product_measure(

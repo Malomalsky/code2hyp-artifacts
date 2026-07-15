@@ -156,7 +156,11 @@ def test_validation_curvature_selection_uses_mean_then_smallest_tie() -> None:
         },
     ]
 
-    result = select_active_curvature(payloads, active_curvatures=(0.1, 0.3))
+    result = select_active_curvature(
+        payloads,
+        active_curvatures=(0.1, 0.3),
+        expected_seeds=(1, 2),
+    )
 
     assert result["selected_active_curvature"] == 0.1
     assert result["problem_count"] == 2
@@ -167,6 +171,13 @@ def test_validation_curvature_selection_uses_mean_then_smallest_tie() -> None:
         == pytest.approx(0.1)
     )
     assert result["test_relevance_labels_opened"] is False
+
+    with pytest.raises(ValueError, match="registered model seed set"):
+        select_active_curvature(
+            payloads,
+            active_curvatures=(0.1, 0.3),
+            expected_seeds=(1, 3),
+        )
 
 
 def test_matched_weights_preserve_standard_poincare_limit_convention() -> None:
