@@ -165,7 +165,11 @@ def audit_selected_sources(
         if executor is not None:
             executor.shutdown()
 
-    summary = _build_summary(results, max_paths=max_paths, selection_policy=selection_policy)
+    summary = build_source_audit_summary(
+        results,
+        max_paths=max_paths,
+        selection_policy=selection_policy,
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     index_path = output_dir / "selected_source_ast_index.jsonl"
     summary_path = output_dir / "selected_source_ast_summary.json"
@@ -286,12 +290,14 @@ def _safe_source_path(source_root: Path, source_relpath: str) -> Path:
     return candidate
 
 
-def _build_summary(
+def build_source_audit_summary(
     rows: Sequence[Mapping[str, Any]],
     *,
     max_paths: int,
     selection_policy: str,
 ) -> dict[str, Any]:
+    """Summarize the common selected-source audit for any opened split."""
+
     failures = [dict(row) for row in rows if not bool(row.get("audit_ok"))]
     valid = [row for row in rows if bool(row.get("audit_ok"))]
     below_k = [

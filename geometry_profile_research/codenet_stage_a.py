@@ -36,6 +36,12 @@ class StageASplit:
     gallery: tuple[StageAProgram, ...]
 
 
+@dataclass(frozen=True)
+class StageATestSplit:
+    query: tuple[StageAProgram, ...]
+    gallery: tuple[StageAProgram, ...]
+
+
 def load_stage_a_split(
     *,
     source_root: Path,
@@ -79,6 +85,62 @@ def load_stage_a_split(
     if {program.item_id for program in query} & {program.item_id for program in gallery}:
         raise ValueError("validation query and gallery programs overlap")
     return StageASplit(train=train, query=query, gallery=gallery)
+
+
+def load_stage_a_test_split(
+    *,
+    source_root: Path,
+    test_path: Path,
+    ast_index_path: Path,
+) -> StageATestSplit:
+    """Load the once-unsealed test split and verify all registered cardinalities."""
+
+    test_rows = list(_iter_jsonl(test_path))
+    ast_rows = {str(row["source_relpath"]): row for row in _iter_jsonl(ast_index_path)}
+    selected_ids = [str(row["source_relpath"]) for row in test_rows]
+    if len(selected_ids) != len(set(selected_ids)):
+        raise ValueError("unsealed Stage A test program IDs are not unique")
+    if set(selected_ids) != set(ast_rows):
+        raise ValueError("test program manifest and AST audit index contain different sources")
+    if any(str(row.get("split")) != "test" for row in test_rows):
+        raise ValueError("unsealed test manifest contains a non-test program")
+    if any(any("user" in str(key).casefold() for key in row) for row in test_rows):
+        raise ValueError("unsealed test manifest publishes user identifiers")
+
+    source_root = source_root.resolve()
+    programs = tuple(
+        _load_program(
+            source_root=source_root,
+            sample_row=row,
+            ast_row=ast_rows[str(row["source_relpath"])],
+        )
+        for row in test_rows
+    )
+    query = tuple(program for program in programs if program.role == "query")
+    gallery = tuple(program for program in programs if program.role == "gallery")
+    if len(query) != 3_088 or len(gallery) != 3_088:
+        raise ValueError(
+            "frozen Stage A test cardinalities must be query=3088 and gallery=3088; "
+            f"observed query={len(query)}, gallery={len(gallery)}"
+        )
+    if {program.item_id for program in query} & {program.item_id for program in gallery}:
+        raise ValueError("test query and gallery programs overlap")
+    query_clusters = _role_cluster_counts(query)
+    gallery_clusters = _role_cluster_counts(gallery)
+    if query_clusters != gallery_clusters or len(query_clusters) != 386:
+        raise ValueError("test query/gallery cluster sets differ from the registered 386 clusters")
+    if any(count != 8 for count in query_clusters.values()) or any(
+        count != 8 for count in gallery_clusters.values()
+    ):
+        raise ValueError("each test cluster must contain exactly eight queries and eight gallery programs")
+    return StageATestSplit(query=query, gallery=gallery)
+
+
+def _role_cluster_counts(programs: Sequence[StageAProgram]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for program in programs:
+        counts[program.cluster_id] = counts.get(program.cluster_id, 0) + 1
+    return counts
 
 
 def select_calibration_pairs(

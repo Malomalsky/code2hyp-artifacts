@@ -388,6 +388,33 @@ uv run python scripts/seal_codenet_stage_a_validation_selection.py \
   outputs/codenet_python800_stage_a_validation_v1/validation_selection_record.json
 ```
 
+The single test-opening transaction is specified independently in
+`configs/codenet_python800_stage_a_test_execution_protocol_v1.json`, frozen
+during validation and before curvature selection. It requires the complete
+validation-selection seal, writes an immutable opening receipt before parsing
+any test metadata row, and permits a crashed process to resume only the same
+receipt identity. The transaction applies the registered user-distinct HMAC
+rule to 386 test clusters, materializes 3,088 queries and 3,088 gallery
+programs, and repeats the frozen AST/path audit before computing a metric.
+
+From the immutable `codenet-stage-a-test-runner-v1` worktree, perform the one
+test opening and the complete evaluation with:
+
+```bash
+uv run python scripts/run_codenet_stage_a_test.py \
+  --source-root /absolute/path/to/Project_CodeNet_Python800 \
+  --d5-index /absolute/path/to/d5_metadata_index.jsonl \
+  --validation-output-dir /absolute/path/to/codenet_python800_stage_a_validation_v1 \
+  --output-dir /absolute/path/to/codenet_python800_stage_a_test_v1
+```
+
+Each test seed reuses the exact checkpoint, coordinate scales, role weights
+and Sinkhorn epsilon bound to its sealed validation result. No parameter is
+recalibrated on test. All seven planned cells are evaluated regardless of
+sign, after which the frozen 20,000-resample problem-cluster bootstrap reports
+H1 and the two-component H3 intersection-union decision. Test outputs remain
+untracked because they contain the once-opened program identifiers.
+
 The separately frozen train-only scope audit quantifies how often the
 `label_only` encoder input identifies distinct AST nodes, true-LCA anchors and
 complete unoriented path objects with the same signature:
