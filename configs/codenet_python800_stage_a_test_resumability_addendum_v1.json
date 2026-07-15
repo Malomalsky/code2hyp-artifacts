@@ -1,0 +1,61 @@
+{
+  "schema_version": "code2hyp-stage-a-test-resumability-addendum-v1",
+  "status": "frozen_during_validation_before_validation_selection_or_test_unseal",
+  "role": "pre_unseal_operational_resumability_clarification",
+  "superseded_runner": {
+    "commit": "81ff1e954c81fab568ffa520dd20235c2c55505c",
+    "tag": "codenet-stage-a-test-runner-v2",
+    "used_for_test_opening": false,
+    "test_opening_receipt_exists": false,
+    "test_program_ids_materialized": false,
+    "test_retrieval_metrics_computed": false
+  },
+  "exact_sharding": {
+    "axis": "query",
+    "queries_per_shard": 32,
+    "query_order": "unchanged_test_program_order",
+    "gallery_per_shard": "the_complete_3088_item_gallery_in_unchanged_order",
+    "within_shard_query_batch_size": 4,
+    "within_shard_gallery_batch_size": 32,
+    "kernel": "the_same_full_gallery_sinkhorn_divergence_function",
+    "self_objectives": "precompute_once_per_cell_with_the_same_frozen_batch_sizes_and_pass_unchanged_slices_to_each_shard",
+    "assembly": "concatenate_query_shards_in_strictly_ascending_half_open_index_order",
+    "expected_final_shape": [
+      3088,
+      3088
+    ]
+  },
+  "resumption": {
+    "each_shard_is_written_atomically": true,
+    "each_existing_shard_must_match_its_expected_shape_dtype_and_finite_value_invariants": true,
+    "incompatible_shard_action": "stop",
+    "completed_final_matrix_is_bound_to_the_seed_result_by_SHA_256": true,
+    "temporary_shard_retention_after_final_matrix_and_partial_record": false
+  },
+  "required_equivalence_test": {
+    "comparison": "monolithic_full_gallery_result_versus_query_sharded_result",
+    "same_measures_geometry_epsilon_iterations_tolerance_and_batch_sizes": true,
+    "criterion": "torch_equal_bitwise",
+    "failure_action": "stop_before_test_unseal"
+  },
+  "unchanged": [
+    "registered_hypotheses",
+    "test_programs_and_relevance",
+    "encoder_checkpoints",
+    "all_train_only_calibration_values",
+    "geometry_cells",
+    "ground_costs",
+    "Sinkhorn_objective_iterations_rounding_and_tolerance",
+    "ranking_and_tie_break",
+    "retrieval_metrics",
+    "bootstrap_and_decision_rules"
+  ],
+  "state_at_freeze": {
+    "validation_in_progress": true,
+    "validation_selection_complete": false,
+    "test_opening_receipt_exists": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
