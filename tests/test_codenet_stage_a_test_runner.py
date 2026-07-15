@@ -235,6 +235,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         result_path=test_result_path,
         test_execution_protocol_path=test_protocol_path,
         test_runtime_addendum_path=runtime_addendum_path,
+        test_resumability_addendum_path=resumability_addendum_path,
         test_materialization_manifest_path=materialization_path,
         test_programs_path=test_programs_path,
         validation_selection_seal_path=selection_seal_path,
