@@ -12,8 +12,8 @@ import torch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-TEST_RUNNER_COMMIT = "a1c7ebd9db4081c4913f45ace9f2b009fa4e4168"
-TEST_RUNNER_TAG = "codenet-stage-a-test-runner-v1"
+TEST_RUNNER_COMMIT = "81ff1e954c81fab568ffa520dd20235c2c55505c"
+TEST_RUNNER_TAG = "codenet-stage-a-test-runner-v2"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -41,6 +41,7 @@ def seal_test_seed_result(
     *,
     result_path: Path,
     test_execution_protocol_path: Path,
+    test_runtime_addendum_path: Path,
     test_materialization_manifest_path: Path,
     test_programs_path: Path,
     validation_selection_seal_path: Path,
@@ -55,6 +56,7 @@ def seal_test_seed_result(
     result_bytes = result_path.read_bytes()
     result = json.loads(result_bytes)
     protocol_bytes = test_execution_protocol_path.read_bytes()
+    runtime_addendum_bytes = test_runtime_addendum_path.read_bytes()
     materialization_bytes = test_materialization_manifest_path.read_bytes()
     materialization = json.loads(materialization_bytes)
     selection_seal_bytes = validation_selection_seal_path.read_bytes()
@@ -69,6 +71,11 @@ def seal_test_seed_result(
         raise ValueError("test seed used an unexpected implementation")
     if identity.get("test_execution_protocol_sha256") != stable_sha256(protocol_bytes):
         raise ValueError("test seed differs from the frozen execution protocol")
+    if identity.get("test_runtime_addendum_sha256") != stable_sha256(runtime_addendum_bytes):
+        raise ValueError("test seed differs from the frozen runtime addendum")
+    runtime = identity.get("test_runtime", {})
+    if runtime.get("torch_num_threads") != 1 or runtime.get("deterministic_algorithms") is not True:
+        raise ValueError("test seed did not use the frozen deterministic runtime")
     if identity.get("test_materialization_manifest_sha256") != stable_sha256(materialization_bytes):
         raise ValueError("test seed differs from its materialized test split")
     if materialization.get("implementation") != implementation:
@@ -177,6 +184,7 @@ def seal_test_seed_result(
                 "sha256": stable_sha256(result_bytes),
             },
             "test_execution_protocol_sha256": stable_sha256(protocol_bytes),
+            "test_runtime_addendum_sha256": stable_sha256(runtime_addendum_bytes),
             "test_materialization_manifest_sha256": stable_sha256(materialization_bytes),
             "test_programs_sha256": stable_sha256(test_programs_path.read_bytes()),
             "validation_selection_seal_sha256": stable_sha256(selection_seal_bytes),
@@ -214,6 +222,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_execution_protocol_v1.json",
     )
+    parser.add_argument(
+        "--test-runtime-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_runtime_addendum_v1.json",
+    )
     parser.add_argument("--test-materialization-manifest", type=Path, default=None)
     parser.add_argument("--test-programs", type=Path, default=None)
     parser.add_argument("--validation-selection-seal", type=Path, default=None)
@@ -233,6 +246,7 @@ def main() -> None:
     manifest = seal_test_seed_result(
         result_path=args.result,
         test_execution_protocol_path=args.test_execution_protocol,
+        test_runtime_addendum_path=args.test_runtime_addendum,
         test_materialization_manifest_path=materialization,
         test_programs_path=programs,
         validation_selection_seal_path=selection_seal,
