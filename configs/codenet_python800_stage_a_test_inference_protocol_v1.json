@@ -1,0 +1,89 @@
+{
+  "schema_version": "code2hyp-stage-a-test-inference-protocol-v1",
+  "status": "frozen_before_test_program_ID_materialization_or_relevance_access",
+  "role": "execution_detail_for_the_registered_confirmatory_test_inference",
+  "inputs": {
+    "registration": {
+      "path": "registrations/codenet_python800_stage_a_registration_v1.json",
+      "sha256": "4dafbe10ac4d97ba2e37b4b63ede6b40df24f5bf8ac6d68f1fcbbac787184a18"
+    },
+    "model_analysis_protocol": {
+      "path": "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
+      "sha256": "e88154923be3f6511161f2ed99caae444019c1aeb7b9c497a38ca1d4864d2573"
+    },
+    "validation_selection_requirement": "a_valid_code2hyp-stage-a-validation-selection-seal-v1"
+  },
+  "aggregation": {
+    "query_level": "AP_at_8",
+    "within_problem": "unweighted_mean_over_the_8_queries",
+    "within_problem_across_models": "unweighted_mean_over_the_10_registered_model_seeds",
+    "across_problems": "unweighted_mean_over_duplicate_closed_problem_clusters",
+    "independent_sampling_unit": "duplicate_closed_problem_cluster",
+    "model_seed_is_an_independent_sampling_unit": false
+  },
+  "contrasts": {
+    "H1": "EEE_true_LCA_minus_EEE_zero_anchor",
+    "H3a": "validation_selected_active_HEE_minus_EEE_true_LCA",
+    "H3b": "validation_selected_active_HEE_minus_HEE_near_zero_true_LCA"
+  },
+  "bootstrap": {
+    "method": "paired_nonparametric_percentile_cluster_bootstrap",
+    "resamples": 20000,
+    "sample_size_per_resample": "the_observed_test_problem_cluster_count",
+    "sampling": "with_replacement",
+    "shared_resample_indices_across_all_contrasts": true,
+    "rng": "torch.Generator_on_CPU",
+    "rng_seed_derivation": {
+      "digest": "SHA-256",
+      "message": "NIST_beacon_output_bytes_concatenated_with_UTF8_domain",
+      "domain": "code2hyp:codenet-python800:stage-a:test-cluster-bootstrap:v1",
+      "integer": "first_8_digest_bytes_as_unsigned_big_endian_reduced_modulo_2^63_minus_1"
+    },
+    "two_sided_interval": {
+      "confidence": 0.95,
+      "lower_quantile": 0.025,
+      "upper_quantile": 0.975,
+      "interpolation": "linear"
+    },
+    "one_sided_lower_bound": {
+      "component_alpha": 0.025,
+      "quantile": 0.025,
+      "interpolation": "linear"
+    }
+  },
+  "decision_rules": {
+    "minimum_practically_significant_delta_MAP_at_8": 0.01,
+    "H1_statistical_support": "the_0.025_bootstrap_lower_bound_is_strictly_positive",
+    "H1_practical_support": "the_point_estimate_is_at_least_0.01",
+    "H1_confirmatory_success": "both_H1_statistical_support_and_H1_practical_support",
+    "H3_statistical_support": "both_H3a_and_H3b_0.025_bootstrap_lower_bounds_are_strictly_positive",
+    "H3_practical_support": "both_H3a_and_H3b_point_estimates_are_at_least_0.01",
+    "H3_confirmatory_success": "both_H3_statistical_support_and_H3_practical_support",
+    "family_statement": "H1_and_H3_are_reported_as_separately_registered_hypotheses_without_an_unregistered_joint_familywise_claim",
+    "all_planned_cells_reported_regardless_of_sign": true
+  },
+  "secondary_metrics": {
+    "metrics": [
+      "MRR",
+      "Recall_at_1",
+      "Recall_at_5",
+      "Recall_at_10",
+      "mean_first_relevant_rank"
+    ],
+    "inference_status": "descriptive_only"
+  },
+  "failure_policy": {
+    "missing_registered_seed": "stop",
+    "mismatched_problem_cluster_set": "stop",
+    "missing_planned_cell": "stop",
+    "non_finite_score": "stop",
+    "test_opening_count_not_equal_to_one": "stop",
+    "invalid_validation_selection_seal": "stop"
+  },
+  "state_at_freeze": {
+    "validation_selection_complete": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
