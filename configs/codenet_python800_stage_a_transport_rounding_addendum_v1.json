@@ -1,0 +1,62 @@
+{
+  "schema_version": "code2hyp-stage-a-transport-rounding-addendum-v1",
+  "status": "frozen_after_pre_metric_numerical_halt_and_before_any_validation_retrieval_metric",
+  "role": "numerical_feasibility_correction_without_scientific_model_or_hyperparameter_change",
+  "inputs": {
+    "model_analysis_protocol": {
+      "path": "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
+      "sha256": "e88154923be3f6511161f2ed99caae444019c1aeb7b9c497a38ca1d4864d2573"
+    },
+    "numerical_incident": {
+      "path": "reports/codenet_python800_stage_a_numerical_incident_2026-07-15.json",
+      "sha256": "e64109f1b589c8b05f79980446e45b86b71154b9568e82465675fcea7ace8943"
+    }
+  },
+  "unchanged_contract": {
+    "log_domain_iterations": 128,
+    "projection_iterations_max": 2048,
+    "maximum_marginal_residual": 1e-07,
+    "evaluation_precision": "float64",
+    "regularized_OT_objective": "inner_product_pi_C_plus_epsilon_KL_pi_against_product_mass",
+    "all_geometry_cells": "unchanged",
+    "all_model_seeds": "unchanged",
+    "all_calibration_pairs": "unchanged",
+    "all_validation_and_test_estimands": "unchanged"
+  },
+  "rounding": {
+    "application": "once_after_log_domain_Sinkhorn_and_at_most_2048_alternating_projection_iterations",
+    "step_1": "multiply_each_row_by_min(a_i/current_row_mass_i,1)",
+    "step_2": "multiply_each_column_by_min(b_j/current_column_mass_j,1)",
+    "step_3": "add_the_nonnegative_rank_one_outer_product_of_remaining_row_and_column_deficits",
+    "zero_mass_padding": "kept_exactly_zero",
+    "purpose": "restore_prescribed_marginals_without_relaxing_the_registered_tolerance",
+    "applied_to_every_transport_plan": true,
+    "postcondition": "maximum_absolute_row_or_column_residual_at_most_1e-7"
+  },
+  "restart_policy": {
+    "failed_seed": 20260711,
+    "same_registered_seed_reused": true,
+    "failed_runner_v1_checkpoint_reused": false,
+    "training_restarted_from_scratch_under_the_new_immutable_runner": true,
+    "new_model_seed_introduced": false,
+    "validation_metric_observed_before_restart": false
+  },
+  "acceptance_gates": [
+    "independent_POT_plan_and_objective_agreement_on_well_conditioned_cases",
+    "scalar_batched_equivalence",
+    "marginal_residual_at_most_1e-7",
+    "Poincare_near_zero_limit",
+    "endpoint_reversal_invariance",
+    "finite_difference_gradient_agreement",
+    "actual_failed_batch_reproduction_and_resolution",
+    "full_repository_test_suite"
+  ],
+  "state_at_freeze": {
+    "validation_distance_matrices_written": 0,
+    "validation_retrieval_metrics_computed": false,
+    "active_curvature_selected": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
