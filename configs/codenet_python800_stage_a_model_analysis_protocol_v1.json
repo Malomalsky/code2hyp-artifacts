@@ -1,0 +1,282 @@
+{
+  "schema_version": "code2hyp-stage-a-model-analysis-protocol-v1",
+  "status": "frozen_before_calibration_pair_materialization_or_validation_metrics",
+  "role": "post_registration_execution_specification",
+  "scope": "shared_structural_encoder_lca_anchor_ablation_and_role_curvature_gate",
+  "registered_design": {
+    "doi": "10.5281/zenodo.21371188",
+    "path": "configs/codenet_python800_stage_a_draft.json",
+    "sha256": "ddbf576ecf9add93bc9ceadd62e730962a54ec7f6f9e27b9f4f1ae898f2d49a5"
+  },
+  "registration_record": {
+    "path": "registrations/codenet_python800_stage_a_registration_v1.json",
+    "sha256": "4dafbe10ac4d97ba2e37b4b63ede6b40df24f5bf8ac6d68f1fcbbac787184a18"
+  },
+  "path_protocol": {
+    "path": "configs/codenet_python800_stage_a_ast_path_protocol_v1.json",
+    "sha256": "76e1e711ab902bf561e4d27150120c6b913ff98f48cb9604216e21eec44e467c"
+  },
+  "implementation": {
+    "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
+    "commit": "7dd6047d6fd4c52bbf76aae93cc9d88fce10e89f",
+    "tag": "codenet-stage-a-transport-evaluator-v1",
+    "transport_module": "geometry_profile_research/batched_transport.py",
+    "evaluation_module": "geometry_profile_research/codenet_stage_a_evaluation.py",
+    "encoder_module": "geometry_profile_research/raw_ast_code2hyp.py"
+  },
+  "frozen_inputs": {
+    "train_programs": {
+      "path": "data/codenet_python800_stage_a_program_sampling/train_programs.jsonl",
+      "sha256": "ccd6b17f56130c78a34345091e7935d58682c4d149df316cbf555dc3fe3b3c3b",
+      "count": 18560
+    },
+    "validation_programs": {
+      "path": "data/codenet_python800_stage_a_program_sampling/validation_programs.jsonl",
+      "sha256": "19ab821c1c64f7ed0babc27064feec5e001901e3f7d69d1de6a907fcf1456c14",
+      "query_count": 776,
+      "gallery_count": 776
+    },
+    "selected_source_ast_index": {
+      "path": "data/codenet_python800_stage_a_selected_source_ast/selected_source_ast_index.jsonl",
+      "sha256": "371ca1b6b92a6967739cec0b1a3ac8035f906d3287e7353d71da260a73ce586d"
+    },
+    "selected_source_ast_manifest": {
+      "path": "data/codenet_python800_stage_a_selected_source_ast/selected_source_ast_manifest.json",
+      "sha256": "71cc26b30af7798f7cddf03c1759ea008c811abeeb8b35829cfa40ccd7f2eb61"
+    }
+  },
+  "representation": {
+    "program_unit": "one_complete_Python_module",
+    "path_object": "unoriented_equivalence_class_of_true_LCA_start_end_triples",
+    "program_object": "uniform_finite_measure_over_at_most_64_path_objects",
+    "path_selection_policy": "lca_depth_affine_sampled",
+    "path_count": 64,
+    "small_program_rule": "use_every_available_unique_terminal_pair",
+    "terminal_policy": "class",
+    "node_input_mode": "label_only",
+    "terminal_values_used": false,
+    "side_features_used": false,
+    "side_weight": 0.0,
+    "endpoint_orientation": "quotient_by_start_end_exchange"
+  },
+  "encoder_training": {
+    "shared_across_all_cells": true,
+    "training_geometry": "euclidean",
+    "dimension_per_role": 8,
+    "token_dimension": 8,
+    "model_seeds": [
+      20260711,
+      20260712,
+      20260713,
+      20260714,
+      20260715,
+      20260716,
+      20260717,
+      20260718,
+      20260719,
+      20260720
+    ],
+    "epochs": 5,
+    "batch_size_programs": 8,
+    "optimizer": "Adam",
+    "learning_rate": 0.003,
+    "weight_decay": 0.0,
+    "gradient_clip_global_norm": 1.0,
+    "early_stopping": false,
+    "shuffle": "deterministic_Python_random_with_seed_plus_epoch",
+    "precision": "float32",
+    "hardware": "CPU",
+    "loss": {
+      "retrieval_weight": 0.0,
+      "edge_length_weight": 1.0,
+      "soft_gromov_LCA_distortion_weight": 0.1,
+      "branch_length_weight": 1.0,
+      "reversal_weight": 0.0,
+      "program_weighting": "one_mean_per_program_per_active_term",
+      "interpretation": "the_Gromov_LCA_term_is_a_soft_distortion_regularizer_not_an_exact_isometry_constraint"
+    },
+    "validation_information_used_for_training": false,
+    "test_information_used_for_training": false
+  },
+  "train_only_calibration": {
+    "randomness_key": "hex_decoded_NIST_beacon_output_recorded_in_the_registration_record",
+    "pair_selector": "domain_separated_HMAC_SHA256",
+    "domain": "code2hyp:codenet-python800:stage-a:calibration-pairs:v1",
+    "same_cluster_pairs": 2048,
+    "cross_cluster_pairs": 2048,
+    "replacement": false,
+    "pair_count": 4096,
+    "pair_level_statistic": "median_positive_path_to_path_ground_cost",
+    "corpus_level_statistic": "median_across_program_pair_statistics",
+    "large_program_weighting": "one_statistic_per_program_pair",
+    "role_weights": {
+      "lca_scale": "train_pair_statistic_for_Euclidean_LCA_squared_distance",
+      "start_scale": "train_pair_statistic_for_Euclidean_start_squared_distance",
+      "end_scale": "train_pair_statistic_for_Euclidean_end_squared_distance",
+      "endpoint_scale": "median_of_start_and_end_scales",
+      "euclidean_weights": [
+        "1/(3*lca_scale)",
+        "1/(3*endpoint_scale)",
+        "1/(3*endpoint_scale)"
+      ],
+      "canonical_weights": "euclidean_weights_divided_by_4",
+      "reason_for_factor_4": "standard_Poincare_distance_converges_to_twice_Euclidean_distance_as_c_tends_to_zero"
+    },
+    "coordinate_scaling": {
+      "estimated_from": "all_true_LCA_training_measures_per_seed",
+      "active_curvature_max": 3.0,
+      "maximum_ball_radius_fraction": 0.35,
+      "lca_coordinate_scale": "min(1,(0.35/sqrt(3))/maximum_training_LCA_norm)",
+      "endpoint_coordinate_scale": 1.0,
+      "same_scale_for_every_geometry_cell": true,
+      "pair_local_projection_or_normalization": false
+    },
+    "sinkhorn_scale": {
+      "reference_cell": "EEE_true_LCA",
+      "cost_scale": "median_of_positive_pairwise_cost_medians_on_the_same_4096_training_pairs",
+      "kappa": 0.05,
+      "epsilon": "max(kappa*cost_scale,1e-6)",
+      "same_epsilon_for_every_cell_within_a_seed": true,
+      "pair_local_cost_normalization": false
+    }
+  },
+  "geometry_cells": {
+    "gate_A_primary": [
+      {
+        "cell_id": "EEE_true_LCA",
+        "anchor": "true_LCA",
+        "factor_curvatures": [0.0, 0.0, 0.0]
+      },
+      {
+        "cell_id": "EEE_zero_anchor",
+        "anchor": "zero_vector",
+        "factor_curvatures": [0.0, 0.0, 0.0]
+      }
+    ],
+    "gate_C_fixed_controls": [
+      {
+        "cell_id": "EEE_true_LCA",
+        "factor_curvatures": [0.0, 0.0, 0.0]
+      },
+      {
+        "cell_id": "HEE_near_zero_true_LCA",
+        "factor_curvatures": [0.0001, 0.0, 0.0]
+      }
+    ],
+    "gate_C_active_candidates": [
+      {
+        "cell_id": "HEE_c0p1_true_LCA",
+        "factor_curvatures": [0.1, 0.0, 0.0]
+      },
+      {
+        "cell_id": "HEE_c0p3_true_LCA",
+        "factor_curvatures": [0.3, 0.0, 0.0]
+      },
+      {
+        "cell_id": "HEE_c1_true_LCA",
+        "factor_curvatures": [1.0, 0.0, 0.0]
+      },
+      {
+        "cell_id": "HEE_c3_true_LCA",
+        "factor_curvatures": [3.0, 0.0, 0.0]
+      }
+    ],
+    "weight_matching": "positive_curvature_factors_use_canonical_weights_and_Euclidean_factors_use_four_times_canonical_weights",
+    "reported_LCA_sectional_curvature": "-c/w_LCA",
+    "HHH_in_primary_family": false
+  },
+  "transport": {
+    "ground_cost": "weighted_sum_of_squared_role_geodesic_distances_minimized_over_endpoint_exchange",
+    "objective": "regularized_OT_equal_inner_product_pi_C_plus_epsilon_KL_pi_against_product_mass",
+    "program_distance": "debiased_Sinkhorn_divergence",
+    "evaluation_precision": "float64",
+    "log_domain_iterations": 128,
+    "projection_iterations_max": 2048,
+    "maximum_marginal_residual": 1e-7,
+    "self_objectives": "precomputed_once_per_measure_per_cell",
+    "query_gallery_evaluation": "complete_776_by_776_gallery_without_preselection",
+    "query_batch_size": 4,
+    "gallery_batch_size": 32,
+    "negative_divergence_roundoff": "retained_unclipped_and_audited"
+  },
+  "validation_selection": {
+    "hyperparameters_selected": [
+      "one_active_LCA_curvature_from_the_registered_candidate_grid"
+    ],
+    "selection_statistic": "mean_validation_problem_macro_MAP_at_8_across_the_10_model_seeds",
+    "tie_break": "smallest_active_curvature",
+    "gate_A_control_selected_from_results": false,
+    "encoder_configuration_selected_from_results": false,
+    "near_zero_control_selected_from_results": false,
+    "post_selection_action": "write_and_hash_a_validation_selection_record_before_test_unseal"
+  },
+  "estimand": {
+    "primary_metric": "problem_macro_MAP_at_R",
+    "R": 8,
+    "relevant_gallery_items_per_query": 8,
+    "ranking_order": "ascending_Sinkhorn_divergence",
+    "exact_tie_break": "ascending_UTF8_bytes_of_gallery_source_relpath",
+    "aggregation_order": [
+      "AP_at_8_per_query",
+      "mean_over_8_queries_within_problem",
+      "mean_over_10_model_seeds_within_problem",
+      "unweighted_mean_over_problem_clusters"
+    ],
+    "secondary_metrics": [
+      "MRR",
+      "Recall_at_1",
+      "Recall_at_5",
+      "Recall_at_10",
+      "mean_first_relevant_rank"
+    ]
+  },
+  "confirmatory_hypotheses": {
+    "H1": {
+      "contrast": "EEE_true_LCA_minus_EEE_zero_anchor",
+      "interpretation": "effect_of_the_explicit_true_LCA_anchor_with_endpoints_encoder_and_measure_fixed"
+    },
+    "H2": {
+      "included": false,
+      "reason": "no_certified_global_Frechet_set_solver_for_the_unoriented_endpoint_quotient"
+    },
+    "H3": {
+      "selected_active_cell": "chosen_once_on_validation_by_the_frozen_rule",
+      "intersection_union_contrasts": [
+        "selected_active_HEE_minus_EEE_true_LCA",
+        "selected_active_HEE_minus_HEE_near_zero_true_LCA"
+      ],
+      "success_rule": "both_predefined_lower_confidence_bounds_are_strictly_positive"
+    },
+    "H4_and_H5": {
+      "included": false,
+      "status": "future_Stage_B_only"
+    }
+  },
+  "test_inference": {
+    "test_openings": 1,
+    "bootstrap_resamples": 20000,
+    "bootstrap_unit": "duplicate_closed_problem_cluster",
+    "confidence_interval": "two_sided_95_percent_cluster_bootstrap",
+    "intersection_union_component_alpha": 0.025,
+    "minimum_practically_significant_delta_MAP_at_R": 0.01,
+    "model_seed_is_not_the_independent_sampling_unit": true,
+    "all_planned_cells_reported_regardless_of_sign": true
+  },
+  "failure_policy": {
+    "Gate_0_failure": "stop_before_validation_metrics",
+    "input_hash_mismatch": "stop",
+    "AST_or_path_audit_mismatch": "stop",
+    "NaN_or_Inf": "stop_without_replacing_the_seed",
+    "marginal_residual_above_1e-7": "stop",
+    "unexpected_relevant_count": "stop",
+    "validation_or_test_item_used_in_calibration": "stop"
+  },
+  "state_at_freeze": {
+    "calibration_pairs_materialized": false,
+    "validation_retrieval_metrics_computed": false,
+    "active_curvature_selected": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}

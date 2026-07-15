@@ -304,7 +304,7 @@ def summarize_problem_macro_retrieval(
         relevant_set = set(relevant)
         order = sorted(
             range(len(gallery_ids)),
-            key=lambda index: (float(values[query_index, index]), gallery_ids[index]),
+            key=lambda index: (float(values[query_index, index]), gallery_ids[index].encode("utf-8")),
         )
         ranked_relevance = tuple(index in relevant_set for index in order)
         average_precision = average_precision_at_r(
