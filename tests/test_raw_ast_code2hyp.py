@@ -97,6 +97,21 @@ class RawASTCode2HypTests(unittest.TestCase):
         self.assertAlmostEqual(float(measure.mass.sum()), 1.0, places=6)
         self.assertTrue(torch.all(measure.mass > 0.0))
 
+    def test_encode_product_measure_skips_branch_encoder(self) -> None:
+        tree = self._tree()
+        vocab = build_raw_ast_token_vocab((tree,))
+        model = RawASTCode2Hyp(vocab, dim=4, manifold="euclidean", max_paths=4)
+
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("branch encoder must not run for point-only Stage A measures")
+
+        model._encode_branch = fail_if_called
+        measure = model.encode_product_measure(tree)
+
+        self.assertEqual(measure.points.shape[1], 3)
+        self.assertIsNone(measure.side_features)
+        self.assertAlmostEqual(float(measure.mass.sum()), 1.0, places=6)
+
     def test_encode_method_supports_single_point_path_object(self) -> None:
         tree = self._tree()
         vocab = build_raw_ast_token_vocab((tree,))

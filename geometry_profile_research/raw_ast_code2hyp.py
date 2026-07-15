@@ -14,6 +14,7 @@ from geometry_profile_research.code2hyp_torch import (
     torch_poincare_distance,
     torch_project_to_ball,
 )
+from geometry_profile_research.constant_curvature import ProductMeasure
 from geometry_profile_research.gromov_wasserstein import sinkhorn_divergence
 from geometry_profile_research.raw_ast import NodeId, RawAstPath, RawAstTree, terminal_to_terminal_paths
 
@@ -181,42 +182,64 @@ class RawASTCode2Hyp(nn.Module):
     def encode_method(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> RawASTMethodMeasure:
         """Encode one raw-AST callable scope as a uniform measure over path objects."""
 
-        raw_paths = (
-            tuple(paths)
-            if paths is not None
-            else terminal_to_terminal_paths(
-                tree,
-                max_paths=self.max_paths,
-                selection_policy=self.path_selection_policy,
-            )
-        )
-        if not raw_paths:
-            raise ValueError("encode_method requires at least one terminal-to-terminal path")
-        node_points = self.encode_nodes(tree)
-        triples = []
+        raw_paths = self._resolve_paths(tree, paths)
+        points, mass = self._encode_path_points(tree, raw_paths)
         left_branches = []
         right_branches = []
         for path in raw_paths:
-            lca = path.lca(tree)
-            anchor = self._anchor_point(tree, path, node_points=node_points, true_lca=lca)
-            lca_product = torch.stack([anchor, node_points[path.start], node_points[path.end]], dim=0)
-            if self.path_object_mode == "lca_product":
-                triples.append(lca_product)
-            else:
-                triples.append(self._single_path_point(lca_product).unsqueeze(0))
             left_ids, right_ids = _branch_node_ids(tree, path)
             left_branches.append(self._encode_branch(tree, left_ids))
             right_branches.append(self._encode_branch(tree, right_ids))
-        path_count = len(raw_paths)
         return RawASTMethodMeasure(
-            points=torch.stack(triples, dim=0),
+            points=points,
             left_branch=torch.stack(left_branches, dim=0),
             right_branch=torch.stack(right_branches, dim=0),
-            mass=torch.full((path_count,), 1.0 / path_count, dtype=torch.float32),
+            mass=mass,
             manifold=self.manifold,
             curvature=self.curvature,
             path_object_mode=self.path_object_mode,
         )
+
+    def encode_product_measure(
+        self,
+        tree: RawAstTree,
+        paths: Sequence[RawAstPath] | None = None,
+    ) -> ProductMeasure:
+        """Encode only the path-object measure, without unused branch features."""
+
+        raw_paths = self._resolve_paths(tree, paths)
+        points, mass = self._encode_path_points(tree, raw_paths)
+        return ProductMeasure(points=points, mass=mass)
+
+    def _resolve_paths(
+        self,
+        tree: RawAstTree,
+        paths: Sequence[RawAstPath] | None,
+    ) -> tuple[RawAstPath, ...]:
+        raw_paths = tuple(paths) if paths is not None else self._selected_paths(tree)
+        if not raw_paths:
+            raise ValueError("method encoding requires at least one terminal-to-terminal path")
+        return raw_paths
+
+    def _encode_path_points(
+        self,
+        tree: RawAstTree,
+        paths: Sequence[RawAstPath],
+    ) -> tuple[Tensor, Tensor]:
+        node_points = self.encode_nodes(tree)
+        encoded_paths = []
+        for path in paths:
+            lca = path.lca(tree)
+            anchor = self._anchor_point(tree, path, node_points=node_points, true_lca=lca)
+            lca_product = torch.stack([anchor, node_points[path.start], node_points[path.end]], dim=0)
+            encoded_paths.append(
+                lca_product
+                if self.path_object_mode == "lca_product"
+                else self._single_path_point(lca_product).unsqueeze(0)
+            )
+        points = torch.stack(encoded_paths, dim=0)
+        mass = points.new_full((len(paths),), 1.0 / len(paths))
+        return points, mass
 
     def _anchor_point(self, tree: RawAstTree, path: RawAstPath, *, node_points: Tensor, true_lca: NodeId) -> Tensor:
         if self.anchor_mode == "true_lca":
