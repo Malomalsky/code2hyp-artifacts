@@ -33,7 +33,7 @@ class MetricMeasureSpace:
     mass: Tensor | None = None
 
     def __post_init__(self) -> None:
-        distance = torch.as_tensor(self.distance, dtype=torch.float32)
+        distance = _as_floating_tensor(self.distance)
         if distance.ndim != 2 or distance.shape[0] != distance.shape[1]:
             raise ValueError("distance must be a square matrix")
         if not torch.isfinite(distance).all():
@@ -110,6 +110,7 @@ def sinkhorn_plan(
     epsilon: float = 0.05,
     iterations: int = 128,
     projection_iterations: int = 2048,
+    marginal_tolerance: float = 1e-4,
 ) -> Tensor:
     """Solve an entropic OT subproblem in log-domain arithmetic."""
 
@@ -119,6 +120,8 @@ def sinkhorn_plan(
         raise ValueError("iterations must be positive")
     if projection_iterations < 0:
         raise ValueError("projection_iterations must be non-negative")
+    if marginal_tolerance <= 0.0:
+        raise ValueError("marginal_tolerance must be positive")
     cost = torch.as_tensor(cost_matrix, dtype=torch.float64)
     if cost.ndim != 2:
         raise ValueError("cost_matrix must be two-dimensional")
@@ -139,17 +142,27 @@ def sinkhorn_plan(
     for _ in range(projection_iterations):
         plan = plan * (left / torch.clamp(plan.sum(dim=1), min=1e-12)).unsqueeze(1)
         plan = plan * (right / torch.clamp(plan.sum(dim=0), min=1e-12)).unsqueeze(0)
-        row_residual = torch.max(torch.abs(plan.sum(dim=1) - left))
-        column_residual = torch.max(torch.abs(plan.sum(dim=0) - right))
-        if float(torch.maximum(row_residual, column_residual).detach()) <= 1e-6:
+        if _max_marginal_residual(plan, left, right) <= marginal_tolerance:
             break
-    return _validate_coupling(plan, left, right)
+    if _max_marginal_residual(plan, left, right) > marginal_tolerance:
+        for _ in range(max(4096, projection_iterations)):
+            plan = plan * (left / torch.clamp(plan.sum(dim=1), min=1e-12)).unsqueeze(1)
+            plan = plan * (right / torch.clamp(plan.sum(dim=0), min=1e-12)).unsqueeze(0)
+            if _max_marginal_residual(plan, left, right) <= marginal_tolerance:
+                break
+    return _validate_coupling(plan, left, right, tolerance=marginal_tolerance)
 
 
-def sinkhorn_plan_diagnostics(plan: Tensor, left_mass: Tensor, right_mass: Tensor) -> dict[str, float]:
+def sinkhorn_plan_diagnostics(
+    plan: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+    *,
+    tolerance: float = 1e-4,
+) -> dict[str, float]:
     """Return marginal residuals and entropy for an already computed plan."""
 
-    coupling = _validate_coupling(plan, left_mass, right_mass)
+    coupling = _validate_coupling(plan, left_mass, right_mass, tolerance=tolerance)
     left = _normalize_mass(left_mass).to(dtype=coupling.dtype, device=coupling.device)
     right = _normalize_mass(right_mass).to(dtype=coupling.dtype, device=coupling.device)
     entropy = -torch.sum(coupling * torch.log(torch.clamp(coupling, min=1e-12)))
@@ -183,6 +196,80 @@ def sinkhorn_transport_cost(
     return torch.sum(plan * cost)
 
 
+def entropic_plan_kl(coupling: Tensor, left_mass: Tensor, right_mass: Tensor) -> Tensor:
+    """KL divergence ``KL(pi || left_mass tensor_product right_mass)``."""
+
+    plan = _validate_coupling(coupling, left_mass, right_mass)
+    left = _normalize_mass(left_mass).to(dtype=plan.dtype, device=plan.device)
+    right = _normalize_mass(right_mass).to(dtype=plan.dtype, device=plan.device)
+    product = torch.clamp(left.unsqueeze(1) * right.unsqueeze(0), min=1e-300)
+    positive = plan > 0.0
+    log_ratio = torch.log(torch.clamp(plan, min=1e-300)) - torch.log(product)
+    return torch.sum(torch.where(positive, plan * log_ratio, torch.zeros_like(plan)))
+
+
+def entropic_transport_objective(
+    coupling: Tensor,
+    cost_matrix: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+    *,
+    epsilon: float,
+) -> Tensor:
+    """Full objective ``<pi,C> + epsilon KL(pi || left tensor_product right)``."""
+
+    if epsilon <= 0.0:
+        raise ValueError("epsilon must be positive")
+    plan = _validate_coupling(coupling, left_mass, right_mass)
+    cost = torch.as_tensor(cost_matrix, dtype=plan.dtype, device=plan.device)
+    if cost.shape != plan.shape:
+        raise ValueError("cost_matrix shape must match coupling shape")
+    return torch.sum(plan * cost) + float(epsilon) * entropic_plan_kl(plan, left_mass, right_mass)
+
+
+def sinkhorn_transport_objective(
+    cost_matrix: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+    *,
+    epsilon: float = 0.05,
+    iterations: int = 128,
+    projection_iterations: int = 2048,
+) -> Tensor:
+    """Evaluate the full entropic OT objective at its Sinkhorn minimizer."""
+
+    plan = sinkhorn_plan(
+        cost_matrix,
+        left_mass,
+        right_mass,
+        epsilon=epsilon,
+        iterations=iterations,
+        projection_iterations=projection_iterations,
+    )
+    return entropic_transport_objective(plan, cost_matrix, left_mass, right_mass, epsilon=epsilon)
+
+
+def sinkhorn_regularized_cost(
+    cost_matrix: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+    *,
+    epsilon: float = 0.05,
+    iterations: int = 128,
+    projection_iterations: int = 2048,
+) -> Tensor:
+    """Backward-compatible alias for ``sinkhorn_transport_objective``."""
+
+    return sinkhorn_transport_objective(
+        cost_matrix,
+        left_mass,
+        right_mass,
+        epsilon=epsilon,
+        iterations=iterations,
+        projection_iterations=projection_iterations,
+    )
+
+
 def sinkhorn_divergence(
     cross_cost: Tensor,
     left_mass: Tensor,
@@ -193,10 +280,13 @@ def sinkhorn_divergence(
     epsilon: float = 0.05,
     iterations: int = 128,
     projection_iterations: int = 2048,
+    objective: Literal["regularized", "transport_cost"] = "regularized",
 ) -> Tensor:
-    """Debiased Sinkhorn divergence for explicit finite cost matrices."""
+    """Debias either the full entropic objective or its transport-only part."""
 
-    cross = torch.as_tensor(cross_cost, dtype=torch.float32)
+    if objective not in {"regularized", "transport_cost"}:
+        raise ValueError("objective must be 'regularized' or 'transport_cost'")
+    cross = _as_floating_tensor(cross_cost)
     left = _normalize_mass(left_mass).to(dtype=cross.dtype, device=cross.device)
     right = _normalize_mass(right_mass).to(dtype=cross.dtype, device=cross.device)
     if cross.shape != (left.numel(), right.numel()):
@@ -213,7 +303,12 @@ def sinkhorn_divergence(
         right_self = cross
     else:
         right_self = torch.as_tensor(right_self_cost, dtype=cross.dtype, device=cross.device)
-    cross_value = sinkhorn_transport_cost(
+    if left_self.shape != (left.numel(), left.numel()):
+        raise ValueError("left_self_cost shape must match the left mass")
+    if right_self.shape != (right.numel(), right.numel()):
+        raise ValueError("right_self_cost shape must match the right mass")
+    transport = sinkhorn_transport_objective if objective == "regularized" else sinkhorn_transport_cost
+    cross_value = transport(
         cross,
         left,
         right,
@@ -221,7 +316,7 @@ def sinkhorn_divergence(
         iterations=iterations,
         projection_iterations=projection_iterations,
     )
-    left_value = sinkhorn_transport_cost(
+    left_value = transport(
         left_self,
         left,
         left,
@@ -229,7 +324,7 @@ def sinkhorn_divergence(
         iterations=iterations,
         projection_iterations=projection_iterations,
     )
-    right_value = sinkhorn_transport_cost(
+    right_value = transport(
         right_self,
         right,
         right,
@@ -389,7 +484,7 @@ def entropic_fused_gromov_wasserstein(
 def _normalize_mass(mass: Tensor, *, expected_size: int | None = None) -> Tensor:
     values = torch.as_tensor(mass)
     if not torch.is_floating_point(values):
-        values = values.to(dtype=torch.float32)
+        values = values.to(dtype=torch.float64)
     if values.ndim != 1:
         raise ValueError("mass must be a one-dimensional vector")
     if expected_size is not None and values.numel() != expected_size:
@@ -426,10 +521,16 @@ def _build_result(
     )
 
 
-def _validate_coupling(coupling: Tensor, left_mass: Tensor, right_mass: Tensor) -> Tensor:
+def _validate_coupling(
+    coupling: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+    *,
+    tolerance: float | None = None,
+) -> Tensor:
     plan = torch.as_tensor(coupling)
     if not torch.is_floating_point(plan):
-        plan = plan.to(dtype=torch.float32)
+        plan = plan.to(dtype=torch.float64)
     if plan.ndim != 2:
         raise ValueError("coupling must be a two-dimensional matrix")
     left = _normalize_mass(left_mass).to(dtype=plan.dtype, device=plan.device)
@@ -440,8 +541,20 @@ def _validate_coupling(coupling: Tensor, left_mass: Tensor, right_mass: Tensor) 
         raise ValueError("coupling must contain only finite values")
     if bool((plan < -1e-8).any()):
         raise ValueError("coupling values must be non-negative")
-    if not torch.allclose(plan.sum(dim=1), left, atol=1e-3, rtol=1e-3):
+    tolerance_value = tolerance if tolerance is not None else 1e-4
+    if not torch.allclose(plan.sum(dim=1), left, atol=tolerance_value, rtol=tolerance_value):
         raise ValueError("coupling row sums must equal left mass")
-    if not torch.allclose(plan.sum(dim=0), right, atol=1e-3, rtol=1e-3):
+    if not torch.allclose(plan.sum(dim=0), right, atol=tolerance_value, rtol=tolerance_value):
         raise ValueError("coupling column sums must equal right mass")
     return torch.clamp(plan, min=0.0)
+
+
+def _max_marginal_residual(plan: Tensor, left: Tensor, right: Tensor) -> float:
+    row_residual = torch.max(torch.abs(plan.sum(dim=1) - left))
+    column_residual = torch.max(torch.abs(plan.sum(dim=0) - right))
+    return float(torch.maximum(row_residual, column_residual).detach())
+
+
+def _as_floating_tensor(value: Tensor) -> Tensor:
+    tensor = torch.as_tensor(value)
+    return tensor if torch.is_floating_point(tensor) else tensor.to(dtype=torch.float64)

@@ -16,7 +16,16 @@ from scripts.run_lca_causal_matrix import (
 )
 
 
-def test_lca_causal_matrix_freezes_encoder_and_normalization_across_cells(tmp_path: Path) -> None:
+def test_lca_causal_matrix_freezes_encoder_and_normalization_across_cells(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.run_dta_factor_matrix as factor_module
+
+    def fail_if_retrieval_triples_are_built(*args: object, **kwargs: object) -> None:
+        raise AssertionError("structural-only training must not build retrieval triples")
+
+    monkeypatch.setattr(factor_module, "build_retrieval_triples", fail_if_retrieval_triples_are_built)
     task_a = _write_task(tmp_path, "task-a", "a")
     task_b = _write_task(tmp_path, "task-b", "b")
     output = tmp_path / "lca-causal.json"
@@ -41,6 +50,8 @@ def test_lca_causal_matrix_freezes_encoder_and_normalization_across_cells(tmp_pa
     assert loaded["config"]["neutral_encoder"] is True
     assert loaded["config"]["retrieval_loss_weight"] == 0.0
     assert loaded["config"]["training_history"][0]["retrieval_weight"] == 0.0
+    assert loaded["config"]["training_history"][0]["program_count"] == 4.0
+    assert loaded["config"]["training_history"][0]["batch_count"] == 1.0
     assert loaded["config"]["study_stage"] == "pilot"
     assert loaded["config"]["normalization"]["source"] == "true_lca_train_split_only"
     assert loaded["config"]["normalization"]["endpoint_weight_constraint"] == "w_start = w_end"

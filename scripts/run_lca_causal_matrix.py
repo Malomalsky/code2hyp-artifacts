@@ -147,6 +147,7 @@ def run_lca_causal_matrix(
         method_aggregation="measure",
         path_selection_policy=path_selection_policy,
         lambda_retrieval=0.0,
+        training_seed=seed,
     )
 
     encoded: dict[Treatment, dict[str, list[ProductMeasure]]] = {}

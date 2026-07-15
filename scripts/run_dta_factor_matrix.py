@@ -503,7 +503,17 @@ def _train_shared_encoder(
     method_aggregation: MethodAggregation = "measure",
     path_selection_policy: str = "lca_depth_stratified",
     lambda_retrieval: float = 1.0,
+    structural_batch_size: int = 8,
+    training_seed: int = 20260625,
+    lambda_edge: float = 0.1,
+    lambda_gromov: float = 0.1,
+    lambda_branch: float = 0.1,
+    lambda_reversal: float = 0.1,
 ) -> tuple[RawASTCode2Hyp, list[dict[str, float]]]:
+    if not train_items:
+        raise ValueError("train_items must not be empty")
+    if structural_batch_size <= 0:
+        raise ValueError("structural_batch_size must be positive")
     raw_items = tuple(item.item for item in train_items)
     vocab = build_raw_ast_token_vocab(tuple(item.tree for item in raw_items), terminal_policy="class", node_input_mode="label_only")
     model = RawASTCode2Hyp(
@@ -520,8 +530,58 @@ def _train_shared_encoder(
         path_selection_policy=path_selection_policy,
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    if lambda_retrieval == 0.0:
+        history: list[dict[str, float]] = []
+        for epoch in range(epochs):
+            order = list(range(len(raw_items)))
+            random.Random(training_seed + epoch).shuffle(order)
+            totals = {
+                "loss": 0.0,
+                "edge": 0.0,
+                "gromov_lca": 0.0,
+                "gromov_lca_mean_abs_residual": 0.0,
+                "branch_length": 0.0,
+                "reversal": 0.0,
+            }
+            observed = 0
+            batch_count = 0
+            for start in range(0, len(order), structural_batch_size):
+                indices = order[start : start + structural_batch_size]
+                trees = tuple(raw_items[index].tree for index in indices)
+                optimizer.zero_grad(set_to_none=True)
+                loss = model.structural_training_loss(
+                    trees,
+                    lambda_edge=lambda_edge,
+                    lambda_gromov=lambda_gromov,
+                    lambda_branch=lambda_branch,
+                    lambda_reversal=lambda_reversal,
+                )
+                loss["loss"].backward()
+                optimizer.step()
+                weight = len(indices)
+                for name in totals:
+                    totals[name] += weight * float(loss[name].detach())
+                observed += weight
+                batch_count += 1
+            history.append(
+                {
+                    "epoch": float(epoch + 1),
+                    "loss": totals["loss"] / observed,
+                    "retrieval": 0.0,
+                    "edge": totals["edge"] / observed,
+                    "gromov_lca": totals["gromov_lca"] / observed,
+                    "gromov_lca_mean_abs_residual": totals["gromov_lca_mean_abs_residual"] / observed,
+                    "branch_length": totals["branch_length"] / observed,
+                    "reversal": totals["reversal"] / observed,
+                    "retrieval_weight": 0.0,
+                    "program_count": float(observed),
+                    "batch_count": float(batch_count),
+                }
+            )
+        return model, history
+
     triples = build_retrieval_triples(raw_items, min_structural_gap=min_structural_gap, positive_mode=positive_mode)
-    history: list[dict[str, float]] = []
+    history = []
     for epoch in range(epochs):
         optimizer.zero_grad(set_to_none=True)
         loss = model.training_loss(
@@ -529,6 +589,10 @@ def _train_shared_encoder(
             sinkhorn_epsilon=0.05,
             sinkhorn_iterations=sinkhorn_iterations,
             lambda_retrieval=lambda_retrieval,
+            lambda_edge=lambda_edge,
+            lambda_gromov=lambda_gromov,
+            lambda_branch=lambda_branch,
+            lambda_reversal=lambda_reversal,
         )
         loss["loss"].backward()
         optimizer.step()
@@ -540,6 +604,8 @@ def _train_shared_encoder(
                 "edge": float(loss["edge"].detach()),
                 "gromov_lca": float(loss["gromov_lca"].detach()),
                 "gromov_lca_mean_abs_residual": float(loss["gromov_lca_mean_abs_residual"].detach()),
+                "branch_length": float(loss["branch_length"].detach()),
+                "reversal": float(loss["reversal"].detach()),
                 "retrieval_weight": float(loss["retrieval_weight"].detach()),
             }
         )

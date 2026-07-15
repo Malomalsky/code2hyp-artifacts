@@ -328,25 +328,27 @@ class RawASTCode2Hyp(nn.Module):
         different methods.
         """
 
+        zero = self.embedding.weight.new_zeros(())
         retrieval_terms = []
-        for anchor_tree, positive_tree, negative_tree in triples:
-            anchor = self.encode_method(anchor_tree)
-            positive = self.encode_method(positive_tree)
-            negative = self.encode_method(negative_tree)
-            positive_distance = self.method_distance(
-                anchor,
-                positive,
-                epsilon=sinkhorn_epsilon,
-                sinkhorn_iterations=sinkhorn_iterations,
-            )
-            negative_distance = self.method_distance(
-                anchor,
-                negative,
-                epsilon=sinkhorn_epsilon,
-                sinkhorn_iterations=sinkhorn_iterations,
-            )
-            retrieval_terms.append(F.relu(margin + positive_distance - negative_distance))
-        retrieval = torch.stack(retrieval_terms).mean() if retrieval_terms else torch.zeros(())
+        if lambda_retrieval != 0.0:
+            for anchor_tree, positive_tree, negative_tree in triples:
+                anchor = self.encode_method(anchor_tree)
+                positive = self.encode_method(positive_tree)
+                negative = self.encode_method(negative_tree)
+                positive_distance = self.method_distance(
+                    anchor,
+                    positive,
+                    epsilon=sinkhorn_epsilon,
+                    sinkhorn_iterations=sinkhorn_iterations,
+                )
+                negative_distance = self.method_distance(
+                    anchor,
+                    negative,
+                    epsilon=sinkhorn_epsilon,
+                    sinkhorn_iterations=sinkhorn_iterations,
+                )
+                retrieval_terms.append(F.relu(margin + positive_distance - negative_distance))
+        retrieval = torch.stack(retrieval_terms).mean() if retrieval_terms else zero
         unique_trees = []
         seen = set()
         for triple in triples:
@@ -355,36 +357,88 @@ class RawASTCode2Hyp(nn.Module):
                 if key not in seen:
                     seen.add(key)
                     unique_trees.append(tree)
-        edge = torch.stack([self.edge_length_loss(tree) for tree in unique_trees]).mean()
-        gromov = torch.stack([self.gromov_lca_loss(tree) for tree in unique_trees]).mean()
-        gromov_residuals = tuple(self.gromov_lca_residuals(tree) for tree in unique_trees)
-        nonempty_residuals = tuple(residual for residual in gromov_residuals if residual.numel() > 0)
-        if nonempty_residuals:
-            gromov_abs_residual = torch.cat(nonempty_residuals).abs().mean()
-        else:
-            gromov_abs_residual = gromov.new_tensor(0.0)
-        branch = torch.stack([self.branch_length_loss(tree) for tree in unique_trees]).mean()
-        reversal = torch.stack([self.reversal_equivariance_loss(tree) for tree in unique_trees]).mean()
+        structural = self.structural_training_loss(
+            unique_trees,
+            lambda_edge=lambda_edge,
+            lambda_gromov=lambda_gromov,
+            lambda_branch=lambda_branch,
+            lambda_reversal=lambda_reversal,
+        )
+        total = lambda_retrieval * retrieval + structural["loss"]
+        return {
+            "loss": total,
+            "retrieval": retrieval,
+            "edge": structural["edge"],
+            "gromov_lca": structural["gromov_lca"],
+            "gromov_lca_mean_abs_residual": structural["gromov_lca_mean_abs_residual"],
+            "branch_length": structural["branch_length"],
+            "reversal": structural["reversal"],
+            "retrieval_weight": retrieval.new_tensor(lambda_retrieval),
+        }
+
+    def structural_training_loss(
+        self,
+        trees: Sequence[RawAstTree],
+        *,
+        lambda_edge: float = 0.1,
+        lambda_gromov: float = 0.1,
+        lambda_branch: float = 0.1,
+        lambda_reversal: float = 0.1,
+    ) -> dict[str, Tensor]:
+        """Compute hierarchy regularizers without retrieval pairs or OT.
+
+        Each program contributes one mean loss per active term, so large ASTs
+        do not receive greater weight merely because they contain more nodes or
+        paths. Node embeddings and selected paths are reused within a program.
+        """
+
+        weights = (lambda_edge, lambda_gromov, lambda_branch, lambda_reversal)
+        if any(weight < 0.0 for weight in weights):
+            raise ValueError("structural loss weights must be non-negative")
+        zero = self.embedding.weight.new_zeros(())
+        edge_terms: list[Tensor] = []
+        gromov_terms: list[Tensor] = []
+        gromov_abs_terms: list[Tensor] = []
+        branch_terms: list[Tensor] = []
+        reversal_terms: list[Tensor] = []
+        for tree in trees:
+            paths = self._selected_paths(tree)
+            node_points = self.encode_nodes(tree)
+            if lambda_edge > 0.0:
+                edge_terms.append(self._edge_length_loss_from_points(tree, node_points))
+            if lambda_gromov > 0.0:
+                residuals = self._gromov_lca_residuals_from_points(tree, paths, node_points)
+                gromov_terms.append(residuals.square().mean() if residuals.numel() else zero)
+                gromov_abs_terms.append(residuals.abs().mean() if residuals.numel() else zero)
+            if lambda_branch > 0.0:
+                branch_terms.append(self._branch_length_loss_from_points(tree, paths, node_points))
+            if lambda_reversal > 0.0:
+                reversal_terms.append(self.reversal_equivariance_loss(tree, paths))
+        edge = _mean_tensors(edge_terms, zero)
+        gromov = _mean_tensors(gromov_terms, zero)
+        gromov_abs = _mean_tensors(gromov_abs_terms, zero)
+        branch = _mean_tensors(branch_terms, zero)
+        reversal = _mean_tensors(reversal_terms, zero)
         total = (
-            lambda_retrieval * retrieval
-            + lambda_edge * edge
+            lambda_edge * edge
             + lambda_gromov * gromov
             + lambda_branch * branch
             + lambda_reversal * reversal
         )
         return {
             "loss": total,
-            "retrieval": retrieval,
             "edge": edge,
             "gromov_lca": gromov,
-            "gromov_lca_mean_abs_residual": gromov_abs_residual,
+            "gromov_lca_mean_abs_residual": gromov_abs,
             "branch_length": branch,
             "reversal": reversal,
-            "retrieval_weight": retrieval.new_tensor(lambda_retrieval),
         }
 
     def edge_length_loss(self, tree: RawAstTree) -> Tensor:
         points = self.encode_nodes(tree)
+        return self._edge_length_loss_from_points(tree, points)
+
+    def _edge_length_loss_from_points(self, tree: RawAstTree, points: Tensor) -> Tensor:
         losses = []
         for parent, children in tree.children_by_node.items():
             for child in children:
@@ -409,13 +463,21 @@ class RawASTCode2Hyp(nn.Module):
         residual magnitudes instead of claiming exact tree embedding.
         """
 
-        raw_paths = tuple(paths) if paths is not None else terminal_to_terminal_paths(tree, max_paths=self.max_paths)
+        raw_paths = tuple(paths) if paths is not None else self._selected_paths(tree)
         if not raw_paths:
-            return torch.empty(0)
+            return self.embedding.weight.new_empty(0)
         points = self.encode_nodes(tree)
+        return self._gromov_lca_residuals_from_points(tree, raw_paths, points)
+
+    def _gromov_lca_residuals_from_points(
+        self,
+        tree: RawAstTree,
+        paths: Sequence[RawAstPath],
+        points: Tensor,
+    ) -> Tensor:
         root = points[tree.root_id]
         residuals = []
-        for path in raw_paths:
+        for path in paths:
             lca_depth = float(tree.depth(path.lca(tree)))
             start = points[path.start]
             end = points[path.end]
@@ -450,12 +512,20 @@ class RawASTCode2Hyp(nn.Module):
     def branch_length_loss(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> Tensor:
         """Match LCA-to-endpoint geodesic lengths to raw AST branch lengths."""
 
-        raw_paths = tuple(paths) if paths is not None else terminal_to_terminal_paths(tree, max_paths=self.max_paths)
+        raw_paths = tuple(paths) if paths is not None else self._selected_paths(tree)
         if not raw_paths:
-            return torch.zeros(())
+            return self.embedding.weight.new_zeros(())
         points = self.encode_nodes(tree)
+        return self._branch_length_loss_from_points(tree, raw_paths, points)
+
+    def _branch_length_loss_from_points(
+        self,
+        tree: RawAstTree,
+        paths: Sequence[RawAstPath],
+        points: Tensor,
+    ) -> Tensor:
         losses = []
-        for path in raw_paths:
+        for path in paths:
             lca = path.lca(tree)
             left_distance = self._point_distance(points[lca].unsqueeze(0), points[path.start].unsqueeze(0)).squeeze()
             right_distance = self._point_distance(points[lca].unsqueeze(0), points[path.end].unsqueeze(0)).squeeze()
@@ -468,14 +538,21 @@ class RawASTCode2Hyp(nn.Module):
     def reversal_equivariance_loss(self, tree: RawAstTree, paths: Sequence[RawAstPath] | None = None) -> Tensor:
         """Check that reversing an AST path corresponds to swapping path sides."""
 
-        raw_paths = tuple(paths) if paths is not None else terminal_to_terminal_paths(tree, max_paths=self.max_paths)
+        raw_paths = tuple(paths) if paths is not None else self._selected_paths(tree)
         if not raw_paths:
-            return torch.zeros(())
+            return self.embedding.weight.new_zeros(())
         forward = self.encode_method(tree, raw_paths)
         reversed_measure = self.encode_method(tree, tuple(path.reversed() for path in raw_paths))
         swapped_forward = self._swap_path_orientation(forward)
         cost = self._path_cost_matrix(swapped_forward, reversed_measure)
         return torch.diagonal(cost).mean()
+
+    def _selected_paths(self, tree: RawAstTree) -> tuple[RawAstPath, ...]:
+        return terminal_to_terminal_paths(
+            tree,
+            max_paths=self.max_paths,
+            selection_policy=self.path_selection_policy,
+        )
 
     def _path_cost_matrix(self, left: RawASTMethodMeasure, right: RawASTMethodMeasure) -> Tensor:
         if left.manifold != self.manifold or right.manifold != self.manifold:
@@ -693,3 +770,7 @@ def _terminal_class(token: str) -> str:
     except ValueError:
         return "symbol"
     return "number"
+
+
+def _mean_tensors(values: Sequence[Tensor], zero: Tensor) -> Tensor:
+    return torch.stack(tuple(values)).mean() if values else zero
