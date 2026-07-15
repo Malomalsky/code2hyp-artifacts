@@ -45,6 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_execution_protocol_v1.json",
     )
     parser.add_argument(
+        "--test-runtime-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_runtime_addendum_v1.json",
+    )
+    parser.add_argument(
         "--model-protocol",
         type=Path,
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
@@ -98,6 +103,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     implementation = verified_implementation_state(PROJECT_ROOT)
+    runtime_addendum_bytes = args.test_runtime_addendum.read_bytes()
+    runtime_addendum = json.loads(runtime_addendum_bytes)
+    if runtime_addendum.get("schema_version") != "code2hyp-stage-a-test-runtime-addendum-v1":
+        raise ValueError("unexpected Stage A test-runtime addendum")
+    if runtime_addendum.get("status") != (
+        "frozen_during_validation_before_validation_selection_or_test_unseal"
+    ):
+        raise ValueError("Stage A test-runtime addendum was not frozen before unseal")
     selection_path = args.validation_output_dir / "validation_selection_record.json"
     selection_seal_path = args.validation_output_dir / "validation_selection_record_seal.json"
     seal_validation_selection(
@@ -158,6 +171,7 @@ def main() -> None:
             test_materialization_manifest_path=materialization_path,
             output_dir=args.output_dir,
             test_execution_protocol_sha256=stable_sha256(execution_protocol_bytes),
+            test_runtime_addendum_sha256=stable_sha256(runtime_addendum_bytes),
             implementation=implementation,
             progress_callback=progress,
         )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import platform
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -38,6 +39,7 @@ def run_stage_a_test_seed(
     test_materialization_manifest_path: Path,
     output_dir: Path,
     test_execution_protocol_sha256: str,
+    test_runtime_addendum_sha256: str,
     implementation: Mapping[str, Any],
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
@@ -85,6 +87,26 @@ def run_stage_a_test_seed(
         "test_execution_protocol_sha256": str(test_execution_protocol_sha256),
         "implementation": dict(implementation),
     }
+    execution = dict(validation["execution_config"])
+    torch_num_threads = int(execution["torch_num_threads"])
+    if torch_num_threads != 1:
+        raise ValueError("the frozen Stage A test runtime requires torch_num_threads=1")
+    torch.set_num_threads(torch_num_threads)
+    try:
+        torch.use_deterministic_algorithms(True, warn_only=False)
+    except Exception as error:
+        raise RuntimeError("unable to enable deterministic algorithms for Stage A test") from error
+    test_runtime = {
+        "torch_version": torch.__version__,
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "torch_num_threads": torch.get_num_threads(),
+        "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+    }
+    if test_runtime["torch_num_threads"] != 1 or test_runtime["deterministic_algorithms"] is not True:
+        raise RuntimeError("Stage A test runtime did not apply the frozen deterministic configuration")
+    result_identity["test_runtime_addendum_sha256"] = str(test_runtime_addendum_sha256)
+    result_identity["test_runtime"] = test_runtime
     if result_path.exists():
         payload = json.loads(result_path.read_text(encoding="utf-8"))
         if payload.get("status") == "complete" and payload.get("identity") == result_identity:
@@ -108,7 +130,6 @@ def run_stage_a_test_seed(
             raise ValueError(f"refusing to reuse incompatible test partial: {partial_path}")
         cells.update(partial.get("cells", {}))
 
-    execution = dict(validation["execution_config"])
     role_scales = tuple(float(value) for value in validation["coordinate_scaling"]["role_scales"])
     epsilon = float(validation["sinkhorn_calibration"]["epsilon"])
     if not math.isfinite(epsilon) or epsilon <= 0.0:
