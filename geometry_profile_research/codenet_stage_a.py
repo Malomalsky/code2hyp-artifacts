@@ -8,7 +8,13 @@ from heapq import nsmallest
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from geometry_profile_research.codenet_eligibility import normalize_python_source, stable_sha256
+from geometry_profile_research.codenet_eligibility import (
+    canonical_json_bytes,
+    jsonl_bytes,
+    normalize_python_source,
+    portable_manifest_path,
+    stable_sha256,
+)
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
 from geometry_profile_research.raw_ast import RawAstTree
 
@@ -192,6 +198,133 @@ def select_calibration_pairs(
     return tuple(rows)
 
 
+def build_calibration_pair_artifacts(
+    *,
+    project_root: Path,
+    protocol_path: Path,
+    registration_path: Path,
+    train_path: Path,
+    output_dir: Path,
+) -> dict[str, Any]:
+    """Materialize the frozen train-only calibration pairs and audit manifest."""
+
+    protocol_bytes = protocol_path.read_bytes()
+    registration_bytes = registration_path.read_bytes()
+    train_bytes = train_path.read_bytes()
+    protocol = json.loads(protocol_bytes)
+    registration = json.loads(registration_bytes)
+    if protocol.get("schema_version") != "code2hyp-stage-a-model-analysis-protocol-v1":
+        raise ValueError("unexpected model-analysis protocol schema")
+    if protocol.get("status") != "frozen_before_calibration_pair_materialization_or_validation_metrics":
+        raise ValueError("model-analysis protocol is not in the expected pre-calibration state")
+    expected_registration_hash = str(protocol["registration_record"]["sha256"])
+    if stable_sha256(registration_bytes) != expected_registration_hash:
+        raise ValueError("registration file differs from the model-analysis protocol")
+    expected_train_hash = str(protocol["frozen_inputs"]["train_programs"]["sha256"])
+    if stable_sha256(train_bytes) != expected_train_hash:
+        raise ValueError("training manifest differs from the model-analysis protocol")
+    if bool(protocol["state_at_freeze"]["validation_retrieval_metrics_computed"]):
+        raise ValueError("protocol claims that validation metrics were already computed")
+    if bool(registration["state_at_registration"]["codenet_retrieval_metrics_computed"]):
+        raise ValueError("registration claims that CodeNet retrieval metrics were already computed")
+
+    calibration = protocol["train_only_calibration"]
+    output_hex = str(registration["nist_randomness_beacon"]["output_value_hex"])
+    beacon_key = bytes.fromhex(output_hex)
+    train_rows = list(_iter_jsonl(train_path))
+    pairs = select_calibration_pairs(
+        train_rows,
+        beacon_key=beacon_key,
+        dataset_revision=str(registration["design"]["dataset_revision"]),
+        domain=str(calibration["domain"]),
+        same_cluster_count=int(calibration["same_cluster_pairs"]),
+        cross_cluster_count=int(calibration["cross_cluster_pairs"]),
+    )
+    expected_count = int(calibration["pair_count"])
+    if len(pairs) != expected_count:
+        raise ValueError("calibration pair count differs from the frozen protocol")
+    known_train_ids = {str(row["source_relpath"]) for row in train_rows}
+    pair_keys = {
+        (str(row["left_source_relpath"]), str(row["right_source_relpath"]))
+        for row in pairs
+    }
+    if len(pair_keys) != len(pairs):
+        raise ValueError("calibration pairs are not unique")
+    if any(
+        str(row["left_source_relpath"]) not in known_train_ids
+        or str(row["right_source_relpath"]) not in known_train_ids
+        for row in pairs
+    ):
+        raise ValueError("calibration pair references a non-training program")
+
+    summary = {
+        "pair_count": len(pairs),
+        "same_cluster_pair_count": sum(row["pair_type"] == "same_cluster" for row in pairs),
+        "cross_cluster_pair_count": sum(row["pair_type"] == "cross_cluster" for row in pairs),
+        "unique_program_count": len(
+            {
+                str(row[field])
+                for row in pairs
+                for field in ("left_source_relpath", "right_source_relpath")
+            }
+        ),
+        "train_program_count": len(train_rows),
+        "test_program_ids_materialized": False,
+        "validation_programs_used": False,
+        "validation_retrieval_metrics_computed": False,
+        "test_retrieval_metrics_computed": False,
+    }
+    payloads = {
+        "calibration_pairs.jsonl": jsonl_bytes(pairs),
+        "calibration_pair_summary.json": canonical_json_bytes(summary),
+    }
+    output_dir.mkdir(parents=True, exist_ok=True)
+    artifacts = []
+    for filename, content in payloads.items():
+        _write_once_or_verify(output_dir / filename, content)
+        artifacts.append(
+            {
+                "path": filename,
+                "bytes": len(content),
+                "sha256": stable_sha256(content),
+            }
+        )
+    manifest = {
+        "schema_version": "code2hyp-stage-a-calibration-pairs-v1",
+        "experiment_role": "frozen_train_only_calibration_pairs_before_validation_metrics",
+        "input": {
+            "model_analysis_protocol": {
+                "path": portable_manifest_path(protocol_path, project_root=project_root),
+                "sha256": stable_sha256(protocol_bytes),
+            },
+            "registration": {
+                "path": portable_manifest_path(registration_path, project_root=project_root),
+                "sha256": stable_sha256(registration_bytes),
+            },
+            "train_programs": {
+                "path": portable_manifest_path(train_path, project_root=project_root),
+                "sha256": stable_sha256(train_bytes),
+            },
+        },
+        "selection": {
+            "algorithm": "domain_separated_HMAC_SHA256",
+            "domain": str(calibration["domain"]),
+            "dataset_revision": str(registration["design"]["dataset_revision"]),
+            "randomness_reference": "NIST_beacon_pulse_recorded_in_registration",
+            "replacement": False,
+        },
+        "summary": summary,
+        "artifacts": sorted(artifacts, key=lambda item: item["path"]),
+    }
+    manifest_bytes = canonical_json_bytes(manifest)
+    _write_once_or_verify(output_dir / "calibration_pair_manifest.json", manifest_bytes)
+    _write_once_or_verify(
+        output_dir / "calibration_pair_manifest.sha256",
+        f"{stable_sha256(manifest_bytes)}  calibration_pair_manifest.json\n".encode("ascii"),
+    )
+    return manifest
+
+
 def _load_program(
     *,
     source_root: Path,
@@ -244,3 +377,11 @@ def _iter_jsonl(path: Path) -> Iterable[dict[str, Any]]:
                 yield json.loads(line)
             except json.JSONDecodeError as error:
                 raise ValueError(f"invalid JSONL at {path}:{line_number}") from error
+
+
+def _write_once_or_verify(path: Path, content: bytes) -> None:
+    if path.exists():
+        if path.read_bytes() != content:
+            raise ValueError(f"refusing to overwrite a different frozen artifact: {path}")
+        return
+    path.write_bytes(content)
