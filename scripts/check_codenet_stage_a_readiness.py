@@ -36,6 +36,7 @@ def evaluate_readiness(
     d4: dict[str, Any],
     d5: dict[str, Any],
     attrition: dict[str, Any],
+    manifest_hashes: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
 
@@ -52,6 +53,24 @@ def evaluate_readiness(
     add("statements_complete", d4["summary"]["descriptions_missing"] == 0, f"missing={d4['summary']['descriptions_missing']}")
     official_map_complete = d4["protocol"].get("official_identical_problem_map") == "applied_and_verified"
     add("official_identical_problem_map", official_map_complete, str(d4["protocol"].get("official_identical_problem_map")))
+    expected_map_sha = (
+        design.get("dataset", {}).get("official_identical_problem_map", {}).get("sha256")
+    )
+    actual_map_sha = d4.get("input", {}).get("official_identical_problem_map_sha256")
+    if expected_map_sha is not None:
+        add(
+            "official_identical_problem_map_checksum",
+            actual_map_sha == expected_map_sha,
+            f"actual={actual_map_sha}, expected={expected_map_sha}",
+        )
+    expected_archive_sha = design.get("dataset", {}).get("official_full_archive", {}).get("sha256")
+    actual_archive_sha = d4.get("input", {}).get("official_full_archive_sha256")
+    if expected_archive_sha is not None:
+        add(
+            "official_full_archive_checksum",
+            actual_archive_sha == expected_archive_sha,
+            f"actual={actual_archive_sha}, expected={expected_archive_sha}",
+        )
     minimum_users = int(d5["summary"]["minimum_distinct_users_per_problem_cluster"])
     add("user_distinct_sampling", minimum_users >= 80, f"minimum_distinct_users={minimum_users}")
     add(
@@ -59,6 +78,33 @@ def evaluate_readiness(
         "not estimand-preserving" in attrition["summary"]["decision"],
         attrition["summary"]["decision"],
     )
+    audit = design.get("eligibility_audit")
+    if audit is not None:
+        add(
+            "eligibility_cluster_count_pinned",
+            int(audit["eligible_problem_clusters_minimum_64"]) == eligible,
+            f"manifest={eligible}, design={audit['eligible_problem_clusters_minimum_64']}",
+        )
+        add(
+            "eligibility_user_count_pinned",
+            int(audit["minimum_distinct_users_per_problem_cluster"]) == minimum_users,
+            f"manifest={minimum_users}, design={audit['minimum_distinct_users_per_problem_cluster']}",
+        )
+        if manifest_hashes is not None:
+            for key, audit_key in (
+                ("d0_d2", "d0_d2_manifest_sha256"),
+                ("d3", "d3_manifest_sha256"),
+                ("d4", "statement_d4_manifest_sha256"),
+                ("d5", "d5_metadata_manifest_sha256"),
+                ("attrition", "d5_attrition_manifest_sha256"),
+            ):
+                actual = manifest_hashes[key]
+                expected = str(audit[audit_key])
+                add(
+                    f"{key}_manifest_pinned",
+                    actual == expected,
+                    f"actual={actual}, expected={expected}",
+                )
     add(
         "registration_doi_pending",
         design.get("registration_doi") is None,
@@ -102,14 +148,26 @@ def evaluate_readiness(
 
 
 def build_readiness_report(*, project_root: Path, design_path: Path, output_path: Path) -> dict[str, Any]:
+    d0_d2_path = project_root / "data/codenet_python800_eligibility_d0_d2/eligibility_manifest.json"
+    d3_path = project_root / "data/codenet_python800_eligibility_d0_d3/d3_manifest.json"
+    d4_path = project_root / "data/codenet_python800_eligibility_d4_statements/statement_d4_manifest.json"
+    d5_path = project_root / "data/codenet_python800_d5_metadata/d5_metadata_manifest.json"
+    attrition_path = project_root / "data/codenet_python800_d5_attrition/d5_attrition_manifest.json"
     report = evaluate_readiness(
         project_root=project_root,
         design=_load(design_path),
-        d0_d2=_load(project_root / "data/codenet_python800_eligibility_d0_d2/eligibility_manifest.json"),
-        d3=_load(project_root / "data/codenet_python800_eligibility_d0_d3/d3_manifest.json"),
-        d4=_load(project_root / "data/codenet_python800_eligibility_d4_statements/statement_d4_manifest.json"),
-        d5=_load(project_root / "data/codenet_python800_d5_metadata/d5_metadata_manifest.json"),
-        attrition=_load(project_root / "data/codenet_python800_d5_attrition/d5_attrition_manifest.json"),
+        d0_d2=_load(d0_d2_path),
+        d3=_load(d3_path),
+        d4=_load(d4_path),
+        d5=_load(d5_path),
+        attrition=_load(attrition_path),
+        manifest_hashes={
+            "d0_d2": _sha256(d0_d2_path),
+            "d3": _sha256(d3_path),
+            "d4": _sha256(d4_path),
+            "d5": _sha256(d5_path),
+            "attrition": _sha256(attrition_path),
+        },
     )
     report["inputs"] = {
         "design": {"path": str(design_path), "sha256": _sha256(design_path)},

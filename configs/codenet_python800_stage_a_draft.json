@@ -8,7 +8,16 @@
     "official_url": "https://codait-cos-dax.s3.us.cloud-object-storage.appdomain.cloud/dax-project-codenet/1.0.0/Project_CodeNet_Python800.tar.gz",
     "official_bytes": 30641525,
     "official_etag_md5": "45563153eee38855ab14e727b870ec61",
-    "sha256": "39297d11df8030ce0b6619e678547a738d74c4715c5c9a5be0af83941a5587b0"
+    "sha256": "39297d11df8030ce0b6619e678547a738d74c4715c5c9a5be0af83941a5587b0",
+    "official_full_archive": {
+      "url": "https://codait-cos-dax.s3.us.cloud-object-storage.appdomain.cloud/dax-project-codenet/1.0.0/Project_CodeNet.tar.gz",
+      "bytes": 8343137473,
+      "sha256": "7e96620307f874269a62cc0225f2a5a13d2de2b3c368cf61319c87ec276620fb"
+    },
+    "official_identical_problem_map": {
+      "archive_path": "Project_CodeNet/derived/duplicates/identical_problem_clusters",
+      "sha256": "d4731781ef6314502446b6f365ba3f83e16c54ec888e214c5426e84835553520"
+    }
   },
   "eligibility": {
     "required_parse_rate": 0.95,
@@ -25,6 +34,17 @@
       "seed": 20260711,
       "exact_set_jaccard_threshold": 0.9
     }
+  },
+  "eligibility_audit": {
+    "status": "passed_pre_split_without_retrieval_metrics",
+    "problem_clusters_after_d4": 773,
+    "eligible_problem_clusters_minimum_64": 773,
+    "minimum_distinct_users_per_problem_cluster": 92,
+    "d0_d2_manifest_sha256": "614a118b122181c74558cb4d4cf3a4985134d5cafc3067f73b0c8dd98e6fccbb",
+    "d3_manifest_sha256": "3861177174b8694a4fc23327533211b038959285d83a9bd561d01d58db71136e",
+    "statement_d4_manifest_sha256": "b1763e7939e24aada31cfecd4ce94a17626fe9ad75d7047347d657e4767e5627",
+    "d5_metadata_manifest_sha256": "d4ff77c8c7034a9dfdf6306de4760483edf6e0790b8eadc91760b846778ac927",
+    "d5_attrition_manifest_sha256": "7ef91a6a43d080dcdadfd564ecc3f0d0a85555edabec291229a481c69e6e1341"
   },
   "split": {
     "assignment_unit": "duplicate_closed_problem_cluster",

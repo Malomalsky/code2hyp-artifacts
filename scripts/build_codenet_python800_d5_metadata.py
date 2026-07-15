@@ -18,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from geometry_profile_research.codenet_eligibility import (
     canonical_json_bytes,
     jsonl_bytes,
+    portable_manifest_path,
     stable_sha256,
 )
 
@@ -175,7 +176,7 @@ def build_d5_metadata_artifacts(
         "schema_version": D5_SCHEMA_VERSION,
         "experiment_role": "pre_split_author_metadata_for_registered_sensitivity_only",
         "input": {
-            "metadata_root": str(metadata_root.resolve()),
+            "metadata_root": portable_manifest_path(metadata_root, project_root=PROJECT_ROOT),
             "metadata_archive_sha256": metadata_archive_sha256,
             "d3_manifest_sha256": d3_manifest_sha,
             "statement_d4_manifest_sha256": d4_manifest_sha,

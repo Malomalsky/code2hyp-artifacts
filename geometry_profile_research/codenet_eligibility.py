@@ -488,6 +488,14 @@ def environment_record() -> dict[str, str]:
     }
 
 
+def portable_manifest_path(path: Path, *, project_root: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(project_root.resolve()).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
 def canonical_json_bytes(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 

@@ -204,14 +204,18 @@ future preregistered evaluation on Project CodeNet Python800:
 
 - global D0-D2 source/token/alpha-AST duplicate components;
 - D3 MinHash/LSH candidate generation with exact token-5-gram Jaccard checks;
-- statement-based D4 problem checks;
+- statement-based and official-map D4 problem checks;
 - privacy-preserving author metadata and D5 attrition diagnostics;
 - a machine-readable Stage A design draft and readiness checker.
 
 The official Python800 object was verified by byte count, MD5/ETag and
-SHA-256. The full audit covers 240,000 accepted Python programs. It retains
-213,550 programs in 773 duplicate-closed problem clusters after the current
-D0-D4 precheck. No CodeNet split has been generated and no CodeNet retrieval
+SHA-256. The complete 8.34 GB Project CodeNet archive was independently
+validated before extracting the official `identical_problem_clusters` map.
+The map contains 153 clusters; 89 intersect Python800, each through exactly
+one problem, so it introduces no additional within-benchmark edge. The final
+audit covers 240,000 accepted Python programs and retains 213,550 programs in
+773 duplicate-closed problem clusters. The preregistered power threshold is
+764 clusters. No CodeNet split has been generated and no CodeNet retrieval
 metric has been computed.
 
 Run the released data tests:
@@ -227,9 +231,9 @@ uv run pytest -q \
   tests/test_codenet_stage_a_readiness.py
 ```
 
-The readiness command is expected to fail closed until the official CodeNet
-identical-problem map has been applied and a final immutable release commit
-has been sealed:
+The official-map and power gates now pass. The readiness command still fails
+closed in an uncommitted worktree; it passes only from a clean immutable
+artifact commit:
 
 ```bash
 uv run python scripts/check_codenet_stage_a_readiness.py

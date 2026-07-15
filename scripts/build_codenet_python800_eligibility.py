@@ -20,6 +20,7 @@ from geometry_profile_research.codenet_eligibility import (
     canonical_json_bytes,
     environment_record,
     jsonl_bytes,
+    portable_manifest_path,
     stable_sha256,
 )
 
@@ -87,7 +88,7 @@ def build_eligibility_artifacts(
         "dataset": {
             "name": "Project CodeNet Python800",
             "source_archive_sha256": archive_sha256,
-            "input_root": str(input_root.resolve()),
+            "input_root": portable_manifest_path(input_root, project_root=PROJECT_ROOT),
             "observed_problem_count": len({record["problem_id"] for record in records}),
             "observed_source_file_count": len(records),
         },

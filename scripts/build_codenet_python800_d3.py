@@ -26,6 +26,7 @@ from geometry_profile_research.codenet_eligibility import (
     lexical_token_stream,
     minhash_signature,
     normalize_python_source,
+    portable_manifest_path,
     stable_sha256,
     token_ngrams,
 )
@@ -309,8 +310,11 @@ def build_d3_artifacts(
             else "computational_pilot_not_for_eligibility"
         ),
         "input": {
-            "source_root": str(input_root.resolve()),
-            "d0_d2_manifest": str(eligibility_manifest_path.resolve()),
+            "source_root": portable_manifest_path(input_root, project_root=PROJECT_ROOT),
+            "d0_d2_manifest": portable_manifest_path(
+                eligibility_manifest_path,
+                project_root=PROJECT_ROOT,
+            ),
             "d0_d2_manifest_sha256": eligibility_manifest_sha,
         },
         "protocol": {

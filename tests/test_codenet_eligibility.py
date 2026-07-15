@@ -9,6 +9,7 @@ from geometry_profile_research.codenet_eligibility import (
     build_exact_duplicate_audit,
     lexical_token_stream,
     normalize_python_source,
+    portable_manifest_path,
     stable_sha256,
 )
 from scripts.build_codenet_python800_eligibility import build_eligibility_artifacts
@@ -35,6 +36,11 @@ def test_d2_is_invariant_to_alpha_renaming_and_literal_values() -> None:
     structural_change = "def sum_items(items):\n    result = 99\n    return items[result]\n"
     assert alpha_normalized_ast(left) == alpha_normalized_ast(right)
     assert alpha_normalized_ast(left) != alpha_normalized_ast(structural_change)
+
+
+def test_manifest_paths_are_relative_inside_project_root(tmp_path: Path) -> None:
+    nested = tmp_path / "data" / "manifest.json"
+    assert portable_manifest_path(nested, project_root=tmp_path) == "data/manifest.json"
 
 
 def test_exact_audit_deduplicates_globally_and_builds_d4_edge() -> None:

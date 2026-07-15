@@ -18,11 +18,12 @@ from geometry_profile_research.codenet_eligibility import (
     DisjointSet,
     canonical_json_bytes,
     jsonl_bytes,
+    portable_manifest_path,
     stable_sha256,
 )
 
 
-D4_STATEMENT_SCHEMA_VERSION = "codenet-python800-statement-d4-v1"
+D4_STATEMENT_SCHEMA_VERSION = "codenet-python800-statement-d4-v2"
 
 
 class _VisibleTextParser(html.parser.HTMLParser):
@@ -68,17 +69,46 @@ def _write_and_hash(path: Path, content: bytes) -> dict[str, Any]:
     }
 
 
+def read_official_identical_problem_clusters(path: Path) -> list[list[str]]:
+    clusters: list[list[str]] = []
+    cluster_by_problem: dict[str, int] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        problems = sorted({part.strip() for part in line.split(",") if part.strip()})
+        if len(problems) < 2:
+            raise ValueError(f"Official cluster at line {line_number} has fewer than two problem IDs")
+        for problem in problems:
+            if len(problem) != 6 or not problem.startswith("p") or not problem[1:].isdigit():
+                raise ValueError(f"Invalid official problem ID at line {line_number}: {problem!r}")
+            previous = cluster_by_problem.get(problem)
+            if previous is not None:
+                raise ValueError(
+                    f"Official problem ID {problem} occurs in clusters at lines {previous} and {line_number}"
+                )
+            cluster_by_problem[problem] = line_number
+        clusters.append(problems)
+    if not clusters:
+        raise ValueError("Official identical-problem map is empty")
+    return clusters
+
+
 def build_statement_d4_artifacts(
     *,
     descriptions_root: Path,
     d3_dir: Path,
     output_dir: Path,
     minimum_cluster_programs: int = 64,
+    official_identical_problem_map: Path | None = None,
+    official_source_readme: Path | None = None,
+    official_archive_sha256: str | None = None,
 ) -> dict[str, Any]:
     d3_manifest_path = d3_dir / "d3_manifest.json"
     d3_manifest_sha = stable_sha256(d3_manifest_path.read_bytes())
     d3_clusters = _read_jsonl(d3_dir / "post_d3_problem_clusters.jsonl")
     problem_ids = sorted({str(problem) for cluster in d3_clusters for problem in cluster["problem_ids"]})
+    problem_id_set = set(problem_ids)
     problem_index = {problem: index for index, problem in enumerate(problem_ids)}
     problem_dsu = DisjointSet(len(problem_ids))
     retained_by_problem: dict[str, int] = {}
@@ -147,6 +177,51 @@ def build_statement_d4_artifacts(
                     }
                 )
 
+    official_clusters: list[list[str]] = []
+    official_intersections: list[dict[str, Any]] = []
+    official_edges: list[dict[str, Any]] = []
+    official_map_sha256: str | None = None
+    official_source_readme_sha256: str | None = None
+    if official_identical_problem_map is not None:
+        if official_archive_sha256 is None:
+            raise ValueError("official_archive_sha256 is required with an official identical-problem map")
+        normalized_archive_sha = official_archive_sha256.strip().casefold()
+        if len(normalized_archive_sha) != 64 or any(
+            character not in "0123456789abcdef" for character in normalized_archive_sha
+        ):
+            raise ValueError("official_archive_sha256 must contain exactly 64 hexadecimal characters")
+        official_archive_sha256 = normalized_archive_sha
+        official_map_bytes = official_identical_problem_map.read_bytes()
+        official_map_sha256 = stable_sha256(official_map_bytes)
+        official_clusters = read_official_identical_problem_clusters(official_identical_problem_map)
+        for official_cluster_index, official_problems in enumerate(official_clusters, start=1):
+            in_frame = sorted(set(official_problems) & problem_id_set)
+            if not in_frame:
+                continue
+            outside_frame = sorted(set(official_problems) - problem_id_set)
+            official_intersections.append(
+                {
+                    "official_cluster_index": official_cluster_index,
+                    "official_problem_ids": official_problems,
+                    "problem_ids_in_sampling_frame": in_frame,
+                    "problem_ids_outside_sampling_frame": outside_frame,
+                    "sampling_frame_member_count": len(in_frame),
+                }
+            )
+            for left_index, left in enumerate(in_frame):
+                for right in in_frame[left_index + 1 :]:
+                    problem_dsu.union(problem_index[left], problem_index[right])
+                    official_edges.append(
+                        {
+                            "left_problem_id": left,
+                            "right_problem_id": right,
+                            "official_cluster_index": official_cluster_index,
+                            "rule": "official_identical_problem_cluster",
+                        }
+                    )
+        if official_source_readme is not None:
+            official_source_readme_sha256 = stable_sha256(official_source_readme.read_bytes())
+
     retained_by_d3_cluster: dict[frozenset[str], int] = {
         frozenset(str(problem) for problem in cluster["problem_ids"]): int(cluster["retained_programs_after_d0_d3"])
         for cluster in d3_clusters
@@ -180,6 +255,12 @@ def build_statement_d4_artifacts(
         "descriptions_missing": sum(int(not row["description_available"]) for row in statement_rows),
         "identical_statement_groups": len(statement_groups),
         "identical_statement_edges": len(statement_edges),
+        "official_identical_problem_clusters_total": len(official_clusters),
+        "official_identical_problem_clusters_touching_sampling_frame": len(official_intersections),
+        "official_identical_problem_clusters_with_multiple_sampling_frame_members": sum(
+            int(row["sampling_frame_member_count"] > 1) for row in official_intersections
+        ),
+        "official_identical_problem_edges_within_sampling_frame": len(official_edges),
         "problem_cluster_count_after_statement_d4": len(final_clusters),
         "eligible_problem_clusters_minimum_64": sum(
             int(cluster["eligible_minimum_64"]) for cluster in final_clusters
@@ -190,6 +271,11 @@ def build_statement_d4_artifacts(
         _write_and_hash(output_dir / "problem_statement_inventory.jsonl", jsonl_bytes(statement_rows)),
         _write_and_hash(output_dir / "identical_statement_groups.jsonl", jsonl_bytes(statement_groups)),
         _write_and_hash(output_dir / "identical_statement_edges.jsonl", jsonl_bytes(statement_edges)),
+        _write_and_hash(
+            output_dir / "official_identical_problem_intersections.jsonl",
+            jsonl_bytes(official_intersections),
+        ),
+        _write_and_hash(output_dir / "official_identical_problem_edges.jsonl", jsonl_bytes(official_edges)),
         _write_and_hash(output_dir / "post_statement_d4_problem_clusters.jsonl", jsonl_bytes(final_clusters)),
         _write_and_hash(output_dir / "statement_d4_summary.json", canonical_json_bytes(summary)),
     ]
@@ -197,9 +283,22 @@ def build_statement_d4_artifacts(
         "schema_version": D4_STATEMENT_SCHEMA_VERSION,
         "experiment_role": "pre_split_statement_D4_without_retrieval_metrics",
         "input": {
-            "descriptions_root": str(descriptions_root.resolve()),
-            "d3_manifest": str(d3_manifest_path.resolve()),
+            "descriptions_root": portable_manifest_path(descriptions_root, project_root=PROJECT_ROOT),
+            "d3_manifest": portable_manifest_path(d3_manifest_path, project_root=PROJECT_ROOT),
             "d3_manifest_sha256": d3_manifest_sha,
+            "official_identical_problem_map": (
+                portable_manifest_path(official_identical_problem_map, project_root=PROJECT_ROOT)
+                if official_identical_problem_map is not None
+                else None
+            ),
+            "official_identical_problem_map_sha256": official_map_sha256,
+            "official_source_readme": (
+                portable_manifest_path(official_source_readme, project_root=PROJECT_ROOT)
+                if official_source_readme is not None
+                else None
+            ),
+            "official_source_readme_sha256": official_source_readme_sha256,
+            "official_full_archive_sha256": official_archive_sha256,
         },
         "protocol": {
             "normalization": "visible HTML text; Unicode NFKC; casefold; collapsed whitespace",
@@ -207,14 +306,25 @@ def build_statement_d4_artifacts(
             "manual_adjudication": False,
             "split_status": "not_generated",
             "retrieval_metrics_opened": False,
-            "official_identical_problem_map": "pending_full_CodeNet_derived_metadata",
+            "official_identical_problem_map": (
+                "applied_and_verified"
+                if official_identical_problem_map is not None
+                else "pending_full_CodeNet_derived_metadata"
+            ),
         },
         "summary": summary,
         "gate_precheck": {
             "at_least_764_eligible_clusters_for_300_100_364": (
                 summary["eligible_problem_clusters_minimum_64"] >= 764
             ),
-            "final_eligibility": "pending_official_identical_problem_map",
+            "final_eligibility": (
+                "passed"
+                if official_identical_problem_map is not None
+                and summary["eligible_problem_clusters_minimum_64"] >= 764
+                else "failed"
+                if official_identical_problem_map is not None
+                else "pending_official_identical_problem_map"
+            ),
         },
         "artifacts": sorted(artifacts, key=lambda item: item["path"]),
     }
@@ -234,6 +344,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--d3-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--minimum-cluster-programs", type=int, default=64)
+    parser.add_argument("--official-identical-problem-map", type=Path)
+    parser.add_argument("--official-source-readme", type=Path)
+    parser.add_argument("--official-archive-sha256")
     return parser
 
 
@@ -244,6 +357,9 @@ def main() -> None:
         d3_dir=args.d3_dir,
         output_dir=args.output_dir,
         minimum_cluster_programs=args.minimum_cluster_programs,
+        official_identical_problem_map=args.official_identical_problem_map,
+        official_source_readme=args.official_source_readme,
+        official_archive_sha256=args.official_archive_sha256,
     )
     print(json.dumps(manifest["summary"], ensure_ascii=False, indent=2, sort_keys=True))
     print(f"manifest={args.output_dir / 'statement_d4_manifest.json'}")
