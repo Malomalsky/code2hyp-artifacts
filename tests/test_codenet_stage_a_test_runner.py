@@ -4,16 +4,20 @@ import json
 from pathlib import Path
 
 import pytest
+import torch
 
 from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256
 from geometry_profile_research.codenet_stage_a import StageAProgram, StageASplit, StageATestSplit
+from geometry_profile_research.codenet_stage_a_evaluation import full_gallery_sinkhorn_divergence
 from geometry_profile_research.codenet_stage_a_runner import run_stage_a_validation_seed
 from geometry_profile_research.codenet_stage_a_test_runner import (
     VALIDATION_RUNNER_COMMIT,
     VALIDATION_RUNNER_TAG,
     aggregate_all_test_cells,
+    resumable_full_gallery_sinkhorn_divergence,
     run_stage_a_test_seed,
 )
+from geometry_profile_research.constant_curvature import ProductMeasure, RoleProductGeometry
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
 from scripts.seal_codenet_stage_a_test_seed import (
     TEST_RUNNER_COMMIT,
@@ -145,6 +149,9 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
     runtime_addendum_path = tmp_path / "runtime_addendum.json"
     runtime_addendum_path.write_text("runtime addendum", encoding="utf-8")
     runtime_addendum_sha = stable_sha256(runtime_addendum_path.read_bytes())
+    resumability_addendum_path = tmp_path / "resumability_addendum.json"
+    resumability_addendum_path.write_text("resumability addendum", encoding="utf-8")
+    resumability_addendum_sha = stable_sha256(resumability_addendum_path.read_bytes())
     materialization_path = tmp_path / "test_materialization_manifest.json"
     materialization_path.write_bytes(
         canonical_json_bytes(
@@ -168,6 +175,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         output_dir=tmp_path / "test",
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
+        test_resumability_addendum_sha256=resumability_addendum_sha,
         implementation=test_implementation,
     )
     resumed = run_stage_a_test_seed(
@@ -180,6 +188,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         output_dir=tmp_path / "test",
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
+        test_resumability_addendum_sha256=resumability_addendum_sha,
         implementation=test_implementation,
     )
 
@@ -236,6 +245,63 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         relevant_count=8,
     )
     assert seal["checks"]["all_metrics_recomputed_from_distances"] is True
+
+
+def test_query_sharding_is_bitwise_equal_to_monolithic_full_gallery(tmp_path: Path) -> None:
+    generator = torch.Generator().manual_seed(17)
+
+    def measure(size: int) -> ProductMeasure:
+        points = 0.05 * torch.randn((size, 3, 2), generator=generator, dtype=torch.float64)
+        return ProductMeasure(
+            points=points,
+            mass=torch.full((size,), 1.0 / size, dtype=torch.float64),
+        )
+
+    queries = tuple(measure(size) for size in (2, 3, 2, 4, 3))
+    gallery = tuple(measure(size) for size in (2, 4, 3, 2, 3, 4))
+    geometry = RoleProductGeometry(
+        factor_curvatures=(0.0, 0.0, 0.0),
+        factor_weights=(1.0, 1.0, 1.0),
+        side_weight=0.0,
+        unoriented=True,
+    )
+    common = {
+        "epsilon": 0.05,
+        "query_batch_size": 1,
+        "gallery_batch_size": 2,
+        "sinkhorn_iterations": 16,
+        "projection_iterations": 128,
+        "marginal_tolerance": 1e-7,
+    }
+    monolithic = full_gallery_sinkhorn_divergence(
+        queries,
+        gallery,
+        geometry,
+        **common,
+    )
+    sharded, shard_paths = resumable_full_gallery_sinkhorn_divergence(
+        queries,
+        gallery,
+        geometry,
+        output_dir=tmp_path,
+        shard_prefix="equivalence",
+        query_shard_size=2,
+        **common,
+    )
+    resumed, resumed_paths = resumable_full_gallery_sinkhorn_divergence(
+        queries,
+        gallery,
+        geometry,
+        output_dir=tmp_path,
+        shard_prefix="equivalence",
+        query_shard_size=2,
+        **common,
+    )
+
+    assert torch.equal(sharded, monolithic)
+    assert torch.equal(resumed, monolithic)
+    assert resumed_paths == shard_paths
+    assert all(path.with_suffix(path.suffix + ".sha256").exists() for path in shard_paths)
 
 
 def test_all_cell_aggregation_averages_seeds_within_problem_first() -> None:

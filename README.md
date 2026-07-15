@@ -397,7 +397,7 @@ receipt identity. The transaction applies the registered user-distinct HMAC
 rule to 386 test clusters, materializes 3,088 queries and 3,088 gallery
 programs, and repeats the frozen AST/path audit before computing a metric.
 
-From the immutable `codenet-stage-a-test-runner-v2` worktree, perform the one
+From the immutable `codenet-stage-a-test-runner-v3` worktree, perform the one
 test opening and the complete evaluation with:
 
 ```bash

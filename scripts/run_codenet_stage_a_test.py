@@ -50,6 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_runtime_addendum_v1.json",
     )
     parser.add_argument(
+        "--test-resumability-addendum",
+        type=Path,
+        default=PROJECT_ROOT
+        / "configs/codenet_python800_stage_a_test_resumability_addendum_v1.json",
+    )
+    parser.add_argument(
         "--model-protocol",
         type=Path,
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
@@ -111,6 +117,16 @@ def main() -> None:
         "frozen_during_validation_before_validation_selection_or_test_unseal"
     ):
         raise ValueError("Stage A test-runtime addendum was not frozen before unseal")
+    resumability_addendum_bytes = args.test_resumability_addendum.read_bytes()
+    resumability_addendum = json.loads(resumability_addendum_bytes)
+    if resumability_addendum.get("schema_version") != (
+        "code2hyp-stage-a-test-resumability-addendum-v1"
+    ):
+        raise ValueError("unexpected Stage A test-resumability addendum")
+    if resumability_addendum.get("status") != (
+        "frozen_during_validation_before_validation_selection_or_test_unseal"
+    ):
+        raise ValueError("Stage A test-resumability addendum was not frozen before unseal")
     selection_path = args.validation_output_dir / "validation_selection_record.json"
     selection_seal_path = args.validation_output_dir / "validation_selection_record_seal.json"
     seal_validation_selection(
@@ -172,6 +188,7 @@ def main() -> None:
             output_dir=args.output_dir,
             test_execution_protocol_sha256=stable_sha256(execution_protocol_bytes),
             test_runtime_addendum_sha256=stable_sha256(runtime_addendum_bytes),
+            test_resumability_addendum_sha256=stable_sha256(resumability_addendum_bytes),
             implementation=implementation,
             progress_callback=progress,
         )

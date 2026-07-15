@@ -14,6 +14,7 @@ from geometry_profile_research.codenet_eligibility import canonical_json_bytes, 
 from geometry_profile_research.codenet_stage_a import StageATestSplit
 from geometry_profile_research.codenet_stage_a_evaluation import (
     full_gallery_sinkhorn_divergence,
+    precompute_self_objectives,
     summarize_problem_macro_retrieval,
 )
 from geometry_profile_research.codenet_stage_a_runner import (
@@ -40,6 +41,7 @@ def run_stage_a_test_seed(
     output_dir: Path,
     test_execution_protocol_sha256: str,
     test_runtime_addendum_sha256: str,
+    test_resumability_addendum_sha256: str,
     implementation: Mapping[str, Any],
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
@@ -106,6 +108,9 @@ def run_stage_a_test_seed(
     if test_runtime["torch_num_threads"] != 1 or test_runtime["deterministic_algorithms"] is not True:
         raise RuntimeError("Stage A test runtime did not apply the frozen deterministic configuration")
     result_identity["test_runtime_addendum_sha256"] = str(test_runtime_addendum_sha256)
+    result_identity["test_resumability_addendum_sha256"] = str(
+        test_resumability_addendum_sha256
+    )
     result_identity["test_runtime"] = test_runtime
     if result_path.exists():
         payload = json.loads(result_path.read_text(encoding="utf-8"))
@@ -194,6 +199,7 @@ def run_stage_a_test_seed(
     cell_ids = expected_cell_ids
     for cell_index, cell_id in enumerate(cell_ids, start=1):
         if cell_id in cells:
+            _cleanup_distance_shards(output_dir=output_dir, seed=seed, cell_id=cell_id)
             continue
         validation_cell = validation["cells"][cell_id]
         curvatures = tuple(float(value) for value in validation_cell["factor_curvatures"])
@@ -216,16 +222,20 @@ def run_stage_a_test_seed(
                     "cell_count": len(cell_ids),
                 }
             )
-        distances = full_gallery_sinkhorn_divergence(
+        distances, shard_paths = resumable_full_gallery_sinkhorn_divergence(
             queries,
             gallery,
             geometry,
             epsilon=epsilon,
+            output_dir=output_dir,
+            shard_prefix=f"seed_{seed}_{cell_id}",
+            query_shard_size=32,
             query_batch_size=int(execution["query_batch_size"]),
             gallery_batch_size=int(execution["gallery_batch_size"]),
             sinkhorn_iterations=int(execution["sinkhorn_iterations"]),
             projection_iterations=int(execution["projection_iterations"]),
             marginal_tolerance=float(execution["marginal_tolerance"]),
+            progress_callback=progress_callback,
         )
         summary = summarize_problem_macro_retrieval(
             distances,
@@ -256,11 +266,115 @@ def run_stage_a_test_seed(
             partial_path,
             _test_seed_payload(identity=result_identity, cells=cells, status="partial"),
         )
+        for shard_path in shard_paths:
+            shard_path.unlink(missing_ok=True)
+            shard_path.with_suffix(shard_path.suffix + ".sha256").unlink(missing_ok=True)
 
     payload = _test_seed_payload(identity=result_identity, cells=cells, status="complete")
     _atomic_json_write(result_path, payload)
     partial_path.unlink(missing_ok=True)
     return json.loads(result_path.read_text(encoding="utf-8"))
+
+
+def resumable_full_gallery_sinkhorn_divergence(
+    queries: Sequence[Any],
+    gallery: Sequence[Any],
+    geometry: RoleProductGeometry,
+    *,
+    epsilon: float,
+    output_dir: Path,
+    shard_prefix: str,
+    query_shard_size: int = 32,
+    query_batch_size: int = 4,
+    gallery_batch_size: int = 32,
+    sinkhorn_iterations: int = 128,
+    projection_iterations: int = 2048,
+    marginal_tolerance: float = 1e-7,
+    progress_callback: Any | None = None,
+) -> tuple[torch.Tensor, tuple[Path, ...]]:
+    """Compute the exact full gallery matrix in hash-verified query shards."""
+
+    if not queries or not gallery:
+        raise ValueError("queries and gallery must not be empty")
+    if query_shard_size <= 0 or query_shard_size % query_batch_size != 0:
+        raise ValueError("query shard size must be a positive multiple of query batch size")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    query_self = precompute_self_objectives(
+        queries,
+        geometry,
+        epsilon=epsilon,
+        batch_size=query_batch_size,
+        sinkhorn_iterations=sinkhorn_iterations,
+        projection_iterations=projection_iterations,
+        marginal_tolerance=marginal_tolerance,
+    )
+    gallery_self = precompute_self_objectives(
+        gallery,
+        geometry,
+        epsilon=epsilon,
+        batch_size=gallery_batch_size,
+        sinkhorn_iterations=sinkhorn_iterations,
+        projection_iterations=projection_iterations,
+        marginal_tolerance=marginal_tolerance,
+    )
+    shard_paths: list[Path] = []
+    shards: list[torch.Tensor] = []
+    shard_count = math.ceil(len(queries) / query_shard_size)
+    for shard_index, start in enumerate(range(0, len(queries), query_shard_size), start=1):
+        stop = min(start + query_shard_size, len(queries))
+        shard_path = output_dir / f"{shard_prefix}_q{start:04d}_{stop:04d}.pt"
+        sidecar_path = shard_path.with_suffix(shard_path.suffix + ".sha256")
+        expected_shape = (stop - start, len(gallery))
+        if shard_path.exists() or sidecar_path.exists():
+            if not shard_path.exists() or not sidecar_path.exists():
+                raise ValueError(f"incomplete distance shard artifact: {shard_path}")
+            expected_sha = sidecar_path.read_text(encoding="ascii").strip()
+            actual_sha = stable_sha256(shard_path.read_bytes())
+            if expected_sha != actual_sha:
+                raise ValueError(f"distance shard hash mismatch: {shard_path}")
+            shard = torch.load(shard_path, map_location="cpu", weights_only=True)
+        else:
+            shard = full_gallery_sinkhorn_divergence(
+                queries[start:stop],
+                gallery,
+                geometry,
+                epsilon=epsilon,
+                query_batch_size=query_batch_size,
+                gallery_batch_size=gallery_batch_size,
+                sinkhorn_iterations=sinkhorn_iterations,
+                projection_iterations=projection_iterations,
+                marginal_tolerance=marginal_tolerance,
+                query_self_objectives=query_self[start:stop],
+                gallery_self_objectives=gallery_self,
+            ).to(dtype=torch.float64, device="cpu")
+            _atomic_torch_save(shard_path, shard)
+            _atomic_bytes_write(
+                sidecar_path,
+                (stable_sha256(shard_path.read_bytes()) + "\n").encode("ascii"),
+            )
+        if not isinstance(shard, torch.Tensor) or shard.dtype != torch.float64:
+            raise ValueError(f"distance shard must be a float64 tensor: {shard_path}")
+        if tuple(shard.shape) != expected_shape:
+            raise ValueError(f"distance shard shape mismatch: {shard_path}")
+        if not torch.isfinite(shard).all():
+            raise ValueError(f"distance shard contains non-finite values: {shard_path}")
+        shard_paths.append(shard_path)
+        shards.append(shard)
+        if progress_callback is not None:
+            progress_callback(
+                {
+                    "phase": "test_distance_shard",
+                    "shard_prefix": shard_prefix,
+                    "shard_index": shard_index,
+                    "shard_count": shard_count,
+                    "query_start": start,
+                    "query_stop": stop,
+                }
+            )
+    distances = torch.cat(shards, dim=0)
+    if tuple(distances.shape) != (len(queries), len(gallery)):
+        raise ValueError("assembled distance matrix shape mismatch")
+    return distances, tuple(shard_paths)
 
 
 def aggregate_all_test_cells(
@@ -344,3 +458,15 @@ def _atomic_torch_save(path: Path, payload: Any) -> None:
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     torch.save(payload, temporary)
     os.replace(temporary, path)
+
+
+def _atomic_bytes_write(path: Path, content: bytes) -> None:
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_bytes(content)
+    os.replace(temporary, path)
+
+
+def _cleanup_distance_shards(*, output_dir: Path, seed: int, cell_id: str) -> None:
+    for shard_path in output_dir.glob(f"seed_{seed}_{cell_id}_q????_????.pt"):
+        shard_path.unlink(missing_ok=True)
+        shard_path.with_suffix(shard_path.suffix + ".sha256").unlink(missing_ok=True)
