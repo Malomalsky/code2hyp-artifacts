@@ -353,6 +353,19 @@ On that batch, rounding reduces the maximum residual from `1.738e-7` to
 `4.83e-6`. Gate 0 v2 additionally checks the rounded batched gradient against
 finite differences.
 
+Validation-runner v3 then computed the first complete distance matrix but
+stopped before persisting that matrix or any retrieval metric. The evaluator
+had keyed relevance by the original CodeNet `problem_id`, whereas the
+registered independent unit is the duplicate-closed `cluster_id`. One of the
+97 validation clusters contains the equivalent source problems `p02388` and
+`p02859`; all clusters nevertheless contain exactly 8 queries and 8 gallery
+items. The incident and pre-metric correction are recorded in
+`reports/codenet_python800_stage_a_relevance_identity_incident_2026-07-15.json`
+and `configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json`.
+Runner v4 changes only the relevance and macro-aggregation key to
+`cluster_id`; the split, model, distances, ranking, cutoff and hypotheses are
+unchanged.
+
 Run the resumable validation experiment after supplying the local official
 source tree:
 
@@ -376,9 +389,12 @@ uv run python scripts/seal_codenet_stage_a_validation_seed.py \
 ```
 
 The seal checks the frozen protocol and calibration hashes, numerical Gate 0,
-the exact seven-cell design, validation cardinalities, checkpoint and distance
-matrix hashes, and the three fail-closed test-access flags. It records the
-immutable validation-runner commit and does not read the official source tree.
+the relevance-identity addendum, the exact seven-cell design, validation
+cardinalities, checkpoint and distance-matrix hashes, and the three fail-closed
+test-access flags. It independently recomputes every retrieval summary from
+the stored `float64` matrix and frozen validation `cluster_id` metadata. It
+records the immutable validation-runner commit and does not read the official
+source tree.
 
 After all ten seed seals exist, verify the frozen curvature-selection rule and
 bind the selection record to every sealed input:
@@ -397,7 +413,7 @@ receipt identity. The transaction applies the registered user-distinct HMAC
 rule to 386 test clusters, materializes 3,088 queries and 3,088 gallery
 programs, and repeats the frozen AST/path audit before computing a metric.
 
-From the immutable `codenet-stage-a-test-runner-v3` worktree, perform the one
+From the immutable `codenet-stage-a-test-runner-v4` worktree, perform the one
 test opening and the complete evaluation with:
 
 ```bash

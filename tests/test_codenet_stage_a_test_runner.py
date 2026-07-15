@@ -152,6 +152,16 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
     resumability_addendum_path = tmp_path / "resumability_addendum.json"
     resumability_addendum_path.write_text("resumability addendum", encoding="utf-8")
     resumability_addendum_sha = stable_sha256(resumability_addendum_path.read_bytes())
+    relevance_addendum_path = tmp_path / "relevance_addendum.json"
+    relevance_addendum_path.write_bytes(
+        canonical_json_bytes(
+            {
+                "schema_version": "code2hyp-stage-a-relevance-identity-addendum-v1",
+                "correction": {"relevance_key_after": "cluster_id"},
+            }
+        )
+    )
+    relevance_addendum_sha = stable_sha256(relevance_addendum_path.read_bytes())
     materialization_path = tmp_path / "test_materialization_manifest.json"
     materialization_path.write_bytes(
         canonical_json_bytes(
@@ -176,7 +186,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
         test_resumability_addendum_sha256=resumability_addendum_sha,
-        relevance_identity_addendum_sha256="relevance-addendum-sha256",
+        relevance_identity_addendum_sha256=relevance_addendum_sha,
         implementation=test_implementation,
     )
     resumed = run_stage_a_test_seed(
@@ -190,7 +200,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
         test_resumability_addendum_sha256=resumability_addendum_sha,
-        relevance_identity_addendum_sha256="relevance-addendum-sha256",
+        relevance_identity_addendum_sha256=relevance_addendum_sha,
         implementation=test_implementation,
     )
 
@@ -238,6 +248,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         test_execution_protocol_path=test_protocol_path,
         test_runtime_addendum_path=runtime_addendum_path,
         test_resumability_addendum_path=resumability_addendum_path,
+        relevance_addendum_path=relevance_addendum_path,
         test_materialization_manifest_path=materialization_path,
         test_programs_path=test_programs_path,
         validation_selection_seal_path=selection_seal_path,

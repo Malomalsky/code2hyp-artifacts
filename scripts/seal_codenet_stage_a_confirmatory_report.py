@@ -33,6 +33,7 @@ def seal_confirmatory_report(
     test_execution_protocol_path: Path,
     model_protocol_path: Path,
     inference_protocol_path: Path,
+    relevance_addendum_path: Path,
     registration_path: Path,
     validation_selection_path: Path,
     validation_selection_seal_path: Path,
@@ -48,6 +49,8 @@ def seal_confirmatory_report(
     model_protocol = json.loads(model_bytes)
     inference_bytes = inference_protocol_path.read_bytes()
     inference_protocol = json.loads(inference_bytes)
+    relevance_addendum_bytes = relevance_addendum_path.read_bytes()
+    relevance_addendum = json.loads(relevance_addendum_bytes)
     registration_bytes = registration_path.read_bytes()
     registration = json.loads(registration_bytes)
     selection_bytes = validation_selection_path.read_bytes()
@@ -64,6 +67,8 @@ def seal_confirmatory_report(
         raise ValueError("confirmatory report used an unexpected test runner")
     if materialization.get("implementation") != implementation:
         raise ValueError("confirmatory report and test materialization used different implementations")
+    if relevance_addendum.get("schema_version") != "code2hyp-stage-a-relevance-identity-addendum-v1":
+        raise ValueError("unexpected relevance-identity addendum schema")
 
     registered_seeds = tuple(int(seed) for seed in model_protocol["encoder_training"]["model_seeds"])
     seed_payloads = []
@@ -115,6 +120,7 @@ def seal_confirmatory_report(
             "test_execution_protocol_sha256": stable_sha256(execution_bytes),
             "model_analysis_protocol_sha256": stable_sha256(model_bytes),
             "test_inference_protocol_sha256": stable_sha256(inference_bytes),
+            "relevance_identity_addendum_sha256": stable_sha256(relevance_addendum_bytes),
             "registration_sha256": stable_sha256(registration_bytes),
             "validation_selection_sha256": stable_sha256(selection_bytes),
             "validation_selection_seal_sha256": stable_sha256(selection_seal_bytes),
@@ -158,6 +164,7 @@ def seal_confirmatory_report(
                 "sha256": stable_sha256(report_bytes),
             },
             "test_seed_results_and_seals": seed_inputs,
+            "relevance_identity_addendum_sha256": stable_sha256(relevance_addendum_bytes),
         },
         "selected_active_curvature": float(selection["selected_active_curvature"]),
         "selected_cell_id": str(selection["selected_cell_id"]),
@@ -199,6 +206,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_test_inference_protocol_v1.json",
     )
     parser.add_argument(
+        "--relevance-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json",
+    )
+    parser.add_argument(
         "--registration",
         type=Path,
         default=PROJECT_ROOT / "registrations/codenet_python800_stage_a_registration_v1.json",
@@ -221,6 +233,7 @@ def main() -> None:
         test_execution_protocol_path=args.test_execution_protocol,
         model_protocol_path=args.model_protocol,
         inference_protocol_path=args.inference_protocol,
+        relevance_addendum_path=args.relevance_addendum,
         registration_path=args.registration,
         validation_selection_path=args.validation_selection,
         validation_selection_seal_path=args.validation_selection_seal,

@@ -12,8 +12,8 @@ import torch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-TEST_RUNNER_COMMIT = "38b9334ce3777c48fc1aa45d0118a8c54f11bbe7"
-TEST_RUNNER_TAG = "codenet-stage-a-test-runner-v3"
+TEST_RUNNER_COMMIT = "6b479a441c603f2bd7331df1a7316d7d1c18e5a2"
+TEST_RUNNER_TAG = "codenet-stage-a-test-runner-v4"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -43,6 +43,7 @@ def seal_test_seed_result(
     test_execution_protocol_path: Path,
     test_runtime_addendum_path: Path,
     test_resumability_addendum_path: Path,
+    relevance_addendum_path: Path,
     test_materialization_manifest_path: Path,
     test_programs_path: Path,
     validation_selection_seal_path: Path,
@@ -59,6 +60,8 @@ def seal_test_seed_result(
     protocol_bytes = test_execution_protocol_path.read_bytes()
     runtime_addendum_bytes = test_runtime_addendum_path.read_bytes()
     resumability_addendum_bytes = test_resumability_addendum_path.read_bytes()
+    relevance_addendum_bytes = relevance_addendum_path.read_bytes()
+    relevance_addendum = json.loads(relevance_addendum_bytes)
     materialization_bytes = test_materialization_manifest_path.read_bytes()
     materialization = json.loads(materialization_bytes)
     selection_seal_bytes = validation_selection_seal_path.read_bytes()
@@ -79,6 +82,12 @@ def seal_test_seed_result(
         resumability_addendum_bytes
     ):
         raise ValueError("test seed differs from the frozen resumability addendum")
+    if relevance_addendum.get("schema_version") != "code2hyp-stage-a-relevance-identity-addendum-v1":
+        raise ValueError("unexpected relevance-identity addendum schema")
+    if relevance_addendum.get("correction", {}).get("relevance_key_after") != "cluster_id":
+        raise ValueError("relevance-identity addendum does not require cluster IDs")
+    if identity.get("relevance_identity_addendum_sha256") != stable_sha256(relevance_addendum_bytes):
+        raise ValueError("test seed differs from the frozen relevance-identity addendum")
     runtime = identity.get("test_runtime", {})
     if runtime.get("torch_num_threads") != 1 or runtime.get("deterministic_algorithms") is not True:
         raise ValueError("test seed did not use the frozen deterministic runtime")
@@ -194,6 +203,7 @@ def seal_test_seed_result(
             "test_resumability_addendum_sha256": stable_sha256(
                 resumability_addendum_bytes
             ),
+            "relevance_identity_addendum_sha256": stable_sha256(relevance_addendum_bytes),
             "test_materialization_manifest_sha256": stable_sha256(materialization_bytes),
             "test_programs_sha256": stable_sha256(test_programs_path.read_bytes()),
             "validation_selection_seal_sha256": stable_sha256(selection_seal_bytes),
@@ -242,6 +252,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=PROJECT_ROOT
         / "configs/codenet_python800_stage_a_test_resumability_addendum_v1.json",
     )
+    parser.add_argument(
+        "--relevance-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json",
+    )
     parser.add_argument("--test-materialization-manifest", type=Path, default=None)
     parser.add_argument("--test-programs", type=Path, default=None)
     parser.add_argument("--validation-selection-seal", type=Path, default=None)
@@ -263,6 +278,7 @@ def main() -> None:
         test_execution_protocol_path=args.test_execution_protocol,
         test_runtime_addendum_path=args.test_runtime_addendum,
         test_resumability_addendum_path=args.test_resumability_addendum,
+        relevance_addendum_path=args.relevance_addendum,
         test_materialization_manifest_path=materialization,
         test_programs_path=programs,
         validation_selection_seal_path=selection_seal,

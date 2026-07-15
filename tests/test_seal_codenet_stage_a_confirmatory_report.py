@@ -50,6 +50,12 @@ def test_confirmatory_report_seal_recomputes_aggregation_and_bootstrap(tmp_path:
     }
     inference_path = tmp_path / "inference.json"
     inference_path.write_bytes(canonical_json_bytes(inference_protocol))
+    relevance_path = tmp_path / "relevance.json"
+    relevance_path.write_bytes(
+        canonical_json_bytes(
+            {"schema_version": "code2hyp-stage-a-relevance-identity-addendum-v1"}
+        )
+    )
     registration = {"nist_randomness_beacon": {"output_value_hex": "00" * 64}}
     registration_path = tmp_path / "registration.json"
     registration_path.write_bytes(canonical_json_bytes(registration))
@@ -122,6 +128,7 @@ def test_confirmatory_report_seal_recomputes_aggregation_and_bootstrap(tmp_path:
             "test_execution_protocol_sha256": stable_sha256(execution_path.read_bytes()),
             "model_analysis_protocol_sha256": stable_sha256(model_path.read_bytes()),
             "test_inference_protocol_sha256": stable_sha256(inference_path.read_bytes()),
+            "relevance_identity_addendum_sha256": stable_sha256(relevance_path.read_bytes()),
             "registration_sha256": stable_sha256(registration_path.read_bytes()),
             "validation_selection_sha256": stable_sha256(selection_path.read_bytes()),
             "validation_selection_seal_sha256": stable_sha256(selection_seal_path.read_bytes()),
@@ -146,6 +153,7 @@ def test_confirmatory_report_seal_recomputes_aggregation_and_bootstrap(tmp_path:
         test_execution_protocol_path=execution_path,
         model_protocol_path=model_path,
         inference_protocol_path=inference_path,
+        relevance_addendum_path=relevance_path,
         registration_path=registration_path,
         validation_selection_path=selection_path,
         validation_selection_seal_path=selection_seal_path,
@@ -162,6 +170,7 @@ def test_confirmatory_report_seal_recomputes_aggregation_and_bootstrap(tmp_path:
             test_execution_protocol_path=execution_path,
             model_protocol_path=model_path,
             inference_protocol_path=inference_path,
+            relevance_addendum_path=relevance_path,
             registration_path=registration_path,
             validation_selection_path=selection_path,
             validation_selection_seal_path=selection_seal_path,
