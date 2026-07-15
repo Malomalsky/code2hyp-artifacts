@@ -18,6 +18,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "pot" },
     { name = "psutil" },
     { name = "pytest" },
 ]
@@ -44,6 +45,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'viz'", specifier = ">=2.2" },
     { name = "pillow", marker = "extra == 'viz'", specifier = ">=10" },
     { name = "plotnine", marker = "extra == 'viz'", specifier = ">=0.13" },
+    { name = "pot", marker = "extra == 'dev'", specifier = ">=0.9,<0.10" },
     { name = "psutil", marker = "extra == 'dev'", specifier = ">=6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "seaborn", marker = "extra == 'viz'", specifier = ">=0.13" },
@@ -601,6 +603,23 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
+name = "pot"
+version = "0.9.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/cf/61deefb2c9b300cd186321bc3126cf80c74262006f122dbbef1f6e5fb833/pot-0.9.7-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:9d2415e546a168fa8f1a7fa1b4d4a22d9855c8ad725b18d6879704c1df28e9f5", size = 1532457, upload-time = "2026-07-08T06:41:55.489Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/9d/37d5e6e51cdf3d67105766f58975a7f23081fdd02029fe46dd2afe17b068/pot-0.9.7-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:95e4e4815a6402df4bef510c456e900641d8d1402d2cdc672fd04da200658134", size = 983186, upload-time = "2026-07-08T06:41:57.085Z" },
+    { url = "https://files.pythonhosted.org/packages/85/2c/85b9a8096cf09a171a12752a21ffb154099252fe39ed4f726e247cd5faac/pot-0.9.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6b1f830e1dcf1f2fc0a48dcf94d0c6ae0a65b56e6666d9dfda4f9c54ac51307e", size = 924595, upload-time = "2026-07-08T06:41:58.454Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/5b/cfbad726019d8d77eadd3631151128330332e4a73e805143ff418222e335/pot-0.9.7-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e670a032831c48f468cb302a3e3a20b2ff71fc7a22c9b738343355f73941a411", size = 32266406, upload-time = "2026-07-08T06:42:01.288Z" },
+    { url = "https://files.pythonhosted.org/packages/37/72/482e335fdeb99e51f88f1b6d99813599e64ba41fdbda90312865cd980bb8/pot-0.9.7-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b94f3a1e7420a12b98d2303de3ffa2c2088ae7580ff623cb506ba328d88474a0", size = 32918287, upload-time = "2026-07-08T06:42:05.498Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/4d/1a3a659829368537bd61803e6b319abb55b7623dca37cac3237143f63c56/pot-0.9.7-cp312-cp312-win_amd64.whl", hash = "sha256:8d37a532f8bbb665cf1385e2a917ff56ef59d9b21b1bfe2e656b8c41e8cfa5b1", size = 802969, upload-time = "2026-07-08T06:42:14.937Z" },
 ]
 
 [[package]]

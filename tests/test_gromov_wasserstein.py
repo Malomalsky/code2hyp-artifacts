@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 
+import numpy as np
+import ot
 import torch
 
 from geometry_profile_research.gromov_wasserstein import (
@@ -200,6 +202,53 @@ class GromovWassersteinTests(unittest.TestCase):
 
         torch.testing.assert_close(solved, direct, atol=1e-10, rtol=1e-10)
         assert float(entropic_plan_kl(plan, mass, mass)) > 0.0
+
+    def test_sinkhorn_plan_and_full_objective_match_independent_pot_solver(self) -> None:
+        cost = torch.tensor(
+            [[0.0, 0.7, 1.5], [0.4, 0.2, 0.9], [1.1, 0.6, 0.1]],
+            dtype=torch.float64,
+        )
+        left = torch.tensor([0.2, 0.3, 0.5], dtype=torch.float64)
+        right = torch.tensor([0.4, 0.35, 0.25], dtype=torch.float64)
+        epsilon = 0.23
+
+        actual_plan = sinkhorn_plan(
+            cost,
+            left,
+            right,
+            epsilon=epsilon,
+            iterations=1000,
+            projection_iterations=4096,
+            marginal_tolerance=1e-10,
+        )
+        pot_plan = ot.sinkhorn(
+            left.numpy(),
+            right.numpy(),
+            cost.numpy(),
+            reg=epsilon,
+            method="sinkhorn_log",
+            numItermax=20_000,
+            stopThr=1e-13,
+        )
+        reference_plan = torch.from_numpy(np.asarray(pot_plan))
+        actual_objective = sinkhorn_transport_objective(
+            cost,
+            left,
+            right,
+            epsilon=epsilon,
+            iterations=1000,
+            projection_iterations=4096,
+        )
+        reference_objective = entropic_transport_objective(
+            reference_plan,
+            cost,
+            left,
+            right,
+            epsilon=epsilon,
+        )
+
+        torch.testing.assert_close(actual_plan, reference_plan, atol=1e-8, rtol=1e-8)
+        torch.testing.assert_close(actual_objective, reference_objective, atol=1e-9, rtol=1e-9)
 
     def test_sinkhorn_plan_supports_strict_marginal_tolerance(self) -> None:
         cost = torch.tensor([[0.0, 2.0], [1.0, 0.5], [2.0, 0.0]], dtype=torch.float64)

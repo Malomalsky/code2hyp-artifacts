@@ -312,6 +312,43 @@ pairs. Nine programs have fewer than 64 possible pairs and follow the frozen
 small-program rule. The portable per-program index and manifest are in
 `data/codenet_python800_stage_a_selected_source_ast/`.
 
+The model, calibration and analysis choices were frozen before the first
+validation retrieval score in
+`configs/codenet_python800_stage_a_model_analysis_protocol_v1.json`. The
+protocol fixes a shared structural-only encoder, the true-LCA versus
+zero-anchor contrast, the matched Euclidean/near-zero/active-curvature cells,
+full-gallery `MAP@8`, ten model seeds and the future problem-cluster bootstrap.
+It excludes the Frechet-control hypothesis because no certified global solver
+for the unoriented endpoint quotient is available.
+
+Rebuild the 4,096 train-only calibration pairs and run the independent
+numerical Gate 0:
+
+```bash
+uv run python scripts/build_codenet_stage_a_calibration_pairs.py
+uv run python scripts/run_codenet_stage_a_gate0.py
+```
+
+The calibration set contains 2,048 within-cluster and 2,048 cross-cluster
+pairs and never reads validation or test programs. Gate 0 checks the full
+regularized OT objective against POT, scalar/batched equivalence, marginal
+residuals, the standard Poincare near-zero limit, endpoint-reversal
+invariance and an autograd/finite-difference gradient agreement.
+
+Run the resumable validation experiment after supplying the local official
+source tree:
+
+```bash
+uv run python scripts/run_codenet_stage_a_validation.py \
+  --source-root /absolute/path/to/Project_CodeNet_Python800
+```
+
+Per-seed checkpoints, distance matrices and validation summaries are written
+under `outputs/codenet_python800_stage_a_validation_v1/`, which is intentionally
+not tracked. The validation selection record is produced only after all ten
+registered seeds complete. This command does not materialize test program IDs
+or test relevance labels.
+
 ## Claim Boundary
 
 Safe claim:
