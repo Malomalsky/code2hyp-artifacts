@@ -1,0 +1,79 @@
+{
+  "schema_version": "code2hyp-stage-a-representation-identifiability-audit-v1",
+  "status": "frozen_before_the_first_validation_retrieval_metric",
+  "role": "descriptive_train_only_scope_audit",
+  "primary_analysis_impact": "none",
+  "inputs": {
+    "model_analysis_protocol": {
+      "path": "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
+      "sha256": "e88154923be3f6511161f2ed99caae444019c1aeb7b9c497a38ca1d4864d2573"
+    },
+    "train_programs": {
+      "path": "data/codenet_python800_stage_a_program_sampling/train_programs.jsonl",
+      "sha256": "ccd6b17f56130c78a34345091e7935d58682c4d149df316cbf555dc3fe3b3c3b"
+    }
+  },
+  "representation": {
+    "terminal_policy": "class",
+    "node_input_mode": "label_only",
+    "path_selection_policy": "lca_depth_affine_sampled",
+    "maximum_path_count": 64,
+    "endpoint_orientation": "unoriented",
+    "node_signature": "the_exact_encoder_input_token_sequence_before_embedding",
+    "path_signature": "LCA_signature_plus_lexicographically_canonicalized_endpoint_signatures"
+  },
+  "diagnostics": {
+    "D1_node_identifiability": {
+      "object": "raw_AST_node_ID",
+      "equivalence": "equal_node_signature",
+      "reported_counts": [
+        "node_count",
+        "distinct_node_signature_count",
+        "colliding_node_count"
+      ]
+    },
+    "D2_LCA_anchor_identifiability": {
+      "object": "distinct_true_LCA_node_ID_among_selected_paths",
+      "equivalence": "equal_LCA_node_signature",
+      "reported_counts": [
+        "distinct_true_LCA_node_count",
+        "distinct_LCA_signature_count",
+        "colliding_true_LCA_node_count"
+      ]
+    },
+    "D3_path_object_identifiability": {
+      "object": "selected_unoriented_true_LCA_endpoint_node_ID_triple",
+      "equivalence": "equal_unoriented_path_signature",
+      "reported_counts": [
+        "selected_path_object_count",
+        "distinct_path_signature_count",
+        "colliding_path_object_count"
+      ]
+    }
+  },
+  "aggregation": {
+    "micro_counts": "sum_numerators_and_denominators_over_training_programs",
+    "program_macro_rates": "unweighted_mean_over_training_programs",
+    "program_distribution_quantiles": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "zero_denominator_rule": "report_zero_rate"
+  },
+  "interpretation": {
+    "purpose": "quantify_the_information_identifiability_of_the_frozen_label_only_encoder_input",
+    "not_a_retrieval_hypothesis_test": true,
+    "does_not_modify_validation_selection": true,
+    "does_not_authorize_post_hoc_model_changes": true
+  },
+  "data_boundary": {
+    "validation_programs_read": false,
+    "validation_relevance_labels_read": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  }
+}
