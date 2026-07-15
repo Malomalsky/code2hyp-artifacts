@@ -1,0 +1,53 @@
+{
+  "schema_version": "code2hyp-stage-a-numerical-incident-v1",
+  "recorded_at_utc": "2026-07-15T10:15:09Z",
+  "experiment": "CodeNet_Python800_Stage_A_validation",
+  "seed": 20260711,
+  "implementation": {
+    "commit": "bf8cf512742330dc6b6d53bb7fa971e5ee131378",
+    "tag": "codenet-stage-a-validation-runner-v1"
+  },
+  "protocol": {
+    "path": "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
+    "sha256": "e88154923be3f6511161f2ed99caae444019c1aeb7b9c497a38ca1d4864d2573"
+  },
+  "failure": {
+    "phase": "precompute_query_self_objectives",
+    "cell_id": "EEE_true_LCA",
+    "cell_index": 1,
+    "log_domain_iterations": 128,
+    "projection_iterations_max": 2048,
+    "required_maximum_marginal_residual": 1e-07,
+    "observed_maximum_marginal_residual": 1.738e-07,
+    "exception": "ValueError",
+    "message": "batched Sinkhorn marginal residual 1.738e-07 exceeds tolerance"
+  },
+  "failure_policy_action": {
+    "process_stopped": true,
+    "seed_replaced": false,
+    "tolerance_relaxed": false,
+    "validation_distance_matrices_written": 0,
+    "validation_retrieval_metrics_computed": false,
+    "test_program_ids_materialized": false,
+    "test_relevance_labels_opened": false,
+    "test_retrieval_metrics_computed": false
+  },
+  "retained_training_artifact": {
+    "path": "outputs/codenet_python800_stage_a_validation_v1/seed_20260711_encoder.pt",
+    "sha256": "a7781a4d136b0ad5cf913cb005da0da830a52a9212fb159907b7bfc8983ef521",
+    "role": "failed_runner_v1_audit_evidence_not_an_accepted_validation_result"
+  },
+  "planned_remediation": {
+    "method": "deterministic_nonnegative_rounding_of_the_approximate_transport_plan_to_the_prescribed_marginals",
+    "acceptance_checks": [
+      "maximum_marginal_residual_at_most_1e-7",
+      "independent_POT_objective_agreement",
+      "scalar_batched_equivalence",
+      "finite_difference_gradient_agreement",
+      "actual_failed_batch_reproduction_and_resolution"
+    ],
+    "scientific_model_or_hyperparameter_change": false,
+    "validation_metric_observed_before_remediation": false,
+    "new_immutable_runner_required_before_restart": true
+  }
+}
