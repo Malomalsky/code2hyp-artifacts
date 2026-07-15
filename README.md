@@ -370,6 +370,18 @@ uv run python scripts/seal_codenet_stage_a_validation_selection.py \
   outputs/codenet_python800_stage_a_validation_v1/validation_selection_record.json
 ```
 
+The separately frozen train-only scope audit quantifies how often the
+`label_only` encoder input identifies distinct AST nodes, true-LCA anchors and
+complete unoriented path objects with the same signature:
+
+```bash
+uv run python scripts/audit_codenet_stage_a_representation_identifiability.py \
+  --source-root /absolute/path/to/Project_CodeNet_Python800
+```
+
+This diagnostic is descriptive, reads no validation manifest or test IDs, and
+does not modify the registered curvature-selection rule.
+
 ## Claim Boundary
 
 Safe claim:
