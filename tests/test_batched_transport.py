@@ -8,6 +8,7 @@ from geometry_profile_research.batched_transport import (
     batched_sinkhorn_plan,
     batched_sinkhorn_transport_objective,
     debiased_objective_from_self_terms,
+    round_batched_plan_to_marginals,
 )
 from geometry_profile_research.constant_curvature import ProductMeasure, RoleProductGeometry
 from geometry_profile_research.gromov_wasserstein import sinkhorn_transport_objective
@@ -146,6 +147,56 @@ def test_batched_sinkhorn_has_strict_individual_marginal_residuals() -> None:
     assert bool((residuals <= 1e-10).all())
     assert torch.count_nonzero(plan[0, 3]) == 0
     assert torch.count_nonzero(plan[0, :, 3:]) == 0
+
+
+def test_rank_one_rounding_restores_marginals_with_zero_mass_padding() -> None:
+    plan = torch.tensor(
+        [[[0.08, 0.01, 0.0], [0.02, 0.20, 0.0], [0.0, 0.0, 0.0]]],
+        dtype=torch.float64,
+    )
+    left = torch.tensor([[0.4, 0.6, 0.0]], dtype=torch.float64)
+    right = torch.tensor([[0.7, 0.3, 0.0]], dtype=torch.float64)
+
+    rounded = round_batched_plan_to_marginals(plan, left, right)
+
+    assert float(batched_marginal_residuals(rounded, left, right).max()) <= 1e-15
+    assert bool((rounded >= 0.0).all())
+    assert torch.count_nonzero(rounded[:, 2]) == 0
+    assert torch.count_nonzero(rounded[:, :, 2]) == 0
+
+
+def test_sinkhorn_rounding_handles_underflow_stress_without_relaxing_tolerance() -> None:
+    cost = torch.tensor(
+        [[[0.0, 120.0, 80.0], [90.0, 0.0, 110.0], [70.0, 130.0, 0.0]]],
+        dtype=torch.float64,
+    )
+    left = torch.tensor([[0.2, 0.3, 0.5]], dtype=torch.float64)
+    right = torch.tensor([[0.4, 0.35, 0.25]], dtype=torch.float64)
+
+    unrounded = batched_sinkhorn_plan(
+        cost,
+        left,
+        right,
+        epsilon=0.01,
+        iterations=1,
+        projection_iterations=0,
+        marginal_tolerance=1e-12,
+        round_marginals=False,
+        enforce_marginal_tolerance=False,
+    )
+    plan = batched_sinkhorn_plan(
+        cost,
+        left,
+        right,
+        epsilon=0.01,
+        iterations=1,
+        projection_iterations=0,
+        marginal_tolerance=1e-12,
+    )
+
+    assert float(batched_marginal_residuals(unrounded, left, right).max()) > 1e-12
+    assert float(batched_marginal_residuals(plan, left, right).max()) <= 1e-12
+    assert torch.isfinite(plan).all()
 
 
 def test_precomputed_self_debiasing_broadcasts_query_term() -> None:

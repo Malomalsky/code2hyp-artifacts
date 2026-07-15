@@ -335,6 +335,24 @@ regularized OT objective against POT, scalar/batched equivalence, marginal
 residuals, the standard Poincare near-zero limit, endpoint-reversal
 invariance and an autograd/finite-difference gradient agreement.
 
+Runner v1 stopped before its first validation metric when one self-transport
+batch retained a `1.738e-7` marginal residual against the frozen `1e-7`
+threshold. The incident is preserved in
+`reports/codenet_python800_stage_a_numerical_incident_2026-07-15.json`.
+The frozen numerical addendum introduces one standard nonnegative rank-one
+marginal rounding step without changing the tolerance, model, cells or
+estimand. The exact failed batch is reproduced by:
+
+```bash
+uv run python scripts/reproduce_codenet_stage_a_transport_incident.py \
+  --source-root /absolute/path/to/Project_CodeNet_Python800
+```
+
+On that batch, rounding reduces the maximum residual from `1.738e-7` to
+`6.939e-18`; the relative full-objective shift is between `3.51e-6` and
+`4.83e-6`. Gate 0 v2 additionally checks the rounded batched gradient against
+finite differences.
+
 Run the resumable validation experiment after supplying the local official
 source tree:
 

@@ -19,6 +19,7 @@ from geometry_profile_research.batched_transport import (
     batched_marginal_residuals,
     batched_sinkhorn_plan,
     batched_sinkhorn_transport_objective,
+    round_batched_plan_to_marginals,
 )
 from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256
 from geometry_profile_research.constant_curvature import ProductMeasure, RoleProductGeometry
@@ -30,9 +31,18 @@ from geometry_profile_research.gromov_wasserstein import (
 )
 
 
-def run_gate0(*, protocol_path: Path) -> dict[str, object]:
+def run_gate0(
+    *,
+    protocol_path: Path,
+    rounding_addendum_path: Path = PROJECT_ROOT
+    / "configs/codenet_python800_stage_a_transport_rounding_addendum_v1.json",
+) -> dict[str, object]:
     protocol_bytes = protocol_path.read_bytes()
     protocol = json.loads(protocol_bytes)
+    addendum_bytes = rounding_addendum_path.read_bytes()
+    addendum = json.loads(addendum_bytes)
+    if addendum["inputs"]["model_analysis_protocol"]["sha256"] != stable_sha256(protocol_bytes):
+        raise ValueError("transport rounding addendum refers to another model-analysis protocol")
     tolerance = float(protocol["transport"]["maximum_marginal_residual"])
     epsilon = 0.23
     cost = torch.tensor(
@@ -114,6 +124,32 @@ def run_gate0(*, protocol_path: Path) -> dict[str, object]:
         )
     )
 
+    stress_cost = torch.tensor(
+        [[[0.0, 120.0, 80.0], [90.0, 0.0, 110.0], [70.0, 130.0, 0.0]]],
+        dtype=torch.float64,
+    )
+    stress_left = torch.tensor([[0.2, 0.3, 0.5]], dtype=torch.float64)
+    stress_right = torch.tensor([[0.4, 0.35, 0.25]], dtype=torch.float64)
+    stress_unrounded = batched_sinkhorn_plan(
+        stress_cost,
+        stress_left,
+        stress_right,
+        epsilon=0.01,
+        iterations=1,
+        projection_iterations=0,
+        marginal_tolerance=tolerance,
+        round_marginals=False,
+        enforce_marginal_tolerance=False,
+    )
+    stress_rounded = round_batched_plan_to_marginals(
+        stress_unrounded,
+        stress_left,
+        stress_right,
+    )
+    stress_residual = float(
+        batched_marginal_residuals(stress_rounded, stress_left, stress_right).max()
+    )
+
     generator = torch.Generator().manual_seed(20260715)
     x = torch.randn((16, 4), generator=generator, dtype=torch.float64) * 0.05
     y = torch.randn((16, 4), generator=generator, dtype=torch.float64) * 0.05
@@ -191,6 +227,50 @@ def run_gate0(*, protocol_path: Path) -> dict[str, object]:
             finite_difference[row, column] = (plus_value - minus_value) / (2.0 * step)
     gradient_max_abs_error = float(torch.max(torch.abs(autograd - finite_difference)))
 
+    batched_gradient_base = gradient_cost.detach().clone() + 0.2
+    batched_gradient_cost = batched_gradient_base.unsqueeze(0).requires_grad_(True)
+    batched_gradient_mass = gradient_mass.unsqueeze(0)
+    batched_gradient_value = batched_sinkhorn_transport_objective(
+        batched_gradient_cost,
+        batched_gradient_mass,
+        batched_gradient_mass,
+        epsilon=0.3,
+        iterations=1000,
+        projection_iterations=4096,
+        marginal_tolerance=1e-10,
+    ).sum()
+    batched_gradient_value.backward()
+    batched_autograd = batched_gradient_cost.grad.detach().clone()[0]
+    batched_finite_difference = torch.empty_like(gradient_cost)
+    for row in range(gradient_cost.shape[0]):
+        for column in range(gradient_cost.shape[1]):
+            plus = batched_gradient_base.clone()
+            minus = batched_gradient_base.clone()
+            plus[row, column] += step
+            minus[row, column] -= step
+            plus_value = batched_sinkhorn_transport_objective(
+                plus.unsqueeze(0),
+                batched_gradient_mass,
+                batched_gradient_mass,
+                epsilon=0.3,
+                iterations=1000,
+                projection_iterations=4096,
+                marginal_tolerance=1e-10,
+            )[0]
+            minus_value = batched_sinkhorn_transport_objective(
+                minus.unsqueeze(0),
+                batched_gradient_mass,
+                batched_gradient_mass,
+                epsilon=0.3,
+                iterations=1000,
+                projection_iterations=4096,
+                marginal_tolerance=1e-10,
+            )[0]
+            batched_finite_difference[row, column] = (plus_value - minus_value) / (2.0 * step)
+    batched_gradient_max_abs_error = float(
+        torch.max(torch.abs(batched_autograd - batched_finite_difference))
+    )
+
     identity_cost = torch.tensor([[0.0, 1.0], [1.0, 0.0]], dtype=torch.float64)
     identity_mass = torch.tensor([0.25, 0.75], dtype=torch.float64)
     identity_divergence = float(
@@ -220,6 +300,10 @@ def run_gate0(*, protocol_path: Path) -> dict[str, object]:
             "value": float(batched_marginal_residuals(batch_plan, batch_left, batch_right).max()),
             "threshold": tolerance,
         },
+        "rank_one_rounding_stress_marginal_residual": {
+            "value": stress_residual,
+            "threshold": tolerance,
+        },
         "poincare_near_zero_relative_error": {
             "value": limit_relative_error,
             "threshold": 1e-5,
@@ -232,6 +316,10 @@ def run_gate0(*, protocol_path: Path) -> dict[str, object]:
             "value": gradient_max_abs_error,
             "threshold": 1e-5,
         },
+        "batched_rounded_finite_difference_gradient_max_absolute_error": {
+            "value": batched_gradient_max_abs_error,
+            "threshold": 1e-5,
+        },
         "identity_sinkhorn_divergence_absolute_value": {
             "value": abs(identity_divergence),
             "threshold": 1e-10,
@@ -241,11 +329,15 @@ def run_gate0(*, protocol_path: Path) -> dict[str, object]:
         check["passed"] = bool(check["value"] <= check["threshold"])
     passed = all(bool(check["passed"]) for check in checks.values())
     return {
-        "schema_version": "code2hyp-stage-a-gate0-numerical-v1",
+        "schema_version": "code2hyp-stage-a-gate0-numerical-v2",
         "status": "passed" if passed else "failed",
         "protocol": {
             "path": str(protocol_path.relative_to(PROJECT_ROOT)),
             "sha256": stable_sha256(protocol_bytes),
+        },
+        "transport_rounding_addendum": {
+            "path": str(rounding_addendum_path.relative_to(PROJECT_ROOT)),
+            "sha256": stable_sha256(addendum_bytes),
         },
         "checks": checks,
         "software": {
@@ -269,6 +361,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
     )
     parser.add_argument(
+        "--rounding-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_transport_rounding_addendum_v1.json",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=PROJECT_ROOT / "reports/codenet_python800_stage_a_gate0_numerical_v1.json",
@@ -278,7 +375,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    payload = run_gate0(protocol_path=args.protocol)
+    payload = run_gate0(
+        protocol_path=args.protocol,
+        rounding_addendum_path=args.rounding_addendum,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(canonical_json_bytes(payload))
     print(json.dumps(payload, indent=2, sort_keys=True))

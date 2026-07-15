@@ -121,6 +121,8 @@ def batched_sinkhorn_plan(
     iterations: int = 128,
     projection_iterations: int = 2048,
     marginal_tolerance: float = 1e-7,
+    round_marginals: bool = True,
+    enforce_marginal_tolerance: bool = True,
 ) -> Tensor:
     """Solve independent padded entropic OT problems in one tensor batch."""
 
@@ -177,11 +179,67 @@ def batched_sinkhorn_plan(
         plan = plan * column_scale.unsqueeze(1)
         if bool((batched_marginal_residuals(plan, left, right) <= marginal_tolerance).all()):
             break
+    if round_marginals:
+        plan = round_batched_plan_to_marginals(plan, left, right)
     residuals = batched_marginal_residuals(plan, left, right)
-    if bool((residuals > marginal_tolerance).any()):
+    if enforce_marginal_tolerance and bool((residuals > marginal_tolerance).any()):
         worst = float(residuals.max().detach())
         raise ValueError(f"batched Sinkhorn marginal residual {worst:.3e} exceeds tolerance")
     return plan
+
+
+def round_batched_plan_to_marginals(
+    plan: Tensor,
+    left_mass: Tensor,
+    right_mass: Tensor,
+) -> Tensor:
+    """Round nonnegative approximate couplings to their prescribed marginals.
+
+    The construction first clips row and column rescalings at one, making the
+    remaining marginal errors nonnegative, and then adds their rank-one outer
+    product. Zero-mass padding remains exactly zero.
+    """
+
+    coupling = _floating_tensor(plan)
+    if coupling.ndim != 3:
+        raise ValueError("plan must have shape (batch, n_left, n_right)")
+    left = torch.as_tensor(left_mass, dtype=coupling.dtype, device=coupling.device)
+    right = torch.as_tensor(right_mass, dtype=coupling.dtype, device=coupling.device)
+    if left.shape != coupling.shape[:2] or right.shape != (coupling.shape[0], coupling.shape[2]):
+        raise ValueError("mass tensors must match the plan shape")
+    if not torch.isfinite(coupling).all() or bool((coupling < 0.0).any()):
+        raise ValueError("plan must contain finite non-negative values")
+    _validate_batched_masses(left, name="left_mass")
+    _validate_batched_masses(right, name="right_mass")
+    left = _normalize_batched_mass(left)
+    right = _normalize_batched_mass(right)
+
+    row_sum = coupling.sum(dim=2)
+    row_scale = torch.where(
+        left > 0.0,
+        torch.minimum(left / torch.clamp(row_sum, min=1e-300), torch.ones_like(left)),
+        torch.zeros_like(left),
+    )
+    rounded = coupling * row_scale.unsqueeze(2)
+    column_sum = rounded.sum(dim=1)
+    column_scale = torch.where(
+        right > 0.0,
+        torch.minimum(right / torch.clamp(column_sum, min=1e-300), torch.ones_like(right)),
+        torch.zeros_like(right),
+    )
+    rounded = rounded * column_scale.unsqueeze(1)
+
+    row_error = torch.clamp(left - rounded.sum(dim=2), min=0.0)
+    column_error = torch.clamp(right - rounded.sum(dim=1), min=0.0)
+    column_error_total = column_error.sum(dim=1, keepdim=True)
+    column_distribution = torch.where(
+        column_error_total > 0.0,
+        column_error / torch.clamp(column_error_total, min=1e-300),
+        torch.zeros_like(column_error),
+    )
+    rounded = rounded + row_error.unsqueeze(2) * column_distribution.unsqueeze(1)
+    valid = (left > 0.0).unsqueeze(2) & (right > 0.0).unsqueeze(1)
+    return torch.where(valid, rounded, torch.zeros_like(rounded))
 
 
 def batched_marginal_residuals(plan: Tensor, left_mass: Tensor, right_mass: Tensor) -> Tensor:
