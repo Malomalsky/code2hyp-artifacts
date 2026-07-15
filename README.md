@@ -224,16 +224,21 @@ The registered NIST pulse deterministically assigns 290 clusters to training,
 97 to validation and 386 to the sealed test split. The assignment SHA-256 is
 `5d8456569a11673ab2705b3606de358a26249b9fb1fc447f7c07cdce1b7b8f58`.
 
-This release contains cluster assignments only. Program-level sampling has
-not yet been generated, test relevance labels remain unopened and no CodeNet
-retrieval metric has been computed.
+The cluster release contains assignments only. The subsequent frozen sampling
+rule has now materialized 18,560 training programs and a validation set of 776
+queries plus 776 gallery programs. Test program identifiers and relevance
+labels remain unopened, and no CodeNet retrieval metric has been computed.
 
 The registered design fixes user-distinct sample sizes but does not specify
 how to order multiple programs submitted by the same user. Before sampling or
 computing validation metrics, that execution detail was frozen in
 `configs/codenet_python800_stage_a_sampling_protocol_v1.json`. It uses
 domain-separated HMAC-SHA256 ordering and explicitly forbids materializing
-test program identifiers before the single test unseal.
+test program identifiers before the single test unseal. The selected
+train/validation samples contain 944 overlapping users across different
+problem clusters. This is reported as an authorship-confounding diagnostic;
+the registered primary estimand does not remove users globally because that
+operation would eliminate most eligible training data.
 
 Run the released data tests:
 
@@ -267,9 +272,20 @@ uv run python scripts/build_codenet_python800_split.py
 uv run python scripts/check_codenet_stage_a_split.py
 ```
 
+After reconstructing the ignored D5 metadata index from the official CodeNet
+metadata, materialize and audit train/validation program sampling:
+
+```bash
+uv run python scripts/build_codenet_python800_program_sampling.py
+uv run python scripts/check_codenet_stage_a_program_sampling.py
+```
+
 The split manifest is in
 `data/codenet_python800_stage_a_split/split_manifest.json`; the independent
 audit result is in `reports/codenet_stage_a_split_audit.json`.
+The program sample manifest is in
+`data/codenet_python800_stage_a_program_sampling/program_sampling_manifest.json`;
+its audit is in `reports/codenet_stage_a_program_sampling_audit.json`.
 
 ## Claim Boundary
 
