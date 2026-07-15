@@ -17,6 +17,7 @@ from geometry_profile_research.codenet_split import (
     hmac_cluster_digest,
     validate_registration,
 )
+from scripts.check_codenet_stage_a_split import audit_split
 
 
 def _design(cluster_count: int = 8) -> dict[str, object]:
@@ -214,3 +215,53 @@ def test_build_split_refuses_to_overwrite_different_artifact(tmp_path: Path) -> 
             statement_d4_manifest_path=d4_manifest_path,
             output_dir=output_dir,
         )
+
+
+def test_read_only_audit_rederives_split_and_detects_tampering(tmp_path: Path) -> None:
+    design_path = tmp_path / "design.json"
+    design_bytes = canonical_json_bytes(_design())
+    design_path.write_bytes(design_bytes)
+    registration_path = tmp_path / "registration.json"
+    registration_path.write_bytes(canonical_json_bytes(_registration(design_bytes)))
+    clusters_path = tmp_path / "clusters.jsonl"
+    clusters_path.write_text(
+        "".join(
+            json.dumps({"cluster_id": f"problem-{index:03d}", "eligible_minimum_64": True}) + "\n"
+            for index in range(8)
+        ),
+        encoding="utf-8",
+    )
+    d4_manifest_path = tmp_path / "d4.json"
+    d4_manifest_path.write_bytes(
+        canonical_json_bytes(
+            {"protocol": {"retrieval_metrics_opened": False, "split_status": "not_generated"}}
+        )
+    )
+    split_dir = tmp_path / "split"
+    build_split_artifacts(
+        project_root=tmp_path,
+        design_path=design_path,
+        registration_path=registration_path,
+        clusters_path=clusters_path,
+        statement_d4_manifest_path=d4_manifest_path,
+        output_dir=split_dir,
+    )
+    kwargs = {
+        "design_path": design_path,
+        "registration_path": registration_path,
+        "clusters_path": clusters_path,
+        "statement_d4_manifest_path": d4_manifest_path,
+        "split_dir": split_dir,
+    }
+    valid = audit_split(**kwargs)
+    assert valid["valid_for_program_sampling"] is True
+    assert valid["blocking_failures"] == []
+
+    assignments = (split_dir / "cluster_assignments.jsonl").read_text(encoding="utf-8")
+    (split_dir / "cluster_assignments.jsonl").write_text(
+        assignments.replace('"split":"train"', '"split":"test"', 1),
+        encoding="utf-8",
+    )
+    tampered = audit_split(**kwargs)
+    assert tampered["valid_for_program_sampling"] is False
+    assert "assignment_rederived" in tampered["blocking_failures"]

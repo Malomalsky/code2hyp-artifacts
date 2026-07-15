@@ -197,16 +197,19 @@ Task-level paired contrasts:
   --json-output outputs/code2hyp_hybrid_task_level_contrasts_lca_kernel_nested_tokenast_margin001_reproduced.json
 ```
 
-## CodeNet Python800 Pre-Split Audit
+## CodeNet Python800 Registered Evaluation
 
-The repository now includes the fail-closed data pipeline prepared for a
-future preregistered evaluation on Project CodeNet Python800:
+The repository includes the fail-closed data pipeline for the registered
+evaluation on Project CodeNet Python800:
 
 - global D0-D2 source/token/alpha-AST duplicate components;
 - D3 MinHash/LSH candidate generation with exact token-5-gram Jaccard checks;
 - statement-based and official-map D4 problem checks;
 - privacy-preserving author metadata and D5 attrition diagnostics;
-- a machine-readable Stage A design draft and readiness checker.
+- a machine-readable Stage A design, readiness checker and immutable
+  registration record;
+- a deterministic HMAC-SHA256 cluster split derived from the first NIST
+  Randomness Beacon pulse after registration.
 
 The official Python800 object was verified by byte count, MD5/ETag and
 SHA-256. The complete 8.34 GB Project CodeNet archive was independently
@@ -215,8 +218,15 @@ The map contains 153 clusters; 89 intersect Python800, each through exactly
 one problem, so it introduces no additional within-benchmark edge. The final
 audit covers 240,000 accepted Python programs and retains 213,550 programs in
 773 duplicate-closed problem clusters. The preregistered power threshold is
-764 clusters. No CodeNet split has been generated and no CodeNet retrieval
-metric has been computed.
+764 clusters. The design was archived before randomization at
+[Zenodo, DOI 10.5281/zenodo.21371188](https://doi.org/10.5281/zenodo.21371188).
+The registered NIST pulse deterministically assigns 290 clusters to training,
+97 to validation and 386 to the sealed test split. The assignment SHA-256 is
+`5d8456569a11673ab2705b3606de358a26249b9fb1fc447f7c07cdce1b7b8f58`.
+
+This release contains cluster assignments only. Program-level sampling has
+not yet been generated, test relevance labels remain unopened and no CodeNet
+retrieval metric has been computed.
 
 Run the released data tests:
 
@@ -228,7 +238,8 @@ uv run pytest -q \
   tests/test_codenet_statement_d4.py \
   tests/test_codenet_d5_metadata.py \
   tests/test_codenet_d5_attrition.py \
-  tests/test_codenet_stage_a_readiness.py
+  tests/test_codenet_stage_a_readiness.py \
+  tests/test_codenet_split.py
 ```
 
 The official-map and power gates now pass. The readiness command still fails
@@ -241,6 +252,17 @@ uv run python scripts/check_codenet_stage_a_readiness.py
 
 The complete audit narrative is in
 `reports/codenet_python800_pre_split_eligibility_2026-07-11.md`.
+
+Re-derive and audit the registered cluster split:
+
+```bash
+uv run python scripts/build_codenet_python800_split.py
+uv run python scripts/check_codenet_stage_a_split.py
+```
+
+The split manifest is in
+`data/codenet_python800_stage_a_split/split_manifest.json`; the independent
+audit result is in `reports/codenet_stage_a_split_audit.json`.
 
 ## Claim Boundary
 
