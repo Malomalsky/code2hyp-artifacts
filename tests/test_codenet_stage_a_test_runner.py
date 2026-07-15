@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,11 @@ from geometry_profile_research.codenet_stage_a_test_runner import (
     run_stage_a_test_seed,
 )
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
+from scripts.seal_codenet_stage_a_test_seed import (
+    TEST_RUNNER_COMMIT,
+    TEST_RUNNER_TAG,
+    seal_test_seed_result,
+)
 
 
 def _program(item_id: str, problem_id: str, split: str, role: str, source: str) -> StageAProgram:
@@ -129,10 +135,13 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
     )
     test_implementation = {
         "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
-        "commit": "test-commit",
-        "tag": "codenet-stage-a-test-runner-v1",
+        "commit": TEST_RUNNER_COMMIT,
+        "tag": TEST_RUNNER_TAG,
         "tracked_worktree_clean": True,
     }
+    test_protocol_path = tmp_path / "test_execution_protocol.json"
+    test_protocol_path.write_text("test execution protocol", encoding="utf-8")
+    test_protocol_sha = stable_sha256(test_protocol_path.read_bytes())
     materialization_path = tmp_path / "test_materialization_manifest.json"
     materialization_path.write_bytes(
         canonical_json_bytes(
@@ -154,7 +163,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         validation_seed_seal_path=seed_seal_path,
         test_materialization_manifest_path=materialization_path,
         output_dir=tmp_path / "test",
-        test_execution_protocol_sha256="test-protocol",
+        test_execution_protocol_sha256=test_protocol_sha,
         implementation=test_implementation,
     )
     resumed = run_stage_a_test_seed(
@@ -165,7 +174,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         validation_seed_seal_path=seed_seal_path,
         test_materialization_manifest_path=materialization_path,
         output_dir=tmp_path / "test",
-        test_execution_protocol_sha256="test-protocol",
+        test_execution_protocol_sha256=test_protocol_sha,
         implementation=test_implementation,
     )
 
@@ -174,6 +183,53 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
     assert set(result["cells"]) == set(validation["cells"])
     assert all(cell["metrics"]["problem_count"] == 2 for cell in result["cells"].values())
     assert all(cell["distance_matrix"]["shape"] == [2, 16] for cell in result["cells"].values())
+
+    selection_seal_path = tmp_path / "validation_selection_seal.json"
+    selection_seal_path.write_bytes(
+        canonical_json_bytes(
+            {
+                "schema_version": "code2hyp-stage-a-validation-selection-seal-v1",
+                "inputs": {
+                    "seeds": [
+                        {
+                            "seed": 20260711,
+                            "result_sha256": validation_sha,
+                            "seal_sha256": stable_sha256(seed_seal_path.read_bytes()),
+                        }
+                    ]
+                },
+            }
+        )
+    )
+    test_programs_path = tmp_path / "test" / "test_programs.jsonl"
+    test_rows = [
+        {
+            "source_relpath": program.item_id,
+            "cluster_id": program.cluster_id,
+            "problem_id": program.problem_id,
+            "split": "test",
+            "role": program.role,
+        }
+        for program in (*_test_split().query, *_test_split().gallery)
+    ]
+    test_programs_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in test_rows),
+        encoding="utf-8",
+    )
+    test_result_path = tmp_path / "test" / "seed_20260711_test.json"
+    seal = seal_test_seed_result(
+        result_path=test_result_path,
+        test_execution_protocol_path=test_protocol_path,
+        test_materialization_manifest_path=materialization_path,
+        test_programs_path=test_programs_path,
+        validation_selection_seal_path=selection_seal_path,
+        output_path=tmp_path / "test" / "seed_20260711_test_seal.json",
+        expected_query_count=2,
+        expected_gallery_count=16,
+        expected_problem_count=2,
+        relevant_count=8,
+    )
+    assert seal["checks"]["all_metrics_recomputed_from_distances"] is True
 
 
 def test_all_cell_aggregation_averages_seeds_within_problem_first() -> None:

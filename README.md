@@ -415,6 +415,28 @@ sign, after which the frozen 20,000-resample problem-cluster bootstrap reports
 H1 and the two-component H3 intersection-union decision. Test outputs remain
 untracked because they contain the once-opened program identifiers.
 
+Independently recompute and seal each completed test seed from its stored
+distance matrices:
+
+```bash
+uv run python scripts/seal_codenet_stage_a_test_seed.py \
+  outputs/codenet_python800_stage_a_test_v1/seed_20260711_test.json \
+  --validation-selection-seal \
+  outputs/codenet_python800_stage_a_validation_v1/validation_selection_record_seal.json
+```
+
+After all ten test-seed seals exist, recompute the complete seed-to-problem
+aggregation and cluster bootstrap and seal the final report:
+
+```bash
+uv run python scripts/seal_codenet_stage_a_confirmatory_report.py \
+  outputs/codenet_python800_stage_a_test_v1/confirmatory_test_report.json \
+  --validation-selection \
+  outputs/codenet_python800_stage_a_validation_v1/validation_selection_record.json \
+  --validation-selection-seal \
+  outputs/codenet_python800_stage_a_validation_v1/validation_selection_record_seal.json
+```
+
 The separately frozen train-only scope audit quantifies how often the
 `label_only` encoder input identifies distinct AST nodes, true-LCA anchors and
 complete unoriented path objects with the same signature:
