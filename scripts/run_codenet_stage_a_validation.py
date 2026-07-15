@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+RUNNER_TAG = "codenet-stage-a-validation-runner-v3"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -75,8 +77,36 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _verified_implementation_state(project_root: Path) -> dict[str, Any]:
+    """Require an immutable tagged worktree for an official validation run."""
+
+    def git(*arguments: str) -> str:
+        completed = subprocess.run(
+            ("git", "-C", str(project_root), *arguments),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return completed.stdout.strip()
+
+    commit = git("rev-parse", "HEAD")
+    tracked_status = git("status", "--porcelain", "--untracked-files=no")
+    if tracked_status:
+        raise ValueError("official Stage A validation requires a clean tracked worktree")
+    tags = tuple(sorted(line for line in git("tag", "--points-at", "HEAD").splitlines() if line))
+    if RUNNER_TAG not in tags:
+        raise ValueError(f"official Stage A validation requires runner tag {RUNNER_TAG!r}")
+    return {
+        "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
+        "commit": commit,
+        "tag": RUNNER_TAG,
+        "tracked_worktree_clean": True,
+    }
+
+
 def main() -> None:
     args = build_parser().parse_args()
+    implementation = _verified_implementation_state(PROJECT_ROOT)
     protocol_bytes = args.protocol.read_bytes()
     protocol = json.loads(protocol_bytes)
     if protocol.get("schema_version") != "code2hyp-stage-a-model-analysis-protocol-v1":
@@ -150,6 +180,7 @@ def main() -> None:
             query_batch_size=int(protocol["transport"]["query_batch_size"]),
             gallery_batch_size=int(protocol["transport"]["gallery_batch_size"]),
             torch_num_threads=1,
+            implementation=implementation,
             progress_callback=progress,
         )
         progress(

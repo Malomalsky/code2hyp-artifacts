@@ -235,6 +235,7 @@ def run_stage_a_validation_seed(
     query_batch_size: int = 4,
     gallery_batch_size: int = 32,
     torch_num_threads: int = 1,
+    implementation: Mapping[str, Any] | None = None,
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
     """Train one seed and evaluate every frozen Stage A validation cell."""
@@ -263,6 +264,7 @@ def run_stage_a_validation_seed(
         "gallery_batch_size": gallery_batch_size,
         "torch_num_threads": torch_num_threads,
     }
+    implementation_record = dict(implementation or {"mode": "library_call_without_repository_provenance"})
     if result_path.exists():
         payload = json.loads(result_path.read_text(encoding="utf-8"))
         if (
@@ -271,6 +273,7 @@ def run_stage_a_validation_seed(
             and payload.get("protocol_sha256") == protocol_sha256
             and payload.get("calibration_manifest_sha256") == calibration_manifest_sha256
             and payload.get("execution_config") == execution_config
+            and payload.get("implementation") == implementation_record
         ):
             return payload
         raise ValueError(f"refusing to overwrite incompatible seed result: {result_path}")
@@ -283,6 +286,7 @@ def run_stage_a_validation_seed(
             or checkpoint.get("protocol_sha256") != protocol_sha256
             or checkpoint.get("calibration_manifest_sha256") != calibration_manifest_sha256
             or checkpoint.get("execution_config") != execution_config
+            or checkpoint.get("implementation") != implementation_record
         ):
             raise ValueError(f"refusing to reuse incompatible checkpoint: {checkpoint_path}")
         model = _model_from_checkpoint(checkpoint)
@@ -309,6 +313,7 @@ def run_stage_a_validation_seed(
             "protocol_sha256": protocol_sha256,
             "calibration_manifest_sha256": calibration_manifest_sha256,
             "execution_config": execution_config,
+            "implementation": implementation_record,
             "model_config": _model_config(model),
             "model_state_dict": model.state_dict(),
             "token_to_id": model.token_to_id,
@@ -326,6 +331,7 @@ def run_stage_a_validation_seed(
             or partial.get("protocol_sha256") != protocol_sha256
             or partial.get("calibration_manifest_sha256") != calibration_manifest_sha256
             or partial.get("execution_config") != execution_config
+            or partial.get("implementation") != implementation_record
             or partial.get("checkpoint", {}).get("sha256") != checkpoint_sha256
         ):
             raise ValueError(f"refusing to reuse incompatible partial result: {partial_path}")
@@ -483,6 +489,7 @@ def run_stage_a_validation_seed(
             protocol_sha256=protocol_sha256,
             calibration_manifest_sha256=calibration_manifest_sha256,
             execution_config=execution_config,
+            implementation=implementation_record,
             checkpoint_path=checkpoint_path,
             checkpoint_sha256=checkpoint_sha256,
             training_history=training_history,
@@ -502,6 +509,7 @@ def run_stage_a_validation_seed(
         protocol_sha256=protocol_sha256,
         calibration_manifest_sha256=calibration_manifest_sha256,
         execution_config=execution_config,
+        implementation=implementation_record,
         checkpoint_path=checkpoint_path,
         checkpoint_sha256=checkpoint_sha256,
         training_history=training_history,
@@ -713,6 +721,7 @@ def _seed_payload(
     protocol_sha256: str,
     calibration_manifest_sha256: str,
     execution_config: Mapping[str, Any],
+    implementation: Mapping[str, Any],
     checkpoint_path: Path,
     checkpoint_sha256: str,
     training_history: Sequence[Mapping[str, float]],
@@ -732,6 +741,7 @@ def _seed_payload(
         "protocol_sha256": protocol_sha256,
         "calibration_manifest_sha256": calibration_manifest_sha256,
         "execution_config": dict(execution_config),
+        "implementation": dict(implementation),
         "checkpoint": {
             "path": checkpoint_path.name,
             "sha256": checkpoint_sha256,

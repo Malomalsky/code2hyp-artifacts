@@ -119,6 +119,7 @@ def test_stage_a_seed_runner_writes_complete_resumable_result(tmp_path: Path) ->
 
     assert result == resumed
     assert result["status"] == "complete"
+    assert result["implementation"] == {"mode": "library_call_without_repository_provenance"}
     assert set(result["cells"]) == {
         "EEE_true_LCA",
         "EEE_zero_anchor",
