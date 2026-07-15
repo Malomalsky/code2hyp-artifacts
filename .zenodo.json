@@ -1,0 +1,29 @@
+{
+  "title": "Code2Hyp: Project CodeNet Python800 Stage A evaluation design",
+  "description": "Immutable Stage A design for a preregistered evaluation of Code2Hyp on Project CodeNet Python800. The artifact fixes the duplicate-control pipeline, eligibility rules, split-generation procedure, sampling design, primary estimand, uncertainty analysis, sequential decision rule, and single-unseal test policy. At this stage no CodeNet split has been generated, no test labels have been opened, and no CodeNet retrieval metric has been computed. The scientific design was frozen at Git commit ce9cb8746c331d5d6685337b5b0789f46f37f0d2 and annotated tag codenet-stage-a-design-v1.",
+  "creators": [
+    {
+      "name": "Kosyanenko, Ivan A.",
+      "affiliation": "MIREA - Russian Technological University",
+      "orcid": "0009-0009-1804-9412"
+    }
+  ],
+  "upload_type": "software",
+  "publication_date": "2026-07-15",
+  "version": "codenet-stage-a-registration-v1",
+  "keywords": [
+    "source-code representation learning",
+    "abstract syntax tree",
+    "hyperbolic geometry",
+    "code retrieval",
+    "Project CodeNet",
+    "preregistration",
+    "reproducibility"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/Malomalsky/code2hyp-artifacts/tree/codenet-stage-a-design-v1",
+      "relation": "isDerivedFrom"
+    }
+  ]
+}
