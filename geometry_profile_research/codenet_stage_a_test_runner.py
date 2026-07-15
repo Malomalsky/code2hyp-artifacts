@@ -26,8 +26,8 @@ from geometry_profile_research.raw_ast_code2hyp import RawASTCode2Hyp
 
 
 TEST_SEED_SCHEMA = "code2hyp-stage-a-test-seed-v1"
-VALIDATION_RUNNER_COMMIT = "469cbabc6692d1bc6cfde8cbb33c7ad79f8c9093"
-VALIDATION_RUNNER_TAG = "codenet-stage-a-validation-runner-v3"
+VALIDATION_RUNNER_COMMIT = "cca28ffaccc1ea33256bfa8824fc6589716e3356"
+VALIDATION_RUNNER_TAG = "codenet-stage-a-validation-runner-v4"
 
 
 def run_stage_a_test_seed(
@@ -42,6 +42,7 @@ def run_stage_a_test_seed(
     test_execution_protocol_sha256: str,
     test_runtime_addendum_sha256: str,
     test_resumability_addendum_sha256: str,
+    relevance_identity_addendum_sha256: str,
     implementation: Mapping[str, Any],
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
@@ -110,6 +111,9 @@ def run_stage_a_test_seed(
     result_identity["test_runtime_addendum_sha256"] = str(test_runtime_addendum_sha256)
     result_identity["test_resumability_addendum_sha256"] = str(
         test_resumability_addendum_sha256
+    )
+    result_identity["relevance_identity_addendum_sha256"] = str(
+        relevance_identity_addendum_sha256
     )
     result_identity["test_runtime"] = test_runtime
     if result_path.exists():

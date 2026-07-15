@@ -56,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
         / "configs/codenet_python800_stage_a_test_resumability_addendum_v1.json",
     )
     parser.add_argument(
+        "--relevance-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json",
+    )
+    parser.add_argument(
         "--model-protocol",
         type=Path,
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_model_analysis_protocol_v1.json",
@@ -127,6 +132,12 @@ def main() -> None:
         "frozen_during_validation_before_validation_selection_or_test_unseal"
     ):
         raise ValueError("Stage A test-resumability addendum was not frozen before unseal")
+    relevance_addendum_bytes = args.relevance_addendum.read_bytes()
+    relevance_addendum = json.loads(relevance_addendum_bytes)
+    if relevance_addendum.get("schema_version") != "code2hyp-stage-a-relevance-identity-addendum-v1":
+        raise ValueError("unexpected Stage A relevance-identity addendum")
+    if relevance_addendum.get("correction", {}).get("relevance_key_after") != "cluster_id":
+        raise ValueError("Stage A relevance must use duplicate-closed cluster IDs")
     selection_path = args.validation_output_dir / "validation_selection_record.json"
     selection_seal_path = args.validation_output_dir / "validation_selection_record_seal.json"
     seal_validation_selection(
@@ -189,6 +200,7 @@ def main() -> None:
             test_execution_protocol_sha256=stable_sha256(execution_protocol_bytes),
             test_runtime_addendum_sha256=stable_sha256(runtime_addendum_bytes),
             test_resumability_addendum_sha256=stable_sha256(resumability_addendum_bytes),
+            relevance_identity_addendum_sha256=stable_sha256(relevance_addendum_bytes),
             implementation=implementation,
             progress_callback=progress,
         )
@@ -240,6 +252,7 @@ def main() -> None:
             "test_execution_protocol_sha256": stable_sha256(execution_protocol_bytes),
             "model_analysis_protocol_sha256": stable_sha256(model_protocol_bytes),
             "test_inference_protocol_sha256": stable_sha256(inference_protocol_bytes),
+            "relevance_identity_addendum_sha256": stable_sha256(relevance_addendum_bytes),
             "registration_sha256": stable_sha256(registration_bytes),
             "validation_selection_sha256": stable_sha256(selection_path.read_bytes()),
             "validation_selection_seal_sha256": stable_sha256(selection_seal_path.read_bytes()),

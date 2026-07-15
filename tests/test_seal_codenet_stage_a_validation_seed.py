@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 import torch
 
 from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256
+from geometry_profile_research.codenet_stage_a_evaluation import summarize_problem_macro_retrieval
 from geometry_profile_research.codenet_stage_a_runner import curvature_cell_id
 from scripts.seal_codenet_stage_a_validation_seed import (
     PROJECT_ROOT,
@@ -26,6 +28,12 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
     rounding_addendum_path = (
         PROJECT_ROOT / "configs/codenet_python800_stage_a_transport_rounding_addendum_v1.json"
     )
+    relevance_addendum_path = (
+        PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json"
+    )
+    validation_programs_path = (
+        PROJECT_ROOT / "data/codenet_python800_stage_a_program_sampling/validation_programs.jsonl"
+    )
     protocol_bytes = protocol_path.read_bytes()
     calibration_bytes = calibration_path.read_bytes()
     protocol = json.loads(protocol_bytes)
@@ -39,19 +47,24 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
             for cell in protocol["geometry_cells"]["gate_C_active_candidates"]
         ),
     }
-    metrics = {
-        "problem_macro_map_at_r": 0.0,
-        "query_macro_map_at_r": 0.0,
-        "mrr": 0.0,
-        "recall_at_1": 0.0,
-        "recall_at_5": 0.0,
-        "recall_at_10": 0.0,
-        "mean_first_relevant_rank": 1.0,
-        "query_count": 776,
-        "problem_count": 97,
-        "query_scores": {f"q{index}": 0.0 for index in range(776)},
-        "task_scores": {f"p{index}": 0.0 for index in range(97)},
-    }
+    validation_rows = [
+        json.loads(line)
+        for line in validation_programs_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    query_rows = [row for row in validation_rows if row["role"] == "query"]
+    gallery_rows = [row for row in validation_rows if row["role"] == "gallery"]
+    zero_distances = torch.zeros((776, 776), dtype=torch.float64)
+    metrics = asdict(
+        summarize_problem_macro_retrieval(
+            zero_distances,
+            query_ids=tuple(row["source_relpath"] for row in query_rows),
+            query_cluster_ids=tuple(row["cluster_id"] for row in query_rows),
+            gallery_ids=tuple(row["source_relpath"] for row in gallery_rows),
+            gallery_cluster_ids=tuple(row["cluster_id"] for row in gallery_rows),
+            r=8,
+        )
+    )
     cell_curvatures = {
         "EEE_true_LCA": [0.0, 0.0, 0.0],
         "EEE_zero_anchor": [0.0, 0.0, 0.0],
@@ -65,7 +78,7 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
     distance_paths = []
     for cell_id in cell_ids:
         distance_path = tmp_path / f"seed_20260711_{cell_id}_distances.pt"
-        torch.save(torch.zeros((776, 776), dtype=torch.float64), distance_path)
+        torch.save(zero_distances, distance_path)
         distance_paths.append(distance_path)
         cells[cell_id] = {
             "factor_curvatures": cell_curvatures[cell_id],
@@ -160,6 +173,8 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
         calibration_manifest_path=calibration_path,
         gate0_path=gate0_path,
         rounding_addendum_path=rounding_addendum_path,
+        relevance_addendum_path=relevance_addendum_path,
+        validation_programs_path=validation_programs_path,
         output_path=output_path,
     )
 
@@ -177,6 +192,8 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
             calibration_manifest_path=calibration_path,
             gate0_path=gate0_path,
             rounding_addendum_path=rounding_addendum_path,
+            relevance_addendum_path=relevance_addendum_path,
+            validation_programs_path=validation_programs_path,
             output_path=tmp_path / "tampered-seal.json",
         )
 
@@ -190,5 +207,7 @@ def test_seed_seal_verifies_hashes_cardinalities_and_test_boundary(tmp_path: Pat
             calibration_manifest_path=calibration_path,
             gate0_path=gate0_path,
             rounding_addendum_path=rounding_addendum_path,
+            relevance_addendum_path=relevance_addendum_path,
+            validation_programs_path=validation_programs_path,
             output_path=tmp_path / "forbidden-test-seal.json",
         )

@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -14,12 +15,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256
-from geometry_profile_research.codenet_stage_a_runner import curvature_cell_id
+from geometry_profile_research.codenet_eligibility import canonical_json_bytes, stable_sha256  # noqa: E402
+from geometry_profile_research.codenet_stage_a_evaluation import (  # noqa: E402
+    summarize_problem_macro_retrieval,
+)
+from geometry_profile_research.codenet_stage_a_runner import curvature_cell_id  # noqa: E402
 
 
-RUNNER_COMMIT = "469cbabc6692d1bc6cfde8cbb33c7ad79f8c9093"
-RUNNER_TAG = "codenet-stage-a-validation-runner-v3"
+RUNNER_COMMIT = "cca28ffaccc1ea33256bfa8824fc6589716e3356"
+RUNNER_TAG = "codenet-stage-a-validation-runner-v4"
 
 
 def seal_seed_result(
@@ -29,6 +33,8 @@ def seal_seed_result(
     calibration_manifest_path: Path,
     gate0_path: Path,
     rounding_addendum_path: Path,
+    relevance_addendum_path: Path,
+    validation_programs_path: Path,
     output_path: Path,
 ) -> dict[str, Any]:
     """Verify and seal one complete validation seed without reading source data."""
@@ -38,11 +44,13 @@ def seal_seed_result(
     calibration_bytes = calibration_manifest_path.read_bytes()
     gate0_bytes = gate0_path.read_bytes()
     rounding_addendum_bytes = rounding_addendum_path.read_bytes()
+    relevance_addendum_bytes = relevance_addendum_path.read_bytes()
+    validation_programs_bytes = validation_programs_path.read_bytes()
     result = json.loads(result_bytes)
     protocol = json.loads(protocol_bytes)
-    calibration = json.loads(calibration_bytes)
     gate0 = json.loads(gate0_bytes)
     rounding_addendum = json.loads(rounding_addendum_bytes)
+    relevance_addendum = json.loads(relevance_addendum_bytes)
     if result.get("status") != "complete":
         raise ValueError("validation seed result is not complete")
     if result.get("protocol_sha256") != stable_sha256(protocol_bytes):
@@ -60,6 +68,10 @@ def seal_seed_result(
         raise ValueError("numerical Gate 0 used a different transport rounding addendum")
     if rounding_addendum.get("inputs", {}).get("model_analysis_protocol", {}).get("sha256") != stable_sha256(protocol_bytes):
         raise ValueError("transport rounding addendum used a different protocol")
+    _verify_relevance_addendum(relevance_addendum, relevance_addendum_path=relevance_addendum_path)
+    query_ids, query_cluster_ids, gallery_ids, gallery_cluster_ids = _validation_metadata(
+        validation_programs_bytes
+    )
     expected_implementation = {
         "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
         "commit": RUNNER_COMMIT,
@@ -121,7 +133,17 @@ def seal_seed_result(
         distance_sha = stable_sha256(distance_path.read_bytes())
         if distance_sha != str(distance["sha256"]):
             raise ValueError(f"cell {cell_id!r} distance matrix hash mismatch")
-        _verify_distance_tensor(distance_path, metadata=distance, cell_id=cell_id)
+        distance_values = _verify_distance_tensor(distance_path, metadata=distance, cell_id=cell_id)
+        recomputed = summarize_problem_macro_retrieval(
+            distance_values,
+            query_ids=query_ids,
+            query_cluster_ids=query_cluster_ids,
+            gallery_ids=gallery_ids,
+            gallery_cluster_ids=gallery_cluster_ids,
+            r=8,
+        )
+        if canonical_json_bytes(asdict(recomputed)) != canonical_json_bytes(metrics):
+            raise ValueError(f"cell {cell_id!r} retrieval metrics do not match stored distances and cluster IDs")
         artifact_rows.append(
             {
                 "role": f"distance_matrix:{cell_id}",
@@ -168,6 +190,14 @@ def seal_seed_result(
                 "path": str(rounding_addendum_path.relative_to(PROJECT_ROOT)),
                 "sha256": rounding_sha256,
             },
+            "relevance_identity_addendum": {
+                "path": str(relevance_addendum_path.relative_to(PROJECT_ROOT)),
+                "sha256": stable_sha256(relevance_addendum_bytes),
+            },
+            "validation_programs": {
+                "path": str(validation_programs_path.relative_to(PROJECT_ROOT)),
+                "sha256": stable_sha256(validation_programs_bytes),
+            },
         },
         "artifacts": artifact_rows,
         "checks": {
@@ -183,7 +213,7 @@ def seal_seed_result(
             "all_hashes_match": True,
             "checkpoint_content_validated": True,
             "distance_tensor_content_validated": True,
-            "MAP_at_8_aggregates_recomputed": True,
+            "MAP_at_8_recomputed_from_distance_matrices_and_cluster_IDs": True,
             "validation_only": True,
         },
         "test_program_ids_materialized": False,
@@ -242,6 +272,54 @@ def _verify_checkpoint(
         raise ValueError("encoder checkpoint model state contains an invalid tensor")
 
 
+def _verify_relevance_addendum(
+    addendum: Mapping[str, Any],
+    *,
+    relevance_addendum_path: Path,
+) -> None:
+    if addendum.get("schema_version") != "code2hyp-stage-a-relevance-identity-addendum-v1":
+        raise ValueError("unexpected relevance-identity addendum schema")
+    if addendum.get("correction", {}).get("relevance_key_after") != "cluster_id":
+        raise ValueError("relevance-identity addendum does not freeze cluster-level relevance")
+    if addendum.get("correction", {}).get("problem_macro_aggregation_key_after") != "cluster_id":
+        raise ValueError("relevance-identity addendum does not freeze cluster-level macro aggregation")
+    incident = addendum.get("incident", {})
+    incident_path = PROJECT_ROOT / str(incident.get("path", ""))
+    if not incident_path.is_file():
+        raise ValueError("relevance-identity incident report is missing")
+    if stable_sha256(incident_path.read_bytes()) != str(incident.get("sha256")):
+        raise ValueError("relevance-identity incident report hash mismatch")
+    if relevance_addendum_path.resolve() != (
+        PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json"
+    ).resolve():
+        raise ValueError("unexpected relevance-identity addendum path")
+
+
+def _validation_metadata(
+    validation_programs_bytes: bytes,
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    rows = [json.loads(line) for line in validation_programs_bytes.decode("utf-8").splitlines() if line]
+    if len(rows) != 1_552 or any(str(row.get("split")) != "validation" for row in rows):
+        raise ValueError("validation program artifact differs from the registered 97-cluster design")
+    query_rows = [row for row in rows if str(row.get("role")) == "query"]
+    gallery_rows = [row for row in rows if str(row.get("role")) == "gallery"]
+    if len(query_rows) != 776 or len(gallery_rows) != 776:
+        raise ValueError("validation program artifact does not contain 776 queries and 776 gallery items")
+    cluster_roles: dict[str, dict[str, int]] = {}
+    for row in rows:
+        cluster_id = str(row["cluster_id"])
+        role = str(row["role"])
+        cluster_roles.setdefault(cluster_id, {"query": 0, "gallery": 0})[role] += 1
+    if len(cluster_roles) != 97 or any(counts != {"query": 8, "gallery": 8} for counts in cluster_roles.values()):
+        raise ValueError("validation clusters do not satisfy the frozen 8+8 role contract")
+    return (
+        tuple(str(row["source_relpath"]) for row in query_rows),
+        tuple(str(row["cluster_id"]) for row in query_rows),
+        tuple(str(row["source_relpath"]) for row in gallery_rows),
+        tuple(str(row["cluster_id"]) for row in gallery_rows),
+    )
+
+
 def _verify_metrics(metrics: Mapping[str, Any], *, cell_id: str) -> None:
     if int(metrics["query_count"]) != 776 or int(metrics["problem_count"]) != 97:
         raise ValueError(f"cell {cell_id!r} has unexpected validation cardinalities")
@@ -297,7 +375,7 @@ def _verify_distance_tensor(
     *,
     metadata: Mapping[str, Any],
     cell_id: str,
-) -> None:
+) -> torch.Tensor:
     values = torch.load(distance_path, map_location="cpu", weights_only=True)
     if not isinstance(values, torch.Tensor):
         raise ValueError(f"cell {cell_id!r} distance artifact is not a tensor")
@@ -311,6 +389,7 @@ def _verify_distance_tensor(
         raise ValueError(f"cell {cell_id!r} distance maximum metadata mismatch")
     if int((values < 0.0).sum()) != int(metadata["negative_count"]):
         raise ValueError(f"cell {cell_id!r} negative distance count metadata mismatch")
+    return values
 
 
 def _verify_execution_config(actual: Mapping[str, Any], protocol: Mapping[str, Any]) -> None:
@@ -369,6 +448,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=PROJECT_ROOT / "configs/codenet_python800_stage_a_transport_rounding_addendum_v1.json",
     )
+    parser.add_argument(
+        "--relevance-addendum",
+        type=Path,
+        default=PROJECT_ROOT / "configs/codenet_python800_stage_a_relevance_identity_addendum_v1.json",
+    )
+    parser.add_argument(
+        "--validation-programs",
+        type=Path,
+        default=PROJECT_ROOT / "data/codenet_python800_stage_a_program_sampling/validation_programs.jsonl",
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser
 
@@ -382,6 +471,8 @@ def main() -> None:
         calibration_manifest_path=args.calibration_manifest,
         gate0_path=args.gate0,
         rounding_addendum_path=args.rounding_addendum,
+        relevance_addendum_path=args.relevance_addendum,
+        validation_programs_path=args.validation_programs,
         output_path=output,
     )
     print(json.dumps(manifest["checks"], indent=2, sort_keys=True))

@@ -176,6 +176,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
         test_resumability_addendum_sha256=resumability_addendum_sha,
+        relevance_identity_addendum_sha256="relevance-addendum-sha256",
         implementation=test_implementation,
     )
     resumed = run_stage_a_test_seed(
@@ -189,6 +190,7 @@ def test_test_seed_reuses_sealed_validation_calibration_and_runs_all_cells(tmp_p
         test_execution_protocol_sha256=test_protocol_sha,
         test_runtime_addendum_sha256=runtime_addendum_sha,
         test_resumability_addendum_sha256=resumability_addendum_sha,
+        relevance_identity_addendum_sha256="relevance-addendum-sha256",
         implementation=test_implementation,
     )
 
