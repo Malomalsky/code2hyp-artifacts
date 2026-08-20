@@ -317,9 +317,10 @@ remain pinned in the design and compact manifests.
 
 ### Stage B execution status
 
-As of 2026-08-20, Java retrieval metrics have not been computed and the Stage B
-split has not been generated. The complete pre-registration design is in
-`configs/codenet_java_stage_b_draft_v1.json`. It fixes 20 independently trained
+At the public registration time, Java retrieval metrics had not been computed
+and the Stage B split had not been generated. The design is archived at
+[Zenodo, DOI 10.5281/zenodo.22028886](https://doi.org/10.5281/zenodo.22028886)
+and in `configs/codenet_java_stage_b_draft_v1.json`. It fixes 20 independently trained
 models (ten `label_depth_prefix`, ten `label_only`), prefix-only curvature
 selection on 66 validation clusters, seven test cells on 266 clusters, and a
 20,000-resample cluster bootstrap for H_B1-H_B4. The validation and test
@@ -336,6 +337,20 @@ the official run must be benchmarked on an HPC-class CUDA device before test
 opening; a consumer GPU must not be selected from FP32 throughput alone.
 Exact hardware identity is recorded, while bitwise equality across different
 GPU architectures is not claimed.
+
+The first NIST Randomness Beacon pulse strictly after the Zenodo creation time
+was chain 2, pulse 1911175 (`2026-08-20T11:57:00Z`). It deterministically
+produced 199 train, 66 validation and 266 test clusters; the cluster-assignment
+SHA-256 is `43031390aac5052c5958ae5b1b47006ffa5f83a34b8d358a53d7a06dbe4800d9`.
+Only train and validation programs were then sampled: 6,368 train programs and
+528 query plus 528 gallery programs for validation. All 7,424 opened sources
+passed the registered SHA-256 and raw-AST audit, and 4,096 train-only
+calibration pairs were frozen. The transfer unit is the duplicate-closed task
+cluster, not the developer identity; 318 users occur in both train and
+validation tasks, while one-program-per-user sampling is enforced within each
+cluster and validation query/gallery users are disjoint. No Java retrieval
+metric has yet been computed, and no test program identifier or relevance
+label has been materialized.
 
 Run the pre-registration audit with:
 
