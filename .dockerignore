@@ -1,6 +1,7 @@
 *
 !.dockerignore
 !Containerfile.stage-b
+!Containerfile.stage-b-runtime-v2
 !pyproject.toml
 !uv.lock
 !README.md

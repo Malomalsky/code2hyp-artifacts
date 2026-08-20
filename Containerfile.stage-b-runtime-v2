@@ -1,0 +1,9 @@
+FROM ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204
+
+ARG IMPLEMENTATION_COMMIT=c419f6418056b618ce373ebd6fafe6601ff51566
+LABEL org.opencontainers.image.revision="$IMPLEMENTATION_COMMIT" \
+      org.opencontainers.image.base.digest="sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204"
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*

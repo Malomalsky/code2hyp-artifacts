@@ -1,0 +1,68 @@
+name: Build Stage B runtime v2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMPLEMENTATION_COMMIT: c419f6418056b618ce373ebd6fafe6601ff51566
+  IMAGE: ghcr.io/malomalsky/code2hyp-stage-b
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out runtime definition
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check out frozen implementation
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.IMPLEMENTATION_COMMIT }}
+          fetch-depth: 0
+          fetch-tags: true
+          path: frozen-runner
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish corrected runtime
+        id: image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: Containerfile.stage-b-runtime-v2
+          platforms: linux/amd64
+          push: true
+          pull: true
+          tags: ${{ env.IMAGE }}:${{ env.IMPLEMENTATION_COMMIT }}-runtime-v2
+          build-args: IMPLEMENTATION_COMMIT=${{ env.IMPLEMENTATION_COMMIT }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Verify in-container provenance check
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          docker pull "$IMAGE@$DIGEST"
+          docker run --rm "$IMAGE@$DIGEST" git --version
+          docker run --rm \
+            --env GIT_CONFIG_COUNT=1 \
+            --env GIT_CONFIG_KEY_0=safe.directory \
+            --env GIT_CONFIG_VALUE_0=/run/code2hyp \
+            --mount type=bind,src="$PWD/frozen-runner",dst=/run/code2hyp,readonly \
+            --workdir /run/code2hyp \
+            "$IMAGE@$DIGEST" \
+            /workspace/code2hyp/.venv/bin/python -c \
+            "from pathlib import Path; from scripts.run_codenet_stage_a_validation import _verified_implementation_state; print(_verified_implementation_state(Path.cwd(), runner_tag='codenet-java-stage-b-validation-runner-v1'))"
+          printf 'Image: `%s@%s`\n' "$IMAGE" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
