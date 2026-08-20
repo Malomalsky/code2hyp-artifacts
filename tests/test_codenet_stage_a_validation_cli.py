@@ -43,3 +43,23 @@ def test_official_validation_requires_clean_tagged_worktree(tmp_path: Path) -> N
     tracked.write_text("modified\n", encoding="utf-8")
     with pytest.raises(ValueError, match="clean tracked worktree"):
         _verified_implementation_state(tmp_path)
+
+
+def test_implementation_state_accepts_an_explicit_stage_b_tag(tmp_path: Path) -> None:
+    _git(tmp_path, "init")
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("frozen\n", encoding="utf-8")
+    _git(tmp_path, "add", "tracked.txt")
+    _git(
+        tmp_path,
+        "-c",
+        "user.name=Code2Hyp Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-m",
+        "frozen runner",
+    )
+    _git(tmp_path, "tag", "stage-b-test-tag")
+
+    assert _verified_implementation_state(tmp_path, runner_tag="stage-b-test-tag")["tag"] == "stage-b-test-tag"

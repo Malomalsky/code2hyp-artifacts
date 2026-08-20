@@ -207,7 +207,7 @@ def select_non_test_programs(
     for assignment in assignments:
         cluster_id = str(assignment.get("cluster_id", ""))
         split = str(assignment.get("split", ""))
-        if not cluster_id or split not in {"train", "validation", "test"}:
+        if not cluster_id or split not in {"train", "validation", "test", "reserve"}:
             raise ValueError("malformed cluster assignment")
         if cluster_id in split_by_cluster:
             raise ValueError(f"duplicate cluster assignment: {cluster_id}")
@@ -219,14 +219,14 @@ def select_non_test_programs(
     grouped: dict[str, dict[str, list[dict[str, Any]]]] = {
         cluster_id: defaultdict(list)
         for cluster_id, split in split_by_cluster.items()
-        if split != "test"
+        if split in {"train", "validation"}
     }
     observed_non_test_sources: set[str] = set()
     for row in metadata_rows:
         cluster_id = str(row.get("problem_cluster_id", ""))
         if cluster_id not in split_by_cluster:
             raise ValueError(f"metadata row references an unassigned cluster: {cluster_id}")
-        if split_by_cluster[cluster_id] == "test":
+        if split_by_cluster[cluster_id] in {"test", "reserve"}:
             continue
         user_id = str(row.get("user_id_sha256", ""))
         source_relpath = str(row.get("source_relpath", ""))
@@ -248,7 +248,7 @@ def select_non_test_programs(
     ordered_assignments = sorted(assignments, key=lambda row: int(row["order_index"]))
     for assignment in ordered_assignments:
         split = str(assignment["split"])
-        if split == "test":
+        if split in {"test", "reserve"}:
             continue
         cluster_id = str(assignment["cluster_id"])
         users = grouped.get(cluster_id, {})

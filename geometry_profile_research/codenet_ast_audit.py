@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import platform
 import sys
+import tarfile
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from geometry_profile_research.codenet_eligibility import canonical_json_bytes, jsonl_bytes, stable_sha256
+from geometry_profile_research.codenet_eligibility import (
+    canonical_json_bytes,
+    jsonl_bytes,
+    normalize_java_source,
+    normalize_python_source,
+    stable_sha256,
+)
+from geometry_profile_research.java_raw_ast import parse_java_ast_tree
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
 from geometry_profile_research.raw_ast import leaf_node_ids, terminal_to_terminal_paths
 
@@ -35,6 +44,7 @@ def audit_source_program(
     *,
     max_paths: int,
     selection_policy: str,
+    language: str = "python",
 ) -> dict[str, Any]:
     """Parse and audit one selected CodeNet source without exposing its text."""
 
@@ -55,9 +65,15 @@ def audit_source_program(
 
     result["raw_source_bytes"] = len(raw)
     result["raw_source_sha256"] = stable_sha256(raw)
-    from geometry_profile_research.codenet_eligibility import normalize_python_source
-
-    canonical = normalize_python_source(raw)
+    if language == "python":
+        canonical = normalize_python_source(raw)
+        parser = parse_python_ast_tree
+    elif language == "java":
+        canonical = normalize_java_source(raw)
+        parser = parse_java_ast_tree
+        result["language"] = "java"
+    else:
+        raise ValueError(f"unsupported source language: {language!r}")
     result["detected_encoding"] = canonical.encoding
     if not canonical.decode_ok:
         return {**result, "audit_ok": False, "failure": f"source_decode:{canonical.decode_error}"}
@@ -65,8 +81,8 @@ def audit_source_program(
     result["canonical_source_bytes"] = len(canonical_bytes)
     result["canonical_source_sha256"] = stable_sha256(canonical_bytes)
     try:
-        tree = parse_python_ast_tree(canonical.text)
-    except (SyntaxError, TypeError, ValueError) as error:
+        tree = parser(canonical.text)
+    except Exception as error:
         return {**result, "audit_ok": False, "failure": f"ast_parse:{type(error).__name__}"}
 
     leaves = leaf_node_ids(tree)
@@ -148,7 +164,7 @@ def audit_selected_sources(
     if not source_root.is_dir():
         raise FileNotFoundError(f"CodeNet source root does not exist: {source_root}")
 
-    inputs = [(source_root, row, max_paths, selection_policy) for row in sample_rows]
+    inputs = [(source_root, row, max_paths, selection_policy, "python") for row in sample_rows]
     results: list[dict[str, Any]] = []
     if workers == 1:
         iterator = (_audit_worker(item) for item in inputs)
@@ -221,14 +237,227 @@ def audit_selected_sources(
     return manifest
 
 
-def _audit_worker(item: tuple[Path, Mapping[str, Any], int, str]) -> dict[str, Any]:
-    source_root, row, max_paths, selection_policy = item
+def _audit_worker(item: tuple[Path, Mapping[str, Any], int, str, str]) -> dict[str, Any]:
+    source_root, row, max_paths, selection_policy, language = item
     return audit_source_program(
         source_root,
         row,
         max_paths=max_paths,
         selection_policy=selection_policy,
+        language=language,
     )
+
+
+def materialize_and_audit_stage_b_java_rows(
+    *,
+    design: Mapping[str, Any],
+    sample_rows: Sequence[Mapping[str, Any]],
+    candidate_manifest_path: Path,
+    candidate_archive_path: Path,
+    d0_d2_manifest_path: Path,
+    d0_d2_inventory_path: Path,
+    source_root: Path,
+    workers: int = 1,
+) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, str]]:
+    """Extract selected Java rows and recheck their pre-split source and AST identities."""
+
+    if workers <= 0:
+        raise ValueError("workers must be positive")
+    sources = [str(row.get("source_relpath", "")) for row in sample_rows]
+    if not sources or not all(sources) or len(sources) != len(set(sources)):
+        raise ValueError("Stage B selected source paths must be non-empty and unique")
+    roles = {"train": {"train"}, "validation": {"query", "gallery"}, "test": {"query", "gallery"}}
+    if any(str(row.get("role")) not in roles.get(str(row.get("split")), set()) for row in sample_rows):
+        raise ValueError("Stage B selected rows contain an invalid split/role combination")
+    if any(any("user" in str(key).casefold() for key in row) for row in sample_rows):
+        raise ValueError("Stage B selected rows cannot publish user identifiers")
+    selected = set(sources)
+
+    expected_artifacts = design["eligibility"]["artifacts"]
+    candidate_bytes = candidate_manifest_path.read_bytes()
+    candidate = json.loads(candidate_bytes)
+    if stable_sha256(candidate_bytes) != str(expected_artifacts["candidate_materialization_manifest_sha256"]):
+        raise ValueError("Stage B candidate manifest differs from the registered design")
+    candidate_archive_sha = _file_sha256(candidate_archive_path)
+    if candidate_archive_sha != str(candidate["candidate_archive"]["sha256"]):
+        raise ValueError("Stage B candidate source archive differs from its manifest")
+    d0_d2_bytes = d0_d2_manifest_path.read_bytes()
+    d0_d2 = json.loads(d0_d2_bytes)
+    if stable_sha256(d0_d2_bytes) != str(expected_artifacts["d0_d2_manifest_sha256"]):
+        raise ValueError("Stage B D0-D2 manifest differs from the registered design")
+    expected_inventory_sha = next(
+        str(item["sha256"])
+        for item in d0_d2["artifacts"]
+        if item["path"] == "file_inventory.jsonl"
+    )
+    if stable_sha256(d0_d2_inventory_path.read_bytes()) != expected_inventory_sha:
+        raise ValueError("Stage B D0-D2 inventory differs from its manifest")
+    reference = {
+        str(row["source_relpath"]): row
+        for row in iter_jsonl(d0_d2_inventory_path)
+        if str(row.get("source_relpath")) in selected
+    }
+    if set(reference) != selected:
+        raise ValueError("not every selected Stage B source exists in the D0-D2 inventory")
+    if any(
+        row.get("retained_after_d0_d2") is not True
+        or str(row.get("canonical_source_relpath")) != source
+        for source, row in reference.items()
+    ):
+        raise ValueError("a selected Stage B source is not the retained D0-D2 canonical representative")
+
+    source_root.mkdir(parents=True, exist_ok=True)
+    found: set[str] = set()
+    with tarfile.open(candidate_archive_path) as archive:
+        for member in archive:
+            if not member.isfile() or member.name not in selected:
+                continue
+            stream = archive.extractfile(member)
+            if stream is None:
+                raise ValueError(f"cannot read selected Stage B source: {member.name}")
+            target = _safe_source_path(source_root, member.name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            content = stream.read()
+            if target.exists() and target.read_bytes() != content:
+                raise FileExistsError(f"refusing to overwrite a different selected source: {target}")
+            target.write_bytes(content)
+            found.add(member.name)
+    if found != selected:
+        missing = sorted(selected - found)
+        raise ValueError(f"candidate archive is missing selected Stage B sources; first={missing[0]}")
+
+    max_paths = int(design["sampling"]["paths_per_program"])
+    selection_policy = str(design["sampling"]["path_selection_policy"])
+    inputs = [(source_root, row, max_paths, selection_policy, "java") for row in sample_rows]
+    if workers == 1:
+        results = [_audit_worker(item) for item in inputs]
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            results = list(executor.map(_audit_worker, inputs, chunksize=32))
+    for result in results:
+        pre_split = reference[str(result["source_relpath"])]
+        result["pre_split_D0_sha256"] = str(pre_split["d0_sha256"])
+        result["pre_split_AST_node_count"] = int(pre_split["ast_node_count"])
+        result["pre_split_D0_match"] = result.get("canonical_source_sha256") == pre_split["d0_sha256"]
+        result["pre_split_AST_node_count_match"] = result.get("node_count") == pre_split["ast_node_count"]
+        if not result["pre_split_D0_match"] or not result["pre_split_AST_node_count_match"]:
+            result["audit_ok"] = False
+            result["failure"] = "pre_split_source_or_AST_mismatch"
+
+    summary = build_source_audit_summary(results, max_paths=max_paths, selection_policy=selection_policy)
+    summary["valid_for_stage_b_modeling"] = bool(summary.pop("valid_for_stage_a_modeling"))
+    provenance = {
+        "candidate_manifest_sha256": stable_sha256(candidate_bytes),
+        "candidate_archive_sha256": candidate_archive_sha,
+        "d0_d2_manifest_sha256": stable_sha256(d0_d2_bytes),
+        "d0_d2_inventory_sha256": expected_inventory_sha,
+    }
+    return results, summary, provenance
+
+
+def audit_stage_b_selected_sources(
+    *,
+    design_path: Path,
+    sampling_manifest_path: Path,
+    train_path: Path,
+    validation_path: Path,
+    candidate_manifest_path: Path,
+    candidate_archive_path: Path,
+    d0_d2_manifest_path: Path,
+    d0_d2_inventory_path: Path,
+    source_root: Path,
+    output_dir: Path,
+    workers: int = 1,
+) -> dict[str, Any]:
+    """Materialize and re-audit selected Java sources before validation metrics."""
+
+    if workers <= 0:
+        raise ValueError("workers must be positive")
+    design_bytes = design_path.read_bytes()
+    design = json.loads(design_bytes)
+    sampling_bytes = sampling_manifest_path.read_bytes()
+    sampling = json.loads(sampling_bytes)
+    if sampling.get("schema_version") != "codenet-java-stage-b-program-sampling-v1":
+        raise ValueError("unsupported Stage B program-sampling manifest")
+    if sampling["input"]["design_sha256"] != stable_sha256(design_bytes):
+        raise ValueError("Stage B sampling and design hashes differ")
+    if any(value is not False for value in sampling["protocol"].values()):
+        raise ValueError("Stage B source audit must precede validation and test opening")
+
+    train_bytes = train_path.read_bytes()
+    validation_bytes = validation_path.read_bytes()
+    artifact_hashes = {str(item["path"]): str(item["sha256"]) for item in sampling["artifacts"]}
+    if stable_sha256(train_bytes) != artifact_hashes["train_programs.jsonl"]:
+        raise ValueError("Stage B training rows differ from the sampling manifest")
+    if stable_sha256(validation_bytes) != artifact_hashes["validation_programs.jsonl"]:
+        raise ValueError("Stage B validation rows differ from the sampling manifest")
+    sample_rows = [
+        *(json.loads(line) for line in train_bytes.splitlines() if line),
+        *(json.loads(line) for line in validation_bytes.splitlines() if line),
+    ]
+    _validate_sample_rows(sample_rows)
+    results, summary, provenance = materialize_and_audit_stage_b_java_rows(
+        design=design,
+        sample_rows=sample_rows,
+        candidate_manifest_path=candidate_manifest_path,
+        candidate_archive_path=candidate_archive_path,
+        d0_d2_manifest_path=d0_d2_manifest_path,
+        d0_d2_inventory_path=d0_d2_inventory_path,
+        source_root=source_root,
+        workers=workers,
+    )
+    valid = bool(summary["valid_for_stage_b_modeling"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    index_bytes = jsonl_bytes(results)
+    summary_bytes = canonical_json_bytes(summary)
+    index_path = output_dir / "selected_source_ast_index.jsonl"
+    summary_path = output_dir / "selected_source_ast_summary.json"
+    for path, content in ((index_path, index_bytes), (summary_path, summary_bytes)):
+        if path.exists() and path.read_bytes() != content:
+            raise FileExistsError(f"refusing to overwrite a different Stage B AST artifact: {path}")
+        path.write_bytes(content)
+    manifest = {
+        "schema_version": "codenet-java-stage-b-selected-source-ast-audit-v1",
+        "valid_for_stage_b_modeling": valid,
+        "input": {
+            "design_sha256": stable_sha256(design_bytes),
+            "program_sampling_manifest_sha256": stable_sha256(sampling_bytes),
+            "train_programs_sha256": stable_sha256(train_bytes),
+            "validation_programs_sha256": stable_sha256(validation_bytes),
+            **provenance,
+        },
+        "protocol": {
+            "language": "java",
+            "path_selection_policy": str(design["sampling"]["path_selection_policy"]),
+            "maximum_paths_per_program": int(design["sampling"]["paths_per_program"]),
+            "validation_retrieval_metrics_computed": False,
+            "java_test_program_ids_materialized": False,
+            "java_test_retrieval_metrics_computed": False,
+        },
+        "summary": summary,
+        "artifacts": [
+            {"path": index_path.name, "bytes": len(index_bytes), "sha256": stable_sha256(index_bytes)},
+            {"path": summary_path.name, "bytes": len(summary_bytes), "sha256": stable_sha256(summary_bytes)},
+        ],
+    }
+    manifest_bytes = canonical_json_bytes(manifest)
+    manifest_path = output_dir / "selected_source_ast_manifest.json"
+    if manifest_path.exists() and manifest_path.read_bytes() != manifest_bytes:
+        raise FileExistsError(f"refusing to overwrite a different Stage B AST manifest: {manifest_path}")
+    manifest_path.write_bytes(manifest_bytes)
+    (output_dir / "selected_source_ast_manifest.sha256").write_text(
+        f"{stable_sha256(manifest_bytes)}  selected_source_ast_manifest.json\n",
+        encoding="ascii",
+    )
+    return manifest
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _validate_protocol(

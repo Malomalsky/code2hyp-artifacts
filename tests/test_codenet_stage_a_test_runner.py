@@ -11,9 +11,11 @@ from geometry_profile_research.codenet_stage_a import StageAProgram, StageASplit
 from geometry_profile_research.codenet_stage_a_evaluation import full_gallery_sinkhorn_divergence
 from geometry_profile_research.codenet_stage_a_runner import run_stage_a_validation_seed
 from geometry_profile_research.codenet_stage_a_test_runner import (
+    DEFAULT_TEST_CELL_IDS,
     VALIDATION_RUNNER_COMMIT,
     VALIDATION_RUNNER_TAG,
     aggregate_all_test_cells,
+    resolve_test_cell_ids,
     resumable_full_gallery_sinkhorn_divergence,
     run_stage_a_test_seed,
 )
@@ -346,3 +348,14 @@ def test_all_cell_aggregation_averages_seeds_within_problem_first() -> None:
         "A": pytest.approx(0.3),
         "B": pytest.approx(0.7),
     }
+
+
+def test_test_cell_resolution_preserves_stage_a_and_allows_frozen_stage_b_subset() -> None:
+    stage_a = {cell_id: {} for cell_id in DEFAULT_TEST_CELL_IDS}
+    assert resolve_test_cell_ids(stage_a, None) == DEFAULT_TEST_CELL_IDS
+
+    stage_b = {**stage_a, "HHH_c1_true_LCA": {}}
+    requested = ("EEE_true_LCA", "HEE_c1_true_LCA", "HHH_c1_true_LCA")
+    assert resolve_test_cell_ids(stage_b, requested) == requested
+    with pytest.raises(ValueError, match="missing requested"):
+        resolve_test_cell_ids(stage_b, (*requested, "HHH_c3_true_LCA"))

@@ -238,7 +238,7 @@ def select_test_programs(
     for assignment in assignments:
         cluster_id = str(assignment.get("cluster_id", ""))
         split = str(assignment.get("split", ""))
-        if not cluster_id or split not in {"train", "validation", "test"}:
+        if not cluster_id or split not in {"train", "validation", "test", "reserve"}:
             raise ValueError("malformed cluster assignment")
         if cluster_id in split_by_cluster:
             raise ValueError(f"duplicate cluster assignment: {cluster_id}")

@@ -167,6 +167,126 @@ def analyze_confirmatory_test(
     }
 
 
+def analyze_stage_b_confirmatory_test(
+    prefix_payloads: Sequence[Mapping[str, Any]],
+    label_only_payloads: Sequence[Mapping[str, Any]],
+    *,
+    selected_active_cell_id: str,
+    selected_hhh_cell_id: str,
+    expected_seeds: Sequence[int],
+    beacon_output_hex: str,
+    bootstrap_domain: str,
+    bootstrap_resamples: int = 20_000,
+    practical_delta: float = 0.01,
+) -> dict[str, Any]:
+    """Evaluate the frozen Stage B fixed sequence and the two-sided HHH contrast."""
+
+    prefix_cells = {
+        "EEE_true": "EEE_true_LCA",
+        "EEE_zero": "EEE_zero_anchor",
+        "HEE_near_zero": "HEE_near_zero_true_LCA",
+        "HEE_active": selected_active_cell_id,
+        "HHH_active": selected_hhh_cell_id,
+    }
+    label_cells = {
+        "EEE_true": "EEE_true_LCA",
+        "HEE_active": selected_active_cell_id,
+    }
+    prefix_scores = {
+        name: seed_averaged_problem_scores(prefix_payloads, cell_id=cell, expected_seeds=expected_seeds)
+        for name, cell in prefix_cells.items()
+    }
+    label_scores = {
+        name: seed_averaged_problem_scores(label_only_payloads, cell_id=cell, expected_seeds=expected_seeds)
+        for name, cell in label_cells.items()
+    }
+    problem_sets = {tuple(scores) for scores in (*prefix_scores.values(), *label_scores.values())}
+    if len(problem_sets) != 1:
+        raise ValueError("Stage B test cells do not contain the same problem set")
+    problems = next(iter(problem_sets))
+    contrasts = {
+        "H_B1_prefix_EEE_true_minus_zero": _paired_differences(prefix_scores["EEE_true"], prefix_scores["EEE_zero"]),
+        "H_B2a_prefix_HEE_active_minus_EEE_true": _paired_differences(prefix_scores["HEE_active"], prefix_scores["EEE_true"]),
+        "H_B2b_prefix_HEE_active_minus_HEE_near_zero": _paired_differences(prefix_scores["HEE_active"], prefix_scores["HEE_near_zero"]),
+        "H_B3_difference_in_differences": {
+            problem: (
+                prefix_scores["HEE_active"][problem]
+                - prefix_scores["EEE_true"][problem]
+                - label_scores["HEE_active"][problem]
+                + label_scores["EEE_true"][problem]
+            )
+            for problem in problems
+        },
+        "H_B4_prefix_HEE_active_minus_HHH_active": _paired_differences(prefix_scores["HEE_active"], prefix_scores["HHH_active"]),
+    }
+    if bootstrap_resamples <= 0 or practical_delta < 0.0:
+        raise ValueError("Stage B bootstrap count must be positive and practical delta non-negative")
+    seed = derive_cluster_bootstrap_seed(beacon_output_hex, bootstrap_domain)
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+    indices = torch.randint(
+        len(problems),
+        (bootstrap_resamples, len(problems)),
+        generator=generator,
+        dtype=torch.int64,
+        device="cpu",
+    )
+    results = {
+        name: _bootstrap_contrast(
+            values,
+            problems=problems,
+            indices=indices,
+            practical_delta=practical_delta,
+            lower_quantile=0.025,
+            upper_quantile=0.975,
+        )
+        for name, values in contrasts.items()
+    }
+    h1 = results["H_B1_prefix_EEE_true_minus_zero"]
+    h2a = results["H_B2a_prefix_HEE_active_minus_EEE_true"]
+    h2b = results["H_B2b_prefix_HEE_active_minus_HEE_near_zero"]
+    h3 = results["H_B3_difference_in_differences"]
+    h4 = results["H_B4_prefix_HEE_active_minus_HHH_active"]
+    h1_success = h1["statistical_support"] and h1["practical_support"]
+    h2_component_success = all(
+        result["statistical_support"] and result["practical_support"]
+        for result in (h2a, h2b)
+    )
+    h2_success = h1_success and h2_component_success
+    h3_component_success = h3["statistical_support"] and h3["practical_support"]
+    return {
+        "problem_count": len(problems),
+        "model_seed_count_per_representation": len(expected_seeds),
+        "bootstrap": {
+            "resamples": bootstrap_resamples,
+            "rng_seed": seed,
+            "shared_resample_index_sha256": hashlib.sha256(indices.numpy().tobytes(order="C")).hexdigest(),
+            "interval": [0.025, 0.975],
+        },
+        "minimum_practically_significant_delta_MAP_at_8": practical_delta,
+        "contrasts": results,
+        "fixed_sequence": {
+            "order": ["H_B1", "H_B2", "H_B3"],
+            "H_B1_reached": True,
+            "H_B1_success": h1_success,
+            "H_B2_reached": h1_success,
+            "H_B2_component_success": h2_component_success,
+            "H_B2_success": h2_success,
+            "H_B3_reached": h2_success,
+            "H_B3_component_success": h3_component_success,
+            "H_B3_success": h2_success and h3_component_success,
+        },
+        "H_B4_two_sided_descriptive": {
+            "point_estimate_delta_problem_macro_MAP_at_8": h4["point_estimate_delta_problem_macro_MAP_at_8"],
+            "percentile_interval": h4["percentile_interval"],
+            "interval_excludes_zero": (
+                h4["percentile_interval"]["lower"] > 0.0
+                or h4["percentile_interval"]["upper"] < 0.0
+            ),
+        },
+        "all_contrasts_reported_after_gate_failure": True,
+    }
+
+
 def _paired_differences(
     treatment: Mapping[str, float],
     control: Mapping[str, float],

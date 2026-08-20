@@ -7,10 +7,13 @@ import torch
 
 from geometry_profile_research.codenet_stage_a import StageAProgram, StageASplit
 from geometry_profile_research.codenet_stage_a_runner import (
+    all_role_curvature_cell_id,
+    configure_torch_runtime,
     curvature_cell_id,
     matched_role_weights,
     run_stage_a_validation_seed,
     select_active_curvature,
+    train_stage_a_encoder,
 )
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
 
@@ -191,3 +194,82 @@ def test_matched_weights_preserve_standard_poincare_limit_convention() -> None:
     assert hee == (0.2, 1.2, 1.2)
     assert curvature_cell_id(0.3) == "HEE_c0p3_true_LCA"
     assert torch.isfinite(torch.tensor(hee)).all()
+
+
+def test_encoder_accepts_prefix_identifiable_node_input() -> None:
+    model, _, metadata = train_stage_a_encoder(
+        _small_split().train,
+        seed=7,
+        dim=2,
+        epochs=1,
+        batch_size=2,
+        max_paths=4,
+        node_input_mode="label_depth_prefix",
+        torch_num_threads=1,
+    )
+
+    assert model.node_input_mode == "label_depth_prefix"
+    assert any(token.startswith("edge:") for token in model.token_to_id)
+    assert metadata["trainable_parameter_count"] > 0
+    assert metadata["compute_device"] == "cpu"
+
+
+def test_cuda_runtime_fails_closed_when_cuda_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+
+    with pytest.raises(RuntimeError, match="requires an available CUDA device"):
+        configure_torch_runtime(compute_device="cuda", torch_num_threads=1, seed=7)
+
+
+def test_cuda_runtime_rejects_conflicting_cublas_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CUBLAS_WORKSPACE_CONFIG", ":16:8")
+
+    with pytest.raises(RuntimeError, match="CUBLAS_WORKSPACE_CONFIG=:4096:8"):
+        configure_torch_runtime(compute_device="cuda", torch_num_threads=1, seed=7)
+
+
+def test_runner_requires_rolewise_ball_fit_and_emits_hhh_control(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="ball fitting"):
+        run_stage_a_validation_seed(
+            split=_small_split(),
+            calibration_pairs=(),
+            seed=7,
+            output_dir=tmp_path,
+            protocol_sha256="p",
+            calibration_manifest_sha256="c",
+            include_all_role_hyperbolic=True,
+        )
+
+    pairs = (
+        {"pair_type": "same_cluster", "left_source_relpath": "train/a.py", "right_source_relpath": "train/b.py"},
+        {"pair_type": "cross_cluster", "left_source_relpath": "train/a.py", "right_source_relpath": "train/c.py"},
+    )
+    result = run_stage_a_validation_seed(
+        split=_small_split(),
+        calibration_pairs=pairs,
+        seed=7,
+        output_dir=tmp_path / "hhh",
+        protocol_sha256="p",
+        calibration_manifest_sha256="c",
+        dim=2,
+        epochs=1,
+        batch_size=2,
+        max_paths=4,
+        node_input_mode="label_depth_prefix",
+        fit_all_roles_to_active_ball=True,
+        include_all_role_hyperbolic=True,
+        active_curvatures=(0.1,),
+        sinkhorn_iterations=12,
+        projection_iterations=128,
+        marginal_tolerance=1e-6,
+        query_batch_size=2,
+        gallery_batch_size=8,
+        torch_num_threads=1,
+    )
+
+    hhh = result["cells"][all_role_curvature_cell_id(0.1)]
+    assert hhh["factor_curvatures"] == [0.1, 0.1, 0.1]
+    assert len(hhh["effective_factor_sectional_curvatures"]) == 3
+    maxima = result["coordinate_scaling"]["maximum_unscaled_training_role_norms"]
+    scales = result["coordinate_scaling"]["role_scales"]
+    assert all(maximum * scale <= 0.35 / (0.1**0.5) + 1e-7 for maximum, scale in zip(maxima, scales))

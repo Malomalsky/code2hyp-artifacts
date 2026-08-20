@@ -1,0 +1,14 @@
+*
+!.dockerignore
+!Containerfile.stage-b
+!pyproject.toml
+!uv.lock
+!README.md
+!code2hyp/
+!code2hyp/**
+!geometry_profile_research/
+!geometry_profile_research/**
+!scripts/
+!scripts/**
+!configs/
+!configs/**

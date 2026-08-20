@@ -276,6 +276,120 @@ uv run python scripts/check_codenet_stage_a_readiness.py
 The complete audit narrative is in
 `reports/codenet_python800_pre_split_eligibility_2026-07-11.md`.
 
+## CodeNet Java Stage B Pre-split Audit
+
+The independent Java sampling frame is derived from the full Project CodeNet
+1.0.0 archive, not from Java250. Java250 is unsuitable as a new confirmation
+set because 242 of its 250 tasks overlap the opened Python800 Stage A frame.
+The full metadata audit instead identified 847 independent Java components
+with at least 16 accepted programs from 16 users.
+
+After Java parsing and exact D0-D2 deduplication, 50,178 canonical programs
+remain. The primary D3 rule (`exact token-5-gram set-Jaccard >= 0.90`) retains
+48,149 programs in 566 duplicate-closed clusters. D4 applies the official
+identical-problem map, checks normalized statement identity, and excludes an
+entire cluster whenever an official HTML statement is unavailable. The final
+pre-split frame has 531 evaluation-eligible clusters, 123 of which also meet
+the obsolete preliminary threshold of 64 programs and 16 users. That rule was
+not sampler-compatible because program selection is user-distinct. The frozen
+pre-registration design instead requires 32 programs from 32 users. It has 253
+train-eligible clusters and a full Hamilton `3:1:4` allocation of
+`199/66/266`, with no clusters discarded. No Java retrieval labels or metrics
+were opened while producing these artifacts.
+
+The pre-specified D3 sensitivity yields `107/36/143` at threshold `0.80` and
+`256/85/342` at threshold `0.95`; the primary threshold remains `0.90`
+regardless of these counts. A location-shift power precheck at 266 test
+clusters gives marginal power `0.9982` for `delta=0.01 MAP@8` under twice the
+Stage A reference variance; the conservative two-contrast lower bound is
+`0.9964`. This is a planning assumption, not Java retrieval evidence. The
+machine-readable primary records are:
+
+- `data/codenet_java_stage_b_eligibility_d0_d3_v1/d3_manifest.json`;
+- `data/codenet_java_stage_b_eligibility_d4_train32_v2/d4_manifest.json`;
+- `reports/codenet_java_stage_b_sampling_design_v2.json`;
+- `reports/codenet_java_stage_b_power_precheck_train32_v2.json`.
+
+The accepted-source tar and candidate inventory, D0-D2 inventory, D3 index,
+MinHash arrays and user-bearing D5 index are deterministically reconstructable
+from the official archive and intentionally excluded from Git. Their hashes
+remain pinned in the design and compact manifests.
+
+### Stage B execution status
+
+As of 2026-08-20, Java retrieval metrics have not been computed and the Stage B
+split has not been generated. The complete pre-registration design is in
+`configs/codenet_java_stage_b_draft_v1.json`. It fixes 20 independently trained
+models (ten `label_depth_prefix`, ten `label_only`), prefix-only curvature
+selection on 66 validation clusters, seven test cells on 266 clusters, and a
+20,000-resample cluster bootstrap for H_B1-H_B4. The validation and test
+pipelines recompute every metric from the stored `float64` distance matrix and
+fail closed on any hash, AST, cardinality or provenance mismatch.
+The registered execution device is CUDA. Both runners perform a deterministic
+CUDA preflight before expensive loading and, for the test runner, before the
+single test opening. The runtime records the actual device name, compute
+capability, CUDA version, cuBLAS workspace setting and disabled TF32 state.
+The frozen workload contains 180 validation matrices and 70 test matrices,
+or 367,168,000 query-gallery measure pairs in total. Final `float64` matrices
+alone require 2,937,344,000 bytes. Because transport evaluation is `float64`,
+the official run must be benchmarked on an HPC-class CUDA device before test
+opening; a consumer GPU must not be selected from FP32 throughput alone.
+Exact hardware identity is recorded, while bitwise equality across different
+GPU architectures is not claimed.
+
+Run the pre-registration audit with:
+
+```bash
+uv run python scripts/check_codenet_java_stage_b_readiness.py
+```
+
+The audit currently blocks only on the immutable implementation commit, the
+container digest and a clean tracked worktree. The implementation commit and
+both runner tags are deliberately separate from the later protocol commit, so
+the protocol can pin an already immutable implementation without a
+self-referential Git hash.
+
+Build the frozen `linux/amd64` runtime from the implementation commit with:
+
+```bash
+docker buildx build --platform linux/amd64 \
+  --file Containerfile.stage-b \
+  --build-arg IMPLEMENTATION_COMMIT=<implementation-commit> \
+  --tag code2hyp-stage-b:<implementation-commit> \
+  --load .
+```
+
+Record the resulting immutable image ID or registry manifest digest in the
+later protocol commit. The Docker context excludes all local data and outputs;
+registered inputs are mounted read-only at execution time.
+
+The earlier Python Stage A RunPod jobs used CPU computation even though their
+pods exposed an RTX 3090. This hardware-description correction is documented in
+`reports/codenet_python800_stage_a_compute_device_correction_2026-08-20.md` and
+does not alter the sealed Stage A matrices or metrics.
+
+Only after the finalized design is publicly registered and the first later
+NIST Randomness Beacon pulse is recorded, execute the fixed sequence:
+
+```bash
+uv run python scripts/build_codenet_java_stage_b_split.py
+uv run python scripts/build_codenet_java_stage_b_program_sampling.py
+uv run python scripts/audit_codenet_java_stage_b_selected_sources.py
+uv run python scripts/build_codenet_java_stage_b_calibration_pairs.py
+uv run python scripts/run_codenet_java_stage_b_validation.py
+uv run python scripts/seal_codenet_java_stage_b_validation.py
+uv run python scripts/run_codenet_java_stage_b_test.py
+```
+
+The final command writes the single test-opening receipt before reading a test
+metadata row, rechecks every selected Java source against its pre-split D0 and
+AST identity, evaluates only the seven registered cells, recomputes H_B1-H_B4,
+and seals the complete report. A partial run can resume only the same receipt
+and seed identities. No result in this section should be described as Java
+evidence until that sequence has completed.
+
+## CodeNet Python800 Registered Execution
+
 Re-derive and audit the registered cluster split:
 
 ```bash
@@ -379,6 +493,12 @@ under `outputs/codenet_python800_stage_a_validation_v1/`, which is intentionally
 not tracked. The validation selection record is produced only after all ten
 registered seeds complete. This command does not materialize test program IDs
 or test relevance labels.
+
+Validation progress can be inspected without reading any test-facing artifact:
+
+```bash
+uv run python scripts/check_codenet_stage_a_validation_progress.py
+```
 
 Verify and seal each completed validation seed before aggregating the ten-seed
 selection record:

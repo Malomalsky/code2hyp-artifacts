@@ -83,6 +83,30 @@ def normalize_python_source(raw: bytes) -> CanonicalSource:
     )
 
 
+def normalize_java_source(raw: bytes) -> CanonicalSource:
+    """Decode a Java file and apply the same line-level D0 normalization."""
+
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        return CanonicalSource(
+            text="",
+            encoding="utf-8",
+            decode_ok=False,
+            decode_error=type(exc).__name__,
+        )
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = "\n".join(line.rstrip(" \t") for line in text.split("\n")).rstrip("\n")
+    if normalized:
+        normalized += "\n"
+    return CanonicalSource(
+        text=normalized,
+        encoding="utf-8",
+        decode_ok=True,
+        decode_error=None,
+    )
+
+
 def lexical_token_stream(source: str) -> tuple[str, ...]:
     """Return D1 tokens with comments and formatting removed."""
 

@@ -1,0 +1,231 @@
+{
+  "schema_version": "code2hyp-codenet-java-stage-b-design-v1",
+  "status": "draft_before_registration_implementation_freeze_or_split",
+  "registration_doi": null,
+  "dataset": {
+    "name": "Project CodeNet Java independent Stage B frame",
+    "revision": "1.0.0",
+    "official_full_archive_sha256": "7e96620307f874269a62cc0225f2a5a13d2de2b3c368cf61319c87ec276620fb",
+    "official_metadata_archive_sha256": "2d886c36cf45b879abe84090133991e4239f6bcdd85103992e6d718fe3433aff",
+    "official_identical_problem_map_sha256": "d4731781ef6314502446b6f365ba3f83e16c54ec888e214c5426e84835553520",
+    "opened_stage_a_components_excluded": true,
+    "java250_role": "overlap_audit_only_not_independent_confirmation"
+  },
+  "eligibility": {
+    "accepted_status_only": true,
+    "raw_java_ast_parse_required": true,
+    "minimum_distinct_users_evaluation": 16,
+    "minimum_programs_train": 32,
+    "minimum_distinct_users_train": 32,
+    "minimum_programs_validation_or_test": 16,
+    "primary_d3_exact_set_jaccard_threshold": 0.9,
+    "d3_sensitivity_thresholds": [0.8, 0.95],
+    "missing_statement_rule": "exclude_complete_duplicate_closed_cluster",
+    "primary_role_upper_bound": {
+      "train_clusters": 199,
+      "validation_clusters": 66,
+      "test_clusters": 266,
+      "reserve_evaluation_clusters": 0
+    },
+    "primary_counts": {
+      "retained_programs_after_d0_d3": 48149,
+      "problem_clusters_after_d4_union": 566,
+      "eligible_evaluation_clusters": 531,
+      "eligible_train_clusters": 253,
+      "retained_programs_in_eligible_clusters": 41553
+    },
+    "artifacts": {
+      "metadata_frame_sha256": "98285d4dcdef0edfbdabd0b662cd932413dbbbc6ac37f83bb6013b41829b450a",
+      "candidate_materialization_manifest_sha256": "adc7f3c6b748da4b743e7e52b58ac6499622724cb9ca5f274f6d0ba50bc56072",
+      "d0_d2_manifest_sha256": "5396f7ab7098aaa94d96f6bb9c7b0b1b8e6899f2b11a8d7d00beda1dba0c333c",
+      "statement_overlap_audit_sha256": "49c564bec24ac60f86b981957e53319ad65d8b41de8381c8ae6fae5cf6d7eb51",
+      "d3_primary_manifest_sha256": "dbf37871c9f44ea64f04f61e6a7e093478f503640eeb734b490b2a269888dfbb",
+      "d4_primary_manifest_sha256": "2044e866e8bf280b6fed57eb5b85bbc156a5501bf5bf68dba37f7c987c81a94b",
+      "d3_sensitivity_0p80_manifest_sha256": "c55a14d26495d54cae3db68fd2808f0bd504b3e3eeea666d46daf847b55110b7",
+      "d4_sensitivity_0p80_manifest_sha256": "5196ac62ffba25f2860e9495db0795d4e59cde1785301c68ac114f060df8649f",
+      "d3_sensitivity_0p95_manifest_sha256": "f03465abd1a8614e078ec11df1bc6cb459622579e6c294a6aa803a3d4b09aed7",
+      "d4_sensitivity_0p95_manifest_sha256": "c25e93a06e515d459973d6aed99a31f212ba3a091a4f13f7c66a686aa7564b5a",
+      "sampling_design_report_sha256": "223a18420992d8ac42a3fe94a6f971e073ea4b5fe9824846f52d22bc2fed6b5b",
+      "d5_metadata_manifest_sha256": "a645a3d1a15b5ca8af46a59386e6a032d456bac5ce5e01af429dd5d5111fee7e",
+      "d5_metadata_index_sha256": "3924a95dbc629d4c65a6b529a8d5811187c5462aec5030e39ca0686c2158e419"
+    }
+  },
+  "power": {
+    "planned_test_clusters": 266,
+    "minimum_practically_significant_delta_MAP_at_8": 0.01,
+    "gate_variance_multiplier": 2.0,
+    "gate_marginal_power": 0.99822,
+    "gate_two_contrast_joint_power_lower_bound": 0.99644,
+    "required_power": 0.8,
+    "report_sha256": "16932d010d900a04489ebb49912ca943c5d784ecf2cc527b309c02b6030a81b8",
+    "sensitivity_report_sha256": {
+      "jaccard_0p80": "fb5813844b9d053b300cc099258827e693dcb4d4bc76611c1309b640a67574a7",
+      "jaccard_0p95": "b7a3c8ae890ac8ffdccccff6a4268bd87965cdc1077673e5078b9fce3c72bfae"
+    },
+    "interpretation": "planning_precheck_under_location_shift_assumption_not_Java_retrieval_evidence"
+  },
+  "split": {
+    "assignment_unit": "duplicate_closed_problem_cluster",
+    "weights_train_validation_test": [3, 1, 4],
+    "integer_quota_rule": "hamilton_train_validation_test_tie_order",
+    "ordering": "role-constrained HMAC-SHA256(beacon,dataset_revision_NUL_cluster_id)",
+    "role_constraint": "choose 199 train clusters from the 253 clusters with at least 32 retained programs and 32 distinct users; assign all 332 remaining evaluation-eligible clusters to validation or test",
+    "seed_source": "first_NIST_randomness_beacon_pulse_after_public_registration",
+    "generated": false,
+    "beacon": null
+  },
+  "sampling": {
+    "user_distinct_within_problem_cluster": true,
+    "train_programs_per_cluster": 32,
+    "validation_queries_per_cluster": 8,
+    "validation_gallery_per_cluster": 8,
+    "test_queries_per_cluster": 8,
+    "test_gallery_per_cluster": 8,
+    "paths_per_program": 64,
+    "path_selection_policy": "lca_depth_affine_sampled",
+    "small_program_rule": "use_every_available_unique_terminal_pair",
+    "path_selection_randomness": "none; deterministic BLAKE2b-derived affine permutation within each LCA-depth stratum",
+    "randomness": {
+      "digest": "HMAC-SHA256",
+      "field_separator": "NUL",
+      "program_domain": "code2hyp:codenet-java:stage-b:program-representative:v1",
+      "user_domain": "code2hyp:codenet-java:stage-b:user-order:v1",
+      "calibration_pair_domain": "code2hyp:codenet-java:stage-b:calibration-pairs:v1"
+    }
+  },
+  "representation": {
+    "program_unit": "one_complete_Java_compilation_unit",
+    "path_object": "unoriented_equivalence_class_of_true_LCA_start_end_triples",
+    "program_object": "uniform_finite_measure_over_at_most_64_path_objects",
+    "primary_node_input_mode": "label_depth_prefix",
+    "collision_control_node_input_mode": "label_only",
+    "stage_a_reference_node_input_identifiability_audit_sha256": "e11c5b21c4c856056369cfcbc88f9c894210c0b8429047bc53eae571432e6866",
+    "terminal_policy": "class",
+    "terminal_values_used": false,
+    "side_features_used": false,
+    "endpoint_orientation": "quotient_by_start_end_exchange"
+  },
+  "encoder_training": {
+    "dimension_per_role": 8,
+    "token_dimension": 8,
+    "model_seeds": [20260711, 20260712, 20260713, 20260714, 20260715, 20260716, 20260717, 20260718, 20260719, 20260720],
+    "epochs": 5,
+    "batch_size_programs": 8,
+    "optimizer": "Adam",
+    "learning_rate": 0.003,
+    "weight_decay": 0.0,
+    "gradient_clip_global_norm": 1.0,
+    "early_stopping": false,
+    "shuffle": "deterministic_Python_random_with_seed_plus_epoch",
+    "torch_deterministic_algorithms": true,
+    "torch_num_threads_per_process": 1,
+    "compute_device": "cuda",
+    "cuda_hardware_identity": "record_exact_device_name_compute_capability_and_runtime",
+    "cross_gpu_reproduction_claim": "metric_level_reproduction_not_bitwise_identity_across_GPU_architectures",
+    "training_geometry": "euclidean",
+    "precision": "float32",
+    "loss": {
+      "retrieval_weight": 0.0,
+      "edge_length_weight": 1.0,
+      "soft_gromov_LCA_distortion_weight": 0.1,
+      "branch_length_weight": 1.0,
+      "reversal_weight": 0.0,
+      "program_weighting": "one_mean_per_program_per_active_term"
+    },
+    "retrieval_information_used_for_training": false,
+    "same_optimization_budget_for_primary_and_collision_control": true,
+    "parameter_count_policy": "report both counts; the prefix vocabulary may contain more embedding parameters, so H_B3 estimates the implemented representation change rather than a parameter-isolated collision effect"
+  },
+  "train_only_calibration": {
+    "same_cluster_pairs": 2048,
+    "cross_cluster_pairs": 2048,
+    "pair_selection": "domain_separated_HMAC_SHA256_from_registered_beacon",
+    "role_weight_statistic": "median positive path-to-path Euclidean squared distance on the fixed training pairs",
+    "canonical_weights": "Euclidean role weights divided by four",
+    "coordinate_scaling": "fit each of the LCA, start and end factors from training measures only to at most 0.35/sqrt(max_active_curvature)",
+    "maximum_ball_radius_fraction": 0.35,
+    "sinkhorn_cost_scale": "median positive EEE pairwise-cost median on the same fixed training pairs",
+    "sinkhorn_kappa": 0.05,
+    "sinkhorn_epsilon": "max(sinkhorn_kappa*cost_scale,1e-6)",
+    "same_weights_scales_and_epsilon_across_geometry_cells_within_each_model_seed": true
+  },
+  "geometry": {
+    "active_curvature_candidates": [0.1, 0.3, 1.0, 3.0],
+    "near_zero_curvature": 0.0001,
+    "active_curvature_selection": "maximum_validation_problem_macro_MAP_at_8_then_smallest_curvature",
+    "test_cells": [
+      "prefix_EEE_true_LCA",
+      "prefix_EEE_zero_anchor",
+      "prefix_HEE_near_zero_true_LCA",
+      "prefix_HEE_active_true_LCA",
+      "label_only_EEE_true_LCA",
+      "label_only_HEE_active_true_LCA",
+      "prefix_HHH_active_true_LCA"
+    ],
+    "factor_weights": "positive-curvature factors use canonical weights; Euclidean factors use four times canonical weights",
+    "reported_sectional_curvature_per_factor": "-c/w_role",
+    "HHH_interpretation": "product_of_three_equal_curvature_hyperbolic_factors_not_one_constant_curvature_space"
+  },
+  "transport": {
+    "ground_cost": "weighted sum of squared role geodesic distances minimized over endpoint exchange",
+    "program_distance": "debiased Sinkhorn divergence",
+    "evaluation_precision": "float64",
+    "sinkhorn_iterations": 128,
+    "projection_iterations_max": 2048,
+    "maximum_marginal_residual": 1e-7,
+    "query_batch_size": 4,
+    "gallery_batch_size": 32,
+    "full_gallery_without_preselection": true,
+    "validation_matrix_shape_per_seed_and_cell": [528, 528],
+    "test_matrix_shape_per_seed_and_cell": [2128, 2128],
+    "registered_validation_distance_matrices": 180,
+    "registered_test_distance_matrices": 70,
+    "registered_validation_pair_evaluations": 50181120,
+    "registered_test_pair_evaluations": 316986880,
+    "minimum_final_distance_matrix_storage_bytes": 2937344000
+  },
+  "inference": {
+    "primary_metric": "problem_macro_MAP_at_R",
+    "R": 8,
+    "bootstrap_resamples": 20000,
+    "bootstrap_domain": "code2hyp:codenet-java:stage-b:test-cluster-bootstrap:v1",
+    "two_sided_interval_quantiles": [0.025, 0.975],
+    "bootstrap_unit": "duplicate_closed_problem_cluster",
+    "two_sided_confidence": 0.95,
+    "minimum_practically_significant_delta_MAP_at_8": 0.01,
+    "seed_aggregation_before_cluster_bootstrap": true,
+    "fixed_sequence": ["H_B1", "H_B2", "H_B3"],
+    "H_B1": "prefix_EEE_true_LCA_minus_prefix_EEE_zero_anchor",
+    "H_B1_success_rule": "two-sided 95 percent cluster-bootstrap lower bound is positive and point estimate is at least the minimum practically significant delta",
+    "H_B2": [
+      "prefix_HEE_active_minus_prefix_EEE_true_LCA",
+      "prefix_HEE_active_minus_prefix_HEE_near_zero_true_LCA"
+    ],
+    "H_B2_success_rule": "both two-sided 95 percent cluster-bootstrap lower bounds are positive and both point estimates are at least the minimum practically significant delta",
+    "H_B3": "HEE_minus_EEE_prefix_minus_HEE_minus_EEE_label_only",
+    "H_B3_interpretation": "incremental effect of the complete prefix representation as implemented; not parameter-count-isolated",
+    "H_B3_success_rule": "reached only after H_B1 and H_B2; two-sided 95 percent cluster-bootstrap lower bound is positive and point estimate is at least the minimum practically significant delta",
+    "H_B4_two_sided": "prefix_HEE_active_minus_prefix_HHH_active",
+    "multiplicity_control": "fixed-sequence H_B1 then intersection-union H_B2 then H_B3; all cells and contrasts reported even after a gate failure",
+    "all_planned_cells_and_numerical_failures_reported": true
+  },
+  "failure_policy": {
+    "input_hash_mismatch": "stop",
+    "AST_or_path_audit_mismatch": "stop",
+    "NaN_or_Inf": "stop_without_replacing_the_seed",
+    "marginal_residual_above_1e-7": "stop",
+    "validation_or_test_item_used_in_calibration": "stop",
+    "test_openings": 1
+  },
+  "freeze": {
+    "implementation_commit": null,
+    "container_digest": null,
+    "validation_runner_tag": "codenet-java-stage-b-validation-runner-v1",
+    "test_runner_tag": "codenet-java-stage-b-test-runner-v1",
+    "registration_complete": false,
+    "java_validation_metrics_opened": false,
+    "java_test_program_ids_materialized": false,
+    "java_test_relevance_labels_opened": false,
+    "java_test_retrieval_metrics_computed": false
+  }
+}

@@ -18,8 +18,10 @@ from geometry_profile_research.codenet_stage_a_evaluation import (
     summarize_problem_macro_retrieval,
 )
 from geometry_profile_research.codenet_stage_a_runner import (
+    configure_torch_runtime,
     encode_stage_a_programs,
     scale_product_measure,
+    torch_device_metadata,
 )
 from geometry_profile_research.constant_curvature import RoleProductGeometry
 from geometry_profile_research.raw_ast_code2hyp import RawASTCode2Hyp
@@ -28,6 +30,15 @@ from geometry_profile_research.raw_ast_code2hyp import RawASTCode2Hyp
 TEST_SEED_SCHEMA = "code2hyp-stage-a-test-seed-v1"
 VALIDATION_RUNNER_COMMIT = "cca28ffaccc1ea33256bfa8824fc6589716e3356"
 VALIDATION_RUNNER_TAG = "codenet-stage-a-validation-runner-v4"
+DEFAULT_TEST_CELL_IDS = (
+    "EEE_true_LCA",
+    "EEE_zero_anchor",
+    "HEE_near_zero_true_LCA",
+    "HEE_c0p1_true_LCA",
+    "HEE_c0p3_true_LCA",
+    "HEE_c1_true_LCA",
+    "HEE_c3_true_LCA",
+)
 
 
 def run_stage_a_test_seed(
@@ -44,6 +55,11 @@ def run_stage_a_test_seed(
     test_resumability_addendum_sha256: str,
     relevance_identity_addendum_sha256: str,
     implementation: Mapping[str, Any],
+    expected_cell_ids: Sequence[str] | None = None,
+    expected_validation_commit: str = VALIDATION_RUNNER_COMMIT,
+    expected_validation_tag: str = VALIDATION_RUNNER_TAG,
+    expected_materialization_schema: str = "code2hyp-stage-a-test-materialization-v1",
+    result_schema: str = TEST_SEED_SCHEMA,
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
     """Evaluate all frozen cells using one sealed validation checkpoint."""
@@ -53,6 +69,9 @@ def run_stage_a_test_seed(
     if validation_sha256 != validation_result_expected_sha256:
         raise ValueError("validation result differs from the validation-selection seal")
     validation = json.loads(validation_bytes)
+    cell_ids = resolve_test_cell_ids(validation["cells"], expected_cell_ids)
+    if not result_schema:
+        raise ValueError("test result schema must be non-empty")
     seed_seal_bytes = validation_seed_seal_path.read_bytes()
     seed_seal = json.loads(seed_seal_bytes)
     if validation.get("status") != "complete" or int(validation.get("seed", -1)) != seed:
@@ -61,14 +80,14 @@ def run_stage_a_test_seed(
         raise ValueError("validation seed result differs from its seed seal")
     if seed_seal.get("checks", {}).get("validation_only") is not True:
         raise ValueError("validation seed is not sealed as validation-only")
-    if validation.get("implementation", {}).get("commit") != VALIDATION_RUNNER_COMMIT:
+    if validation.get("implementation", {}).get("commit") != expected_validation_commit:
         raise ValueError("validation checkpoint was produced by an unexpected runner commit")
-    if validation.get("implementation", {}).get("tag") != VALIDATION_RUNNER_TAG:
+    if validation.get("implementation", {}).get("tag") != expected_validation_tag:
         raise ValueError("validation checkpoint was produced by an unexpected runner tag")
 
     materialization_bytes = test_materialization_manifest_path.read_bytes()
     materialization = json.loads(materialization_bytes)
-    if materialization.get("schema_version") != "code2hyp-stage-a-test-materialization-v1":
+    if materialization.get("schema_version") != expected_materialization_schema:
         raise ValueError("unexpected test-materialization schema")
     if materialization.get("test_program_ids_materialized") is not True:
         raise ValueError("test programs were not materialized by the registered opening")
@@ -90,15 +109,24 @@ def run_stage_a_test_seed(
         "test_execution_protocol_sha256": str(test_execution_protocol_sha256),
         "implementation": dict(implementation),
     }
+    if cell_ids != DEFAULT_TEST_CELL_IDS:
+        result_identity["test_cell_ids"] = list(cell_ids)
+    if result_schema != TEST_SEED_SCHEMA:
+        result_identity["result_schema"] = result_schema
     execution = dict(validation["execution_config"])
     torch_num_threads = int(execution["torch_num_threads"])
     if torch_num_threads != 1:
         raise ValueError("the frozen Stage A test runtime requires torch_num_threads=1")
-    torch.set_num_threads(torch_num_threads)
+    explicit_compute_device = "compute_device" in execution
+    compute_device = str(execution.get("compute_device", "cpu"))
     try:
-        torch.use_deterministic_algorithms(True, warn_only=False)
+        device = configure_torch_runtime(
+            compute_device=compute_device,
+            torch_num_threads=torch_num_threads,
+            seed=seed,
+        )
     except Exception as error:
-        raise RuntimeError("unable to enable deterministic algorithms for Stage A test") from error
+        raise RuntimeError("unable to apply the deterministic Stage A test runtime") from error
     test_runtime = {
         "torch_version": torch.__version__,
         "python_version": platform.python_version(),
@@ -106,6 +134,8 @@ def run_stage_a_test_seed(
         "torch_num_threads": torch.get_num_threads(),
         "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
     }
+    if explicit_compute_device:
+        test_runtime.update(torch_device_metadata(device))
     if test_runtime["torch_num_threads"] != 1 or test_runtime["deterministic_algorithms"] is not True:
         raise RuntimeError("Stage A test runtime did not apply the frozen deterministic configuration")
     result_identity["test_runtime_addendum_sha256"] = str(test_runtime_addendum_sha256)
@@ -130,7 +160,9 @@ def run_stage_a_test_seed(
         raise ValueError("checkpoint implementation provenance differs from validation result")
     if int(checkpoint.get("seed", -1)) != seed:
         raise ValueError("checkpoint seed differs from requested test seed")
-    model = _model_from_checkpoint(checkpoint)
+    if explicit_compute_device and checkpoint.get("training_metadata", {}).get("compute_device") != str(device):
+        raise ValueError("validation checkpoint was trained on a different compute device")
+    model = _model_from_checkpoint(checkpoint, device=device)
 
     cells: dict[str, dict[str, Any]] = {}
     if partial_path.exists():
@@ -157,19 +189,28 @@ def run_stage_a_test_seed(
         progress_callback=progress_callback,
         phase="encoding_test_gallery_true_lca",
     )
-    query_zero = encode_stage_a_programs(
-        model,
-        test_split.query,
-        anchor_mode="zero_anchor",
-        progress_callback=progress_callback,
-        phase="encoding_test_query_zero_anchor",
+    needs_zero_anchor = "EEE_zero_anchor" in cell_ids
+    query_zero = (
+        encode_stage_a_programs(
+            model,
+            test_split.query,
+            anchor_mode="zero_anchor",
+            progress_callback=progress_callback,
+            phase="encoding_test_query_zero_anchor",
+        )
+        if needs_zero_anchor
+        else None
     )
-    gallery_zero = encode_stage_a_programs(
-        model,
-        test_split.gallery,
-        anchor_mode="zero_anchor",
-        progress_callback=progress_callback,
-        phase="encoding_test_gallery_zero_anchor",
+    gallery_zero = (
+        encode_stage_a_programs(
+            model,
+            test_split.gallery,
+            anchor_mode="zero_anchor",
+            progress_callback=progress_callback,
+            phase="encoding_test_gallery_zero_anchor",
+        )
+        if needs_zero_anchor
+        else None
     )
     query_true_values = tuple(
         scale_product_measure(query_true[item.item_id], role_scales=role_scales)
@@ -179,28 +220,18 @@ def run_stage_a_test_seed(
         scale_product_measure(gallery_true[item.item_id], role_scales=role_scales)
         for item in test_split.gallery
     )
-    query_zero_values = tuple(
-        scale_product_measure(query_zero[item.item_id], role_scales=role_scales)
-        for item in test_split.query
+    query_zero_values = (
+        tuple(scale_product_measure(query_zero[item.item_id], role_scales=role_scales) for item in test_split.query)
+        if query_zero is not None
+        else None
     )
-    gallery_zero_values = tuple(
-        scale_product_measure(gallery_zero[item.item_id], role_scales=role_scales)
-        for item in test_split.gallery
+    gallery_zero_values = (
+        tuple(scale_product_measure(gallery_zero[item.item_id], role_scales=role_scales) for item in test_split.gallery)
+        if gallery_zero is not None
+        else None
     )
     del query_true, gallery_true, query_zero, gallery_zero
 
-    expected_cell_ids = (
-        "EEE_true_LCA",
-        "EEE_zero_anchor",
-        "HEE_near_zero_true_LCA",
-        "HEE_c0p1_true_LCA",
-        "HEE_c0p3_true_LCA",
-        "HEE_c1_true_LCA",
-        "HEE_c3_true_LCA",
-    )
-    if set(validation["cells"]) != set(expected_cell_ids):
-        raise ValueError("sealed validation result does not contain the exact seven-cell design")
-    cell_ids = expected_cell_ids
     for cell_index, cell_id in enumerate(cell_ids, start=1):
         if cell_id in cells:
             _cleanup_distance_shards(output_dir=output_dir, seed=seed, cell_id=cell_id)
@@ -216,6 +247,8 @@ def run_stage_a_test_seed(
         )
         queries = query_zero_values if cell_id == "EEE_zero_anchor" else query_true_values
         gallery = gallery_zero_values if cell_id == "EEE_zero_anchor" else gallery_true_values
+        if queries is None or gallery is None:
+            raise ValueError("zero-anchor test cell was requested without zero-anchor encodings")
         if progress_callback is not None:
             progress_callback(
                 {
@@ -268,16 +301,40 @@ def run_stage_a_test_seed(
         }
         _atomic_json_write(
             partial_path,
-            _test_seed_payload(identity=result_identity, cells=cells, status="partial"),
+            _test_seed_payload(identity=result_identity, cells=cells, status="partial", schema_version=result_schema),
         )
         for shard_path in shard_paths:
             shard_path.unlink(missing_ok=True)
             shard_path.with_suffix(shard_path.suffix + ".sha256").unlink(missing_ok=True)
 
-    payload = _test_seed_payload(identity=result_identity, cells=cells, status="complete")
+    payload = _test_seed_payload(
+        identity=result_identity,
+        cells=cells,
+        status="complete",
+        schema_version=result_schema,
+    )
     _atomic_json_write(result_path, payload)
     partial_path.unlink(missing_ok=True)
     return json.loads(result_path.read_text(encoding="utf-8"))
+
+
+def resolve_test_cell_ids(
+    validation_cells: Mapping[str, Any],
+    requested_cell_ids: Sequence[str] | None,
+) -> tuple[str, ...]:
+    """Resolve the frozen test subset without changing the legacy Stage A design."""
+
+    if requested_cell_ids is None:
+        if set(validation_cells) != set(DEFAULT_TEST_CELL_IDS):
+            raise ValueError("sealed validation result does not contain the exact seven-cell design")
+        return DEFAULT_TEST_CELL_IDS
+    cell_ids = tuple(str(cell_id) for cell_id in requested_cell_ids)
+    if not cell_ids or len(cell_ids) != len(set(cell_ids)):
+        raise ValueError("requested test cells must be non-empty and unique")
+    missing = tuple(cell_id for cell_id in cell_ids if cell_id not in validation_cells)
+    if missing:
+        raise ValueError(f"sealed validation result is missing requested test cells: {missing}")
+    return cell_ids
 
 
 def resumable_full_gallery_sinkhorn_divergence(
@@ -430,9 +487,10 @@ def _test_seed_payload(
     identity: Mapping[str, Any],
     cells: Mapping[str, Any],
     status: str,
+    schema_version: str = TEST_SEED_SCHEMA,
 ) -> dict[str, Any]:
     return {
-        "schema_version": TEST_SEED_SCHEMA,
+        "schema_version": schema_version,
         "status": status,
         "seed": int(identity["seed"]),
         "identity": dict(identity),
@@ -444,9 +502,14 @@ def _test_seed_payload(
     }
 
 
-def _model_from_checkpoint(checkpoint: Mapping[str, Any]) -> RawASTCode2Hyp:
+def _model_from_checkpoint(
+    checkpoint: Mapping[str, Any],
+    *,
+    device: torch.device | str = "cpu",
+) -> RawASTCode2Hyp:
     model = RawASTCode2Hyp(checkpoint["token_to_id"], **dict(checkpoint["model_config"]))
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    model.to(device)
     model.eval()
     return model
 

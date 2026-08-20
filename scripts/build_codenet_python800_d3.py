@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import javalang
 from datasketch import MinHash, MinHashLSH
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -33,19 +34,34 @@ from geometry_profile_research.codenet_eligibility import (
 
 
 D3_SCHEMA_VERSION = "codenet-python800-d3-v1"
+JAVA_D3_SCHEMA_VERSION = "codenet-java-stage-b-d3-v1"
 
 
-def _signature_worker(payload: tuple[str, str, int, int]) -> tuple[str, int, np.ndarray | None]:
-    relative_path, root_value, num_perm, seed = payload
+def _signature_worker(payload: tuple[str, str, int, int, str]) -> tuple[str, int, np.ndarray | None]:
+    relative_path, root_value, num_perm, seed, language = payload
     root = Path(root_value)
-    canonical = normalize_python_source((root / relative_path).read_bytes())
-    if not canonical.decode_ok:
+    tokens = _source_tokens(root / relative_path, language)
+    if tokens is None:
         return relative_path, 0, None
-    tokens = lexical_token_stream(canonical.text)
     shingles = token_ngrams(tokens, width=5)
     if not shingles:
         return relative_path, 0, None
     return relative_path, len(shingles), minhash_signature(shingles, num_perm=num_perm, seed=seed)
+
+
+def _source_tokens(path: Path, language: str) -> tuple[str, ...] | None:
+    raw = path.read_bytes()
+    if language == "python":
+        canonical = normalize_python_source(raw)
+        return lexical_token_stream(canonical.text) if canonical.decode_ok else None
+    try:
+        source = raw.decode("utf-8", errors="strict").replace("\r\n", "\n").replace("\r", "\n")
+        source = "\n".join(line.rstrip(" \t") for line in source.split("\n")).rstrip("\n")
+        if source:
+            source += "\n"
+        return tuple(f"{type(token).__name__}:{token.value}" for token in javalang.tokenizer.tokenize(source))
+    except (UnicodeDecodeError, javalang.tokenizer.LexerError, TypeError):
+        return None
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -79,25 +95,32 @@ def build_d3_artifacts(
     jaccard_threshold: float = 0.90,
     minimum_cluster_programs: int = 64,
     max_records: int | None = None,
+    language: str = "python",
 ) -> dict[str, Any]:
     if bands * rows_per_band != num_perm:
         raise ValueError("bands * rows_per_band must equal num_perm")
     if not 0.0 < jaccard_threshold <= 1.0:
         raise ValueError("jaccard_threshold must be in (0, 1]")
-    eligibility_manifest_path = d0_d2_dir / "eligibility_manifest.json"
+    if language not in {"python", "java"}:
+        raise ValueError("language must be 'python' or 'java'")
+    eligibility_manifest_path = d0_d2_dir / (
+        "eligibility_manifest.json" if language == "python" else "manifest.json"
+    )
     eligibility_manifest_sha = stable_sha256(eligibility_manifest_path.read_bytes())
     inventory: list[dict[str, Any]] = []
     with (d0_d2_dir / "file_inventory.jsonl").open(encoding="utf-8") as handle:
         for line in handle:
             record = json.loads(line)
             if record.get("retained_after_d0_d2"):
-                inventory.append(
-                    {
-                        "problem_id": str(record["problem_id"]),
-                        "submission_id": str(record["submission_id"]),
-                        "source_relpath": str(record["source_relpath"]),
-                    }
-                )
+                item = {
+                    "problem_id": str(record["problem_id"]),
+                    "submission_id": str(record["submission_id"]),
+                    "source_relpath": str(record["source_relpath"]),
+                }
+                for key in ("original_problem_id", "user_id"):
+                    if key in record:
+                        item[key] = str(record[key])
+                inventory.append(item)
     inventory.sort(key=lambda item: item["source_relpath"])
     if max_records is not None:
         inventory = inventory[:max_records]
@@ -120,7 +143,7 @@ def build_d3_artifacts(
         shape=(len(inventory),),
     )
     payloads = [
-        (record["source_relpath"], str(input_root), num_perm, minhash_seed)
+        (record["source_relpath"], str(input_root), num_perm, minhash_seed, language)
         for record in inventory
     ]
     if workers == 1:
@@ -148,10 +171,10 @@ def build_d3_artifacts(
 
     @lru_cache(maxsize=4096)
     def source_shingles(relative_path: str) -> frozenset[tuple[str, ...]]:
-        canonical = normalize_python_source((input_root / relative_path).read_bytes())
-        if not canonical.decode_ok:
+        tokens = _source_tokens(input_root / relative_path, language)
+        if tokens is None:
             return frozenset()
-        return token_ngrams(lexical_token_stream(canonical.text), width=5)
+        return token_ngrams(tokens, width=5)
 
     lsh = MinHashLSH(
         threshold=jaccard_threshold,
@@ -259,6 +282,23 @@ def build_d3_artifacts(
         )
     final_problem_clusters.sort(key=lambda item: item["cluster_id"])
 
+    if language == "java":
+        cluster_by_problem = {
+            problem: cluster["cluster_id"]
+            for cluster in final_problem_clusters
+            for problem in cluster["problem_ids"]
+        }
+        users_by_cluster: dict[str, set[str]] = defaultdict(set)
+        for index, record in enumerate(inventory):
+            if canonical_by_index[index] == index:
+                users_by_cluster[cluster_by_problem[record["problem_id"]]].add(record["user_id"])
+        for cluster in final_problem_clusters:
+            retained = cluster["retained_programs_after_d0_d3"]
+            users = len(users_by_cluster[cluster["cluster_id"]])
+            cluster["distinct_users_after_d0_d3"] = users
+            cluster["eligible_evaluation_minimum_16"] = retained >= 16 and users >= 16
+            cluster["eligible_train_minimum_64"] = retained >= 64 and users >= 16
+
     index_rows = [
         {
             "index": index,
@@ -285,6 +325,19 @@ def build_d3_artifacts(
             int(cluster["eligible_minimum_64"]) for cluster in final_problem_clusters
         ),
     }
+    if language == "java":
+        summary.update(
+            {
+                "eligible_evaluation_clusters_minimum_16_users_16": sum(
+                    int(cluster["eligible_evaluation_minimum_16"])
+                    for cluster in final_problem_clusters
+                ),
+                "eligible_train_clusters_minimum_64_users_16": sum(
+                    int(cluster["eligible_train_minimum_64"])
+                    for cluster in final_problem_clusters
+                ),
+            }
+        )
 
     artifact_records = [
         _write_and_hash(output_dir / "d3_index.jsonl", jsonl_bytes(index_rows)),
@@ -303,7 +356,7 @@ def build_d3_artifacts(
         )
 
     manifest = {
-        "schema_version": D3_SCHEMA_VERSION,
+        "schema_version": D3_SCHEMA_VERSION if language == "python" else JAVA_D3_SCHEMA_VERSION,
         "experiment_role": (
             "full_pre_split_D3_eligibility_without_retrieval_metrics"
             if max_records is None
@@ -318,6 +371,7 @@ def build_d3_artifacts(
             "d0_d2_manifest_sha256": eligibility_manifest_sha,
         },
         "protocol": {
+            "language": language,
             "representation": "set of exact consecutive D1 token 5-grams",
             "num_perm": num_perm,
             "minhash_scheme": "affine32",
@@ -333,12 +387,22 @@ def build_d3_artifacts(
             "official_D4_status": "pending_full_CodeNet_derived_metadata",
         },
         "summary": summary,
-        "gate_precheck": {
-            "at_least_764_eligible_clusters_for_300_100_364": (
-                summary["eligible_problem_clusters_minimum_64"] >= 764
-            ),
-            "final_eligibility": "pending_official_D4",
-        },
+        "gate_precheck": (
+            {
+                "at_least_764_eligible_clusters_for_300_100_364": (
+                    summary["eligible_problem_clusters_minimum_64"] >= 764
+                ),
+                "final_eligibility": "pending_official_D4",
+            }
+            if language == "python"
+            else {
+                "user_supported_train_and_evaluation_clusters_available": (
+                    summary["eligible_train_clusters_minimum_64_users_16"] > 0
+                    and summary["eligible_evaluation_clusters_minimum_16_users_16"] > 0
+                ),
+                "final_eligibility": "pending_official_D4",
+            }
+        ),
         "artifacts": sorted(artifact_records, key=lambda item: item["path"]),
     }
     manifest_bytes = canonical_json_bytes(manifest)
@@ -352,7 +416,7 @@ def build_d3_artifacts(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Build the exact-verified D3 audit for CodeNet Python800.")
+    parser = argparse.ArgumentParser(description="Build an exact-verified D3 audit for Project CodeNet.")
     parser.add_argument("--input-root", type=Path, required=True)
     parser.add_argument("--d0-d2-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -364,6 +428,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--jaccard-threshold", type=float, default=0.90)
     parser.add_argument("--minimum-cluster-programs", type=int, default=64)
     parser.add_argument("--max-records", type=int, default=None)
+    parser.add_argument("--language", choices=("python", "java"), default="python")
     return parser
 
 
@@ -381,6 +446,7 @@ def main() -> None:
         jaccard_threshold=args.jaccard_threshold,
         minimum_cluster_programs=args.minimum_cluster_programs,
         max_records=args.max_records,
+        language=args.language,
     )
     print(json.dumps(manifest["summary"], ensure_ascii=False, indent=2, sort_keys=True))
     print(f"manifest={args.output_dir / 'd3_manifest.json'}")

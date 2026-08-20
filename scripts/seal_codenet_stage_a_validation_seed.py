@@ -464,15 +464,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    output = args.output or args.result.with_name(args.result.stem + "_seal.json")
+
+    def repo_path(path: Path) -> Path:
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    result = repo_path(args.result)
+    output = repo_path(args.output) if args.output is not None else result.with_name(result.stem + "_seal.json")
     manifest = seal_seed_result(
-        result_path=args.result,
-        protocol_path=args.protocol,
-        calibration_manifest_path=args.calibration_manifest,
-        gate0_path=args.gate0,
-        rounding_addendum_path=args.rounding_addendum,
-        relevance_addendum_path=args.relevance_addendum,
-        validation_programs_path=args.validation_programs,
+        result_path=result,
+        protocol_path=repo_path(args.protocol),
+        calibration_manifest_path=repo_path(args.calibration_manifest),
+        gate0_path=repo_path(args.gate0),
+        rounding_addendum_path=repo_path(args.rounding_addendum),
+        relevance_addendum_path=repo_path(args.relevance_addendum),
+        validation_programs_path=repo_path(args.validation_programs),
         output_path=output,
     )
     print(json.dumps(manifest["checks"], indent=2, sort_keys=True))

@@ -211,8 +211,9 @@ def test_test_split_loader_enforces_registered_cluster_cardinalities(
     test_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
     ast_path.write_text("".join(json.dumps(row) + "\n" for row in ast_rows), encoding="utf-8")
 
-    def fake_load_program(*, source_root: Path, sample_row: dict, ast_row: dict) -> StageAProgram:
+    def fake_load_program(*, source_root: Path, sample_row: dict, ast_row: dict, language: str) -> StageAProgram:
         assert ast_row["source_relpath"] == sample_row["source_relpath"]
+        assert language == "python"
         return StageAProgram(
             item_id=sample_row["source_relpath"],
             cluster_id=sample_row["cluster_id"],

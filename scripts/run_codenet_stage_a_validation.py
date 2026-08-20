@@ -77,7 +77,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _verified_implementation_state(project_root: Path) -> dict[str, Any]:
+def _verified_implementation_state(
+    project_root: Path,
+    *,
+    runner_tag: str = RUNNER_TAG,
+) -> dict[str, Any]:
     """Require an immutable tagged worktree for an official validation run."""
 
     def git(*arguments: str) -> str:
@@ -94,12 +98,12 @@ def _verified_implementation_state(project_root: Path) -> dict[str, Any]:
     if tracked_status:
         raise ValueError("official Stage A validation requires a clean tracked worktree")
     tags = tuple(sorted(line for line in git("tag", "--points-at", "HEAD").splitlines() if line))
-    if RUNNER_TAG not in tags:
-        raise ValueError(f"official Stage A validation requires runner tag {RUNNER_TAG!r}")
+    if runner_tag not in tags:
+        raise ValueError(f"official validation requires runner tag {runner_tag!r}")
     return {
         "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
         "commit": commit,
-        "tag": RUNNER_TAG,
+        "tag": runner_tag,
         "tracked_worktree_clean": True,
     }
 

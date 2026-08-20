@@ -1,0 +1,28 @@
+FROM python:3.12-slim-bookworm@sha256:a116514e19457bcb7af7efe9c3dd0b9b71e85b317694e7882a1c52aa15a78134
+
+ARG IMPLEMENTATION_COMMIT=unfrozen
+LABEL org.opencontainers.image.source="https://github.com/Malomalsky/code2hyp-artifacts" \
+      org.opencontainers.image.revision="$IMPLEMENTATION_COMMIT"
+
+ENV CUBLAS_WORKSPACE_CONFIG=:4096:8 \
+    MKL_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1 \
+    PYTHONHASHSEED=0 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy
+
+WORKDIR /workspace/code2hyp
+
+RUN python -m pip install --no-cache-dir uv==0.12.5
+
+COPY pyproject.toml uv.lock README.md ./
+COPY code2hyp/ code2hyp/
+COPY geometry_profile_research/ geometry_profile_research/
+COPY scripts/ scripts/
+COPY configs/ configs/
+
+RUN uv sync --frozen --extra ml --extra raw-ast \
+    && .venv/bin/python -c "import javalang, torch; print(torch.__version__, torch.version.cuda)"
+
+CMD ["/bin/bash"]

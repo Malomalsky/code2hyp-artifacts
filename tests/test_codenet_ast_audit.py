@@ -67,3 +67,22 @@ def test_source_audit_fails_closed_on_syntax_error(tmp_path: Path) -> None:
 
     assert result["audit_ok"] is False
     assert result["failure"] == "ast_parse:SyntaxError"
+
+
+def test_source_audit_uses_the_frozen_java_normalization_and_parser(tmp_path: Path) -> None:
+    source = tmp_path / "p00000" / "s000000001.java"
+    source.parent.mkdir()
+    source.write_bytes(b"class Demo {\r\n  int f(int x) { return x + 1; }  \r\n}\r\n")
+
+    result = audit_source_program(
+        tmp_path,
+        _sample_row("p00000/s000000001.java"),
+        max_paths=64,
+        selection_policy="lca_depth_affine_sampled",
+        language="java",
+    )
+
+    assert result["audit_ok"] is True
+    assert result["language"] == "java"
+    assert result["detected_encoding"] == "utf-8"
+    assert result["node_count"] > result["leaf_count"] >= 2

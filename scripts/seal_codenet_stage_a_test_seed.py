@@ -52,6 +52,7 @@ def seal_test_seed_result(
     expected_gallery_count: int = 3_088,
     expected_problem_count: int = 386,
     relevant_count: int = 8,
+    expected_cells: tuple[str, ...] = EXPECTED_CELLS,
 ) -> dict[str, Any]:
     """Recompute one complete test seed from its stored distance matrices."""
 
@@ -115,8 +116,10 @@ def seal_test_seed_result(
     )
     if any(result.get(flag) is not True for flag in required_flags):
         raise ValueError("test seed does not record complete test access and metrics")
-    if set(result.get("cells", {})) != set(EXPECTED_CELLS):
-        raise ValueError("test seed does not contain the exact seven-cell design")
+    if not expected_cells or len(expected_cells) != len(set(expected_cells)):
+        raise ValueError("expected test cells must be non-empty and unique")
+    if set(result.get("cells", {})) != set(expected_cells):
+        raise ValueError("test seed does not contain the exact frozen cell design")
 
     rows = _iter_jsonl(test_programs_path)
     if any(str(row.get("split")) != "test" for row in rows):
@@ -137,7 +140,7 @@ def seal_test_seed_result(
         raise ValueError("test query or gallery identifiers are not unique")
 
     cell_checks = []
-    for cell_id in EXPECTED_CELLS:
+    for cell_id in expected_cells:
         cell = result["cells"][cell_id]
         distance_meta = cell["distance_matrix"]
         distance_path = result_path.parent / str(distance_meta["path"])

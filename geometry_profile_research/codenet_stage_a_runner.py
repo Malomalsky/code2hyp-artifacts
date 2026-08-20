@@ -45,7 +45,9 @@ def train_stage_a_encoder(
     lambda_branch: float = 1.0,
     max_paths: int = 64,
     path_selection_policy: str = "lca_depth_affine_sampled",
+    node_input_mode: str = "label_only",
     torch_num_threads: int = 1,
+    compute_device: str = "cpu",
     progress_callback: Any | None = None,
 ) -> tuple[RawASTCode2Hyp, list[dict[str, float]], dict[str, Any]]:
     """Train the frozen structural-only encoder without validation information."""
@@ -56,23 +58,18 @@ def train_stage_a_encoder(
         raise ValueError("epochs and batch_size must be positive")
     if gradient_clip_norm <= 0.0:
         raise ValueError("gradient_clip_norm must be positive")
-    if torch_num_threads <= 0:
-        raise ValueError("torch_num_threads must be positive")
     random.seed(seed)
-    torch.manual_seed(seed)
-    torch.set_num_threads(torch_num_threads)
-    try:
-        torch.use_deterministic_algorithms(True, warn_only=False)
-        deterministic = True
-    except Exception:
-        deterministic = False
-        raise
+    device = configure_torch_runtime(
+        compute_device=compute_device,
+        torch_num_threads=torch_num_threads,
+        seed=seed,
+    )
 
     trees = tuple(program.tree for program in train_programs)
     vocab = build_raw_ast_token_vocab(
         trees,
         terminal_policy="class",
-        node_input_mode="label_only",
+        node_input_mode=node_input_mode,
     )
     model = RawASTCode2Hyp(
         vocab,
@@ -82,13 +79,13 @@ def train_stage_a_encoder(
         curvature=1.0,
         max_paths=max_paths,
         terminal_policy="class",
-        node_input_mode="label_only",
+        node_input_mode=node_input_mode,
         path_object_mode="lca_product",
         method_aggregation="measure",
         path_cost_orientation="unoriented",
         path_selection_policy=path_selection_policy,
         anchor_mode="true_lca",
-    )
+    ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.0)
     history: list[dict[str, float]] = []
     for epoch in range(epochs):
@@ -162,7 +159,8 @@ def train_stage_a_encoder(
         "trainable_parameter_count": sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad),
         "torch_version": torch.__version__,
         "torch_num_threads": torch.get_num_threads(),
-        "deterministic_algorithms": deterministic,
+        "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+        **torch_device_metadata(device),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
     }
@@ -225,6 +223,9 @@ def run_stage_a_validation_seed(
     lambda_gromov: float = 0.1,
     lambda_branch: float = 1.0,
     max_paths: int = 64,
+    node_input_mode: str = "label_only",
+    fit_all_roles_to_active_ball: bool = False,
+    include_all_role_hyperbolic: bool = False,
     max_ball_fraction: float = 0.35,
     active_curvatures: Sequence[float] = ACTIVE_CURVATURES,
     near_zero_curvature: float = NEAR_ZERO_CURVATURE,
@@ -235,10 +236,14 @@ def run_stage_a_validation_seed(
     query_batch_size: int = 4,
     gallery_batch_size: int = 32,
     torch_num_threads: int = 1,
+    compute_device: str = "cpu",
     implementation: Mapping[str, Any] | None = None,
     progress_callback: Any | None = None,
 ) -> dict[str, Any]:
     """Train one seed and evaluate every frozen Stage A validation cell."""
+
+    if include_all_role_hyperbolic and not fit_all_roles_to_active_ball:
+        raise ValueError("all-role hyperbolic cells require train-only ball fitting for every role")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     result_path = output_dir / f"seed_{seed}_validation.json"
@@ -264,6 +269,14 @@ def run_stage_a_validation_seed(
         "gallery_batch_size": gallery_batch_size,
         "torch_num_threads": torch_num_threads,
     }
+    if node_input_mode != "label_only":
+        execution_config["node_input_mode"] = node_input_mode
+    if fit_all_roles_to_active_ball:
+        execution_config["fit_all_roles_to_active_ball"] = True
+    if include_all_role_hyperbolic:
+        execution_config["include_all_role_hyperbolic"] = True
+    if compute_device != "cpu":
+        execution_config["compute_device"] = compute_device
     implementation_record = dict(implementation or {"mode": "library_call_without_repository_provenance"})
     if result_path.exists():
         payload = json.loads(result_path.read_text(encoding="utf-8"))
@@ -289,7 +302,12 @@ def run_stage_a_validation_seed(
             or checkpoint.get("implementation") != implementation_record
         ):
             raise ValueError(f"refusing to reuse incompatible checkpoint: {checkpoint_path}")
-        model = _model_from_checkpoint(checkpoint)
+        device = configure_torch_runtime(
+            compute_device=compute_device,
+            torch_num_threads=torch_num_threads,
+            seed=seed,
+        )
+        model = _model_from_checkpoint(checkpoint, device=device)
         training_history = list(checkpoint["training_history"])
         training_metadata = dict(checkpoint["training_metadata"])
     else:
@@ -305,7 +323,9 @@ def run_stage_a_validation_seed(
             lambda_gromov=lambda_gromov,
             lambda_branch=lambda_branch,
             max_paths=max_paths,
+            node_input_mode=node_input_mode,
             torch_num_threads=torch_num_threads,
+            compute_device=compute_device,
             progress_callback=progress_callback,
         )
         checkpoint = {
@@ -315,7 +335,10 @@ def run_stage_a_validation_seed(
             "execution_config": execution_config,
             "implementation": implementation_record,
             "model_config": _model_config(model),
-            "model_state_dict": model.state_dict(),
+            "model_state_dict": {
+                name: value.detach().to(device="cpu")
+                for name, value in model.state_dict().items()
+            },
             "token_to_id": model.token_to_id,
             "training_history": training_history,
             "training_metadata": training_metadata,
@@ -345,13 +368,21 @@ def run_stage_a_validation_seed(
         phase="encoding_train_true_lca",
     )
     max_active_curvature = max(float(value) for value in active_curvatures)
-    maximum_lca_norm = max(
-        float(torch.linalg.vector_norm(measure.points[:, 0], dim=-1).max())
-        for measure in train_measures.values()
+    maximum_role_norms = tuple(
+        max(
+            float(torch.linalg.vector_norm(measure.points[:, role], dim=-1).max())
+            for measure in train_measures.values()
+        )
+        for role in range(3)
     )
+    maximum_lca_norm = maximum_role_norms[0]
     allowed_norm = max_ball_fraction / math.sqrt(max_active_curvature)
-    lca_coordinate_scale = 1.0 if maximum_lca_norm <= 0.0 else min(1.0, allowed_norm / maximum_lca_norm)
-    role_scales = (lca_coordinate_scale, 1.0, 1.0)
+    role_scales = tuple(
+        1.0 if maximum <= 0.0 else min(1.0, allowed_norm / maximum)
+        for maximum in maximum_role_norms
+    )
+    if not fit_all_roles_to_active_ball:
+        role_scales = (role_scales[0], 1.0, 1.0)
     train_measures = {
         item_id: scale_product_measure(measure, role_scales=role_scales)
         for item_id, measure in train_measures.items()
@@ -426,6 +457,16 @@ def run_stage_a_validation_seed(
         )
         for curvature in active_curvatures
     )
+    if include_all_role_hyperbolic:
+        cell_specs.extend(
+            (
+                all_role_curvature_cell_id(curvature),
+                (float(curvature), float(curvature), float(curvature)),
+                query_true_values,
+                gallery_true_values,
+            )
+            for curvature in active_curvatures
+        )
     for cell_index, (cell_id, curvatures, queries, gallery) in enumerate(cell_specs, start=1):
         if cell_id in cells:
             continue
@@ -469,7 +510,7 @@ def run_stage_a_validation_seed(
         )
         distance_path = output_dir / f"seed_{seed}_{cell_id}_distances.pt"
         _atomic_torch_save(distance_path, distances.to(dtype=torch.float64, device="cpu"))
-        cells[cell_id] = {
+        cell = {
             "factor_curvatures": list(curvatures),
             "factor_weights": list(geometry.factor_weights),
             "effective_lca_sectional_curvature": geometry.factor_sectional_curvatures[0],
@@ -484,6 +525,11 @@ def run_stage_a_validation_seed(
                 "negative_count": int((distances < 0.0).sum()),
             },
         }
+        if include_all_role_hyperbolic:
+            cell["effective_factor_sectional_curvatures"] = list(
+                geometry.factor_sectional_curvatures
+            )
+        cells[cell_id] = cell
         partial = _seed_payload(
             seed=seed,
             protocol_sha256=protocol_sha256,
@@ -496,6 +542,7 @@ def run_stage_a_validation_seed(
             training_metadata=training_metadata,
             role_scales=role_scales,
             maximum_lca_norm=maximum_lca_norm,
+            maximum_role_norms=(maximum_role_norms if fit_all_roles_to_active_ball else None),
             role_calibration=asdict(role_calibration),
             cost_scale=asdict(cost_scale),
             epsilon=epsilon,
@@ -516,6 +563,7 @@ def run_stage_a_validation_seed(
         training_metadata=training_metadata,
         role_scales=role_scales,
         maximum_lca_norm=maximum_lca_norm,
+        maximum_role_norms=(maximum_role_norms if fit_all_roles_to_active_ball else None),
         role_calibration=asdict(role_calibration),
         cost_scale=asdict(cost_scale),
         epsilon=epsilon,
@@ -658,6 +706,11 @@ def curvature_cell_id(curvature: float) -> str:
     return f"HEE_c{token}_true_LCA"
 
 
+def all_role_curvature_cell_id(curvature: float) -> str:
+    token = f"{float(curvature):g}".replace(".", "p")
+    return f"HHH_c{token}_true_LCA"
+
+
 def _seed_averaged_task_scores(
     seed_payloads: Sequence[Mapping[str, Any]],
     *,
@@ -728,12 +781,19 @@ def _seed_payload(
     training_metadata: Mapping[str, Any],
     role_scales: Sequence[float],
     maximum_lca_norm: float,
+    maximum_role_norms: Sequence[float] | None,
     role_calibration: Mapping[str, Any],
     cost_scale: Mapping[str, Any],
     epsilon: float,
     cells: Mapping[str, Any],
     status: str,
 ) -> dict[str, Any]:
+    coordinate_scaling = {
+        "role_scales": list(role_scales),
+        "maximum_unscaled_training_LCA_norm": maximum_lca_norm,
+    }
+    if maximum_role_norms is not None:
+        coordinate_scaling["maximum_unscaled_training_role_norms"] = list(maximum_role_norms)
     return {
         "schema_version": "code2hyp-stage-a-validation-seed-v1",
         "status": status,
@@ -748,10 +808,7 @@ def _seed_payload(
         },
         "training_history": list(training_history),
         "training_metadata": dict(training_metadata),
-        "coordinate_scaling": {
-            "role_scales": list(role_scales),
-            "maximum_unscaled_training_LCA_norm": maximum_lca_norm,
-        },
+        "coordinate_scaling": coordinate_scaling,
         "role_calibration": dict(role_calibration),
         "sinkhorn_calibration": {
             "cost_scale": dict(cost_scale),
@@ -795,8 +852,72 @@ def _model_config(model: RawASTCode2Hyp) -> dict[str, Any]:
     }
 
 
-def _model_from_checkpoint(checkpoint: Mapping[str, Any]) -> RawASTCode2Hyp:
+def _model_from_checkpoint(
+    checkpoint: Mapping[str, Any],
+    *,
+    device: torch.device | str = "cpu",
+) -> RawASTCode2Hyp:
     config = dict(checkpoint["model_config"])
     model = RawASTCode2Hyp(checkpoint["token_to_id"], **config)
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    return model
+    return model.to(device)
+
+
+def configure_torch_runtime(
+    *,
+    compute_device: str,
+    torch_num_threads: int,
+    seed: int | None = None,
+) -> torch.device:
+    """Apply the explicit deterministic runtime used by registered runs."""
+
+    if torch_num_threads <= 0:
+        raise ValueError("torch_num_threads must be positive")
+    device = torch.device(compute_device)
+    if device.type not in {"cpu", "cuda"}:
+        raise ValueError("compute_device must be cpu or cuda")
+    if device.type == "cuda":
+        expected_workspace = ":4096:8"
+        workspace = os.environ.get("CUBLAS_WORKSPACE_CONFIG")
+        if workspace not in {None, expected_workspace}:
+            raise RuntimeError(
+                "registered CUDA execution requires "
+                f"CUBLAS_WORKSPACE_CONFIG={expected_workspace}, observed {workspace!r}"
+            )
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = expected_workspace
+        if not torch.cuda.is_available():
+            raise RuntimeError("compute_device=cuda requires an available CUDA device")
+        torch.cuda.set_device(device)
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+    torch.set_num_threads(torch_num_threads)
+    if seed is not None:
+        torch.manual_seed(seed)
+        if device.type == "cuda":
+            torch.cuda.manual_seed_all(seed)
+    torch.use_deterministic_algorithms(True, warn_only=False)
+    return device
+
+
+def torch_device_metadata(device: torch.device) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "compute_device": str(device),
+        "device_type": device.type,
+    }
+    if device.type == "cuda":
+        index = device.index if device.index is not None else torch.cuda.current_device()
+        metadata.update(
+            {
+                "cuda_device_index": index,
+                "cuda_device_name": torch.cuda.get_device_name(index),
+                "cuda_compute_capability": list(torch.cuda.get_device_capability(index)),
+                "cuda_runtime_version": torch.version.cuda,
+                "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+                "tf32_enabled": bool(torch.backends.cuda.matmul.allow_tf32),
+                "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
+                "cudnn_deterministic": bool(torch.backends.cudnn.deterministic),
+            }
+        )
+    return metadata

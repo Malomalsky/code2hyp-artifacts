@@ -11,10 +11,12 @@ from typing import Any, Iterable, Mapping, Sequence
 from geometry_profile_research.codenet_eligibility import (
     canonical_json_bytes,
     jsonl_bytes,
+    normalize_java_source,
     normalize_python_source,
     portable_manifest_path,
     stable_sha256,
 )
+from geometry_profile_research.java_raw_ast import parse_java_ast_tree
 from geometry_profile_research.python_raw_ast import parse_python_ast_tree
 from geometry_profile_research.raw_ast import RawAstTree
 
@@ -42,6 +44,79 @@ class StageATestSplit:
     gallery: tuple[StageAProgram, ...]
 
 
+def load_codenet_split(
+    *,
+    source_root: Path,
+    train_path: Path,
+    validation_path: Path,
+    ast_index_path: Path,
+    language: str,
+    train_clusters: int,
+    validation_clusters: int,
+    train_programs_per_cluster: int,
+    validation_queries_per_cluster: int,
+    validation_gallery_per_cluster: int,
+) -> StageASplit:
+    """Load and cardinality-check an unopened-test CodeNet split."""
+
+    train_rows = list(_iter_jsonl(train_path))
+    validation_rows = list(_iter_jsonl(validation_path))
+    ast_rows = {str(row["source_relpath"]): row for row in _iter_jsonl(ast_index_path)}
+    selected_rows = train_rows + validation_rows
+    selected_ids = [str(row["source_relpath"]) for row in selected_rows]
+    if len(selected_ids) != len(set(selected_ids)) or set(selected_ids) != set(ast_rows):
+        raise ValueError("program manifests and AST audit index must contain the same unique sources")
+    if any(str(row.get("split")) == "test" for row in selected_rows):
+        raise ValueError("test program IDs must remain sealed")
+    if any(any("user" in str(key).casefold() for key in row) for row in selected_rows):
+        raise ValueError("opened program manifests cannot publish user identifiers")
+
+    source_root = source_root.resolve()
+    programs = [
+        _load_program(
+            source_root=source_root,
+            sample_row=row,
+            ast_row=ast_rows[str(row["source_relpath"])],
+            language=language,
+        )
+        for row in selected_rows
+    ]
+    train = tuple(programs[: len(train_rows)])
+    validation = programs[len(train_rows) :]
+    query = tuple(program for program in validation if program.role == "query")
+    gallery = tuple(program for program in validation if program.role == "gallery")
+    expected = (
+        train_clusters * train_programs_per_cluster,
+        validation_clusters * validation_queries_per_cluster,
+        validation_clusters * validation_gallery_per_cluster,
+    )
+    if (len(train), len(query), len(gallery)) != expected:
+        raise ValueError(
+            "CodeNet split cardinalities differ from the frozen design: "
+            f"expected={expected}, observed={(len(train), len(query), len(gallery))}"
+        )
+    if any(program.role != "train" or program.split != "train" for program in train):
+        raise ValueError("training manifest contains a non-training program")
+    if any(program.split != "validation" for program in query + gallery):
+        raise ValueError("query/gallery programs must belong to validation")
+    train_counts = _role_cluster_counts(train)
+    query_counts = _role_cluster_counts(query)
+    gallery_counts = _role_cluster_counts(gallery)
+    if len(train_counts) != train_clusters or any(
+        count != train_programs_per_cluster for count in train_counts.values()
+    ):
+        raise ValueError("training cluster cardinalities differ from the frozen design")
+    if query_counts.keys() != gallery_counts.keys() or len(query_counts) != validation_clusters:
+        raise ValueError("validation query/gallery cluster sets differ from the frozen design")
+    if any(count != validation_queries_per_cluster for count in query_counts.values()) or any(
+        count != validation_gallery_per_cluster for count in gallery_counts.values()
+    ):
+        raise ValueError("validation per-cluster cardinalities differ from the frozen design")
+    if set(train_counts) & set(query_counts):
+        raise ValueError("training and validation problem clusters overlap")
+    return StageASplit(train=train, query=query, gallery=gallery)
+
+
 def load_stage_a_split(
     *,
     source_root: Path,
@@ -51,49 +126,31 @@ def load_stage_a_split(
 ) -> StageASplit:
     """Load the frozen whole-program split and verify it against the AST audit."""
 
-    train_rows = list(_iter_jsonl(train_path))
-    validation_rows = list(_iter_jsonl(validation_path))
-    ast_rows = {str(row["source_relpath"]): row for row in _iter_jsonl(ast_index_path)}
-    selected_rows = train_rows + validation_rows
-    selected_ids = [str(row["source_relpath"]) for row in selected_rows]
-    if len(selected_ids) != len(set(selected_ids)):
-        raise ValueError("frozen Stage A program IDs are not unique")
-    if set(selected_ids) != set(ast_rows):
-        raise ValueError("frozen program manifests and AST audit index do not contain the same sources")
-    if any(str(row.get("split")) == "test" for row in selected_rows):
-        raise ValueError("test program IDs must remain sealed")
-
-    source_root = source_root.resolve()
-    programs = [
-        _load_program(source_root=source_root, sample_row=row, ast_row=ast_rows[str(row["source_relpath"])])
-        for row in selected_rows
-    ]
-    train_count = len(train_rows)
-    train = tuple(programs[:train_count])
-    validation = programs[train_count:]
-    query = tuple(program for program in validation if program.role == "query")
-    gallery = tuple(program for program in validation if program.role == "gallery")
-    if len(train) != 18_560 or len(query) != 776 or len(gallery) != 776:
-        raise ValueError(
-            "frozen Stage A cardinalities must be train=18560, query=776, gallery=776; "
-            f"observed train={len(train)}, query={len(query)}, gallery={len(gallery)}"
-        )
-    if any(program.role != "train" or program.split != "train" for program in train):
-        raise ValueError("training manifest contains a non-training role")
-    if any(program.split != "validation" for program in query + gallery):
-        raise ValueError("query/gallery programs must belong to validation")
-    if {program.item_id for program in query} & {program.item_id for program in gallery}:
-        raise ValueError("validation query and gallery programs overlap")
-    return StageASplit(train=train, query=query, gallery=gallery)
+    return load_codenet_split(
+        source_root=source_root,
+        train_path=train_path,
+        validation_path=validation_path,
+        ast_index_path=ast_index_path,
+        language="python",
+        train_clusters=290,
+        validation_clusters=97,
+        train_programs_per_cluster=64,
+        validation_queries_per_cluster=8,
+        validation_gallery_per_cluster=8,
+    )
 
 
-def load_stage_a_test_split(
+def load_codenet_test_split(
     *,
     source_root: Path,
     test_path: Path,
     ast_index_path: Path,
+    language: str,
+    test_clusters: int,
+    queries_per_cluster: int,
+    gallery_per_cluster: int,
 ) -> StageATestSplit:
-    """Load the once-unsealed test split and verify all registered cardinalities."""
+    """Load a once-unsealed CodeNet test split with exact cardinality checks."""
 
     test_rows = list(_iter_jsonl(test_path))
     ast_rows = {str(row["source_relpath"]): row for row in _iter_jsonl(ast_index_path)}
@@ -113,27 +170,49 @@ def load_stage_a_test_split(
             source_root=source_root,
             sample_row=row,
             ast_row=ast_rows[str(row["source_relpath"])],
+            language=language,
         )
         for row in test_rows
     )
     query = tuple(program for program in programs if program.role == "query")
     gallery = tuple(program for program in programs if program.role == "gallery")
-    if len(query) != 3_088 or len(gallery) != 3_088:
+    expected_queries = test_clusters * queries_per_cluster
+    expected_gallery = test_clusters * gallery_per_cluster
+    if len(query) != expected_queries or len(gallery) != expected_gallery:
         raise ValueError(
-            "frozen Stage A test cardinalities must be query=3088 and gallery=3088; "
+            f"frozen CodeNet test cardinalities must be query={expected_queries} and gallery={expected_gallery}; "
             f"observed query={len(query)}, gallery={len(gallery)}"
         )
     if {program.item_id for program in query} & {program.item_id for program in gallery}:
         raise ValueError("test query and gallery programs overlap")
     query_clusters = _role_cluster_counts(query)
     gallery_clusters = _role_cluster_counts(gallery)
-    if query_clusters != gallery_clusters or len(query_clusters) != 386:
-        raise ValueError("test query/gallery cluster sets differ from the registered 386 clusters")
-    if any(count != 8 for count in query_clusters.values()) or any(
-        count != 8 for count in gallery_clusters.values()
+    if query_clusters.keys() != gallery_clusters.keys() or len(query_clusters) != test_clusters:
+        raise ValueError("test query/gallery cluster sets differ from the frozen design")
+    if any(count != queries_per_cluster for count in query_clusters.values()) or any(
+        count != gallery_per_cluster for count in gallery_clusters.values()
     ):
-        raise ValueError("each test cluster must contain exactly eight queries and eight gallery programs")
+        raise ValueError("test per-cluster cardinalities differ from the frozen design")
     return StageATestSplit(query=query, gallery=gallery)
+
+
+def load_stage_a_test_split(
+    *,
+    source_root: Path,
+    test_path: Path,
+    ast_index_path: Path,
+) -> StageATestSplit:
+    """Load the frozen Python800 Stage A test split."""
+
+    return load_codenet_test_split(
+        source_root=source_root,
+        test_path=test_path,
+        ast_index_path=ast_index_path,
+        language="python",
+        test_clusters=386,
+        queries_per_cluster=8,
+        gallery_per_cluster=8,
+    )
 
 
 def _role_cluster_counts(programs: Sequence[StageAProgram]) -> dict[str, int]:
@@ -392,6 +471,7 @@ def _load_program(
     source_root: Path,
     sample_row: Mapping[str, Any],
     ast_row: Mapping[str, Any],
+    language: str = "python",
 ) -> StageAProgram:
     source_relpath = str(sample_row["source_relpath"])
     relative = Path(source_relpath)
@@ -405,13 +485,20 @@ def _load_program(
     raw = source_path.read_bytes()
     if stable_sha256(raw) != str(ast_row["raw_source_sha256"]):
         raise ValueError(f"raw source hash mismatch: {source_relpath}")
-    canonical = normalize_python_source(raw)
+    if language == "python":
+        canonical = normalize_python_source(raw)
+        parser = parse_python_ast_tree
+    elif language == "java":
+        canonical = normalize_java_source(raw)
+        parser = parse_java_ast_tree
+    else:
+        raise ValueError(f"unsupported source language: {language!r}")
     if not canonical.decode_ok:
         raise ValueError(f"source decode failed after audit: {source_relpath}")
     canonical_bytes = canonical.text.encode("utf-8")
     if stable_sha256(canonical_bytes) != str(ast_row["canonical_source_sha256"]):
         raise ValueError(f"canonical source hash mismatch: {source_relpath}")
-    tree = parse_python_ast_tree(canonical.text)
+    tree = parser(canonical.text)
     if len(tree.parent_by_node) != int(ast_row["node_count"]):
         raise ValueError(f"AST node count mismatch: {source_relpath}")
     return StageAProgram(

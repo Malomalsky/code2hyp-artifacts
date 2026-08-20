@@ -82,3 +82,79 @@ def test_d3_builder_verifies_candidates_and_keeps_metrics_sealed(tmp_path: Path)
     assert manifest["summary"]["problem_cluster_count_after_exact_d4_and_cross_problem_d3"] == 2
     edge = json.loads((output / "d3_near_duplicate_edges.jsonl").read_text())
     assert edge["set_jaccard"] >= 0.90
+
+
+def test_d3_builder_supports_java_token_streams(tmp_path: Path) -> None:
+    source_root = tmp_path / "java"
+    body = " ".join(f"x += {index};" for index in range(80))
+    sources = {
+        "c1/s1.java": f"class A {{ int f() {{ int x = 0; {body} return x; }} }}",
+        "c2/s2.java": f"class B {{ int f() {{ int x = 0; {body.replace('x += 79;', 'x -= 79;')} return x; }} }}",
+    }
+    inventory = []
+    for relative, source in sources.items():
+        path = source_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+        problem, filename = relative.split("/")
+        inventory.append(
+            {
+                "problem_id": problem,
+                "original_problem_id": problem,
+                "submission_id": Path(filename).stem,
+                "source_relpath": relative,
+                "retained_after_d0_d2": True,
+                "user_id": f"user-{problem}",
+            }
+        )
+    d0_d2 = tmp_path / "d0_d2_java"
+    d0_d2.mkdir()
+    (d0_d2 / "manifest.json").write_text("{}\n", encoding="utf-8")
+    (d0_d2 / "file_inventory.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in inventory),
+        encoding="utf-8",
+    )
+    (d0_d2 / "preliminary_problem_clusters.jsonl").write_text(
+        "".join(
+            json.dumps({"cluster_id": problem, "problem_ids": [problem]}) + "\n"
+            for problem in ("c1", "c2")
+        ),
+        encoding="utf-8",
+    )
+
+    result = build_d3_artifacts(
+        input_root=source_root,
+        d0_d2_dir=d0_d2,
+        output_dir=tmp_path / "d3_java",
+        workers=1,
+        num_perm=32,
+        bands=8,
+        rows_per_band=4,
+        minhash_seed=7,
+        jaccard_threshold=0.90,
+        minimum_cluster_programs=1,
+        language="java",
+    )
+
+    assert result["schema_version"] == "codenet-java-stage-b-d3-v1"
+    assert result["summary"]["verified_d3_edges"] == 1
+    clusters = [
+        json.loads(line)
+        for line in (tmp_path / "d3_java" / "post_d3_problem_clusters.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    assert clusters == [
+        {
+            "cluster_id": clusters[0]["cluster_id"],
+            "distinct_users_after_d0_d3": 1,
+            "eligible_evaluation_minimum_16": False,
+            "eligible_minimum_64": True,
+            "eligible_train_minimum_64": False,
+            "problem_count": 2,
+            "problem_ids": ["c1", "c2"],
+            "retained_programs_after_d0_d3": 1,
+        }
+    ]
+    assert result["summary"]["eligible_evaluation_clusters_minimum_16_users_16"] == 0
+    assert result["summary"]["eligible_train_clusters_minimum_64_users_16"] == 0
