@@ -1,0 +1,33 @@
+{
+  "schema_version": "codenet-java-stage-b-validation-input-bundle-v1",
+  "created_at_utc": "2026-08-20T12:19:39Z",
+  "archive": {
+    "local_path": "local_execution/code2hyp_stage_b_validation_inputs_v1.tar.gz",
+    "size_bytes": 6421532,
+    "sha256": "c2b38980e54649973199db2fed461d0117cca283d976c662083b80979f701666"
+  },
+  "contents": {
+    "file_count_including_manifests": 7441,
+    "source_file_count": 7424,
+    "train_program_count": 6368,
+    "validation_program_count": 1056,
+    "test_program_count": 0,
+    "contains_test_program_identifiers": false,
+    "contains_relevance_metrics": false
+  },
+  "integrity": {
+    "all_source_files_match_ast_audit_raw_sha256": true,
+    "archive_round_trip_manifest_check": true,
+    "source_checksum_count": 7424,
+    "source_checksums_sha256": "14149b6a9f432650a21e1fe5659acbeb4bd348214dc5390112842abd054198f9",
+    "bundle_manifest_entry_count": 7440,
+    "bundle_manifest_sha256": "e6b22b0d90106600287aecfdbd7fe05f04ca597deeb24933a2d1754eec8e91f7"
+  },
+  "local_preflight": {
+    "implementation_commit_verified": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "validation_runner_tag_verified": "codenet-java-stage-b-validation-runner-v1",
+    "non_cuda_host_rejected_before_data_loading": true,
+    "expected_error": "compute_device=cuda requires an available CUDA device"
+  },
+  "purpose": "Transfer the registered train and validation inputs to the frozen CUDA runtime without exposing any Stage B test program identifier or source file."
+}

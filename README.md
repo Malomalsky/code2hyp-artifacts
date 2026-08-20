@@ -385,6 +385,44 @@ The Docker context excludes all local data and outputs; registered inputs are
 mounted read-only at execution time. The canonical experiment must use the
 digest above rather than a mutable image tag.
 
+For an official validation run, keep the runtime, source checkout, inputs, and
+outputs separate. The image supplies the pinned CUDA environment, while the
+read-only checkout lets the runner verify the signed implementation tag. The
+local validation-only input archive is described by
+`reports/codenet_java_stage_b_validation_input_bundle_v1.json`; it contains
+7,424 train/validation sources and no test program identifiers.
+
+```bash
+git clone https://github.com/Malomalsky/code2hyp-artifacts.git stage-b-runner
+git -C stage-b-runner checkout --detach codenet-java-stage-b-validation-runner-v1
+tar -xzf code2hyp_stage_b_validation_inputs_v1.tar.gz
+mkdir -p stage-b-validation-output
+
+docker run --rm --gpus all \
+  --mount type=bind,src="$PWD/stage-b-runner",dst=/run/code2hyp,readonly \
+  --mount type=bind,src="$PWD/code2hyp_stage_b_validation_inputs_v1",dst=/inputs,readonly \
+  --mount type=bind,src="$PWD/stage-b-validation-output",dst=/outputs \
+  --workdir /run/code2hyp \
+  ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204 \
+  /workspace/code2hyp/.venv/bin/python scripts/run_codenet_java_stage_b_validation.py \
+  --design /inputs/configs/codenet_java_stage_b_draft_v1.json \
+  --registration /inputs/registrations/codenet_java_stage_b_registration_v1.json \
+  --sampling-manifest /inputs/data/codenet_java_stage_b_program_sampling_v1/program_sampling_manifest.json \
+  --train-programs /inputs/data/codenet_java_stage_b_program_sampling_v1/train_programs.jsonl \
+  --validation-programs /inputs/data/codenet_java_stage_b_program_sampling_v1/validation_programs.jsonl \
+  --calibration-manifest /inputs/data/codenet_java_stage_b_calibration_pairs_v1/calibration_pair_manifest.json \
+  --calibration-pairs /inputs/data/codenet_java_stage_b_calibration_pairs_v1/calibration_pairs.jsonl \
+  --selected-ast-manifest /inputs/data/codenet_java_stage_b_selected_source_ast_v1/selected_source_ast_manifest.json \
+  --ast-index /inputs/data/codenet_java_stage_b_selected_source_ast_v1/selected_source_ast_index.jsonl \
+  --source-root /inputs/sources \
+  --output-dir /outputs
+```
+
+Before starting the container, verify the transferred archive against SHA-256
+`c2b38980e54649973199db2fed461d0117cca283d976c662083b80979f701666`.
+After extraction, `shasum -a 256 -c MANIFEST.sha256` verifies every packaged
+input. Do not mount the full Java candidate source tree into validation.
+
 The earlier Python Stage A RunPod jobs used CPU computation even though their
 pods exposed an RTX 3090. This hardware-description correction is documented in
 `reports/codenet_python800_stage_a_compute_device_correction_2026-08-20.md` and

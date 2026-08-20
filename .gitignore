@@ -38,3 +38,4 @@ outputs/codenet_python800_stage_a_validation_v1/
 outputs/codenet_python800_stage_a_test_v1/
 outputs/codenet_python800_stage_a_validation_runpod_v1/
 outputs/codenet_python800_stage_a_test_runpod_v1/
+local_execution/
