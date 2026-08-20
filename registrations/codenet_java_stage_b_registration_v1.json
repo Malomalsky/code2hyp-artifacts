@@ -1,0 +1,63 @@
+{
+  "schema_version": "code2hyp-codenet-java-stage-b-registration-v1",
+  "registration": {
+    "artifact_type": "preregistered_evaluation_design",
+    "doi": "10.5281/zenodo.22028886",
+    "record_id": 22028886,
+    "record_url": "https://zenodo.org/records/22028886",
+    "api_url": "https://zenodo.org/api/records/22028886",
+    "created_utc": "2026-08-20T11:56:08.168203+00:00",
+    "api_response_sha256": "1ef2da43cdb4d1bc6808e511ec64f0c7367259d208584e661602b9bb8297b8ae",
+    "archive": {
+      "filename": "Malomalsky/code2hyp-artifacts-codenet-java-stage-b-registration-v1.zip",
+      "bytes": 11323526,
+      "md5": "e354a67f425b7ec63a1a87586c99a865"
+    }
+  },
+  "git": {
+    "repository": "https://github.com/Malomalsky/code2hyp-artifacts",
+    "design_tag": "codenet-java-stage-b-design-v1",
+    "design_commit": "8702551c85e821e37748e7e71f1df8b3286b242c",
+    "registration_tag": "codenet-java-stage-b-registration-v1",
+    "registration_commit": "fbff92e6dc44bab859dff81e743509a45948863c",
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/codenet-java-stage-b-registration-v1",
+    "release_published_utc": "2026-08-20T11:56:02Z"
+  },
+  "design": {
+    "path": "configs/codenet_java_stage_b_draft_v1.json",
+    "sha256": "a8f5cc67344c2f0ac10ed67e975bba248e9d6e3b424c428bb645d92b92307fdf",
+    "dataset_revision": "1.0.0",
+    "eligible_evaluation_clusters": 531,
+    "eligible_train_clusters": 253,
+    "quotas_train_validation_test": [199, 66, 266]
+  },
+  "nist_randomness_beacon": {
+    "api_version": "2.0",
+    "selection_rule": "first pulse strictly after the Zenodo record creation timestamp",
+    "query_timestamp_unix_milliseconds": 1787226968168,
+    "query_url": "https://beacon.nist.gov/beacon/2.0/pulse/time/next/1787226968168",
+    "response_sha256": "800eaa8a383e7591e6ac5ca1f9f9886d6069d2452b3c02aef2acc1b4870ea595",
+    "uri": "https://beacon.nist.gov/beacon/2.0/chain/2/pulse/1911175",
+    "chain_index": 2,
+    "pulse_index": 1911175,
+    "timestamp_utc": "2026-08-20T11:57:00.000Z",
+    "period_milliseconds": 60000,
+    "status_code": 0,
+    "certificate_id": "528943a555f5f8ca54423be6dfb95925a35c7b552046420e7d7cd072058a14d6536ad3a8e9754b6582f164a90b0cd86a65d659f5426a2659a947595d1c816c8c",
+    "output_value_hex": "0B099C7A5C352C60D501BB408A2E8A42A12BA299CAA49008911484C0DC63E8D851DFAC70B5604308C27C550DF5BF01FCE5EFE7D6B5E0943F5BB7D354C19CFE37"
+  },
+  "split_derivation": {
+    "algorithm": "role-constrained HMAC-SHA256",
+    "key_encoding": "hex-decode nist_randomness_beacon.output_value_hex to 64 bytes",
+    "message_encoding": "UTF-8(dataset_revision + NUL + cluster_id)",
+    "ordering": "ascending unsigned digest bytes, then ascending UTF-8 cluster_id as a collision tie-breaker",
+    "assignment": "select the first 199 of 253 train-eligible clusters; remove them from the 531 evaluation-eligible clusters; assign the first 66 remaining clusters to validation and the final 266 to test"
+  },
+  "state_at_registration": {
+    "split_generated": false,
+    "java_validation_metrics_opened": false,
+    "java_test_program_ids_materialized": false,
+    "java_test_relevance_labels_opened": false,
+    "java_test_retrieval_metrics_computed": false
+  }
+}
