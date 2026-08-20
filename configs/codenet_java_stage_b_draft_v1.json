@@ -218,8 +218,8 @@
     "test_openings": 1
   },
   "freeze": {
-    "implementation_commit": null,
-    "container_digest": null,
+    "implementation_commit": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "container_digest": "sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204",
     "validation_runner_tag": "codenet-java-stage-b-validation-runner-v1",
     "test_runner_tag": "codenet-java-stage-b-test-runner-v1",
     "registration_complete": false,

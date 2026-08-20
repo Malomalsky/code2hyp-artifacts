@@ -343,11 +343,18 @@ Run the pre-registration audit with:
 uv run python scripts/check_codenet_java_stage_b_readiness.py
 ```
 
-The audit currently blocks only on the immutable implementation commit, the
-container digest and a clean tracked worktree. The implementation commit and
-both runner tags are deliberately separate from the later protocol commit, so
-the protocol can pin an already immutable implementation without a
-self-referential Git hash.
+The implementation is frozen at
+`c419f6418056b618ce373ebd6fafe6601ff51566`; both Stage B runner tags point to
+that commit. The protocol pins the public CUDA image by its registry digest:
+
+```text
+ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204
+```
+
+The image was built from the frozen commit in GitHub Actions with SBOM and
+maximum-mode provenance. Its build receipt is stored in
+`reports/codenet_java_stage_b_container_v1.json`. This protocol commit remains
+separate from the implementation commit to avoid a self-referential Git hash.
 
 Build the frozen `linux/amd64` runtime from the implementation commit with:
 
@@ -359,9 +366,9 @@ docker buildx build --platform linux/amd64 \
   --load .
 ```
 
-Record the resulting immutable image ID or registry manifest digest in the
-later protocol commit. The Docker context excludes all local data and outputs;
-registered inputs are mounted read-only at execution time.
+The Docker context excludes all local data and outputs; registered inputs are
+mounted read-only at execution time. The canonical experiment must use the
+digest above rather than a mutable image tag.
 
 The earlier Python Stage A RunPod jobs used CPU computation even though their
 pods exposed an RTX 3090. This hardware-description correction is documented in

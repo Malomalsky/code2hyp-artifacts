@@ -1,0 +1,34 @@
+{
+  "schema_version": "code2hyp-codenet-java-stage-b-container-v1",
+  "implementation_commit": "c419f6418056b618ce373ebd6fafe6601ff51566",
+  "runner_tags": [
+    "codenet-java-stage-b-validation-runner-v1",
+    "codenet-java-stage-b-test-runner-v1"
+  ],
+  "image": "ghcr.io/malomalsky/code2hyp-stage-b",
+  "container_digest": "sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204",
+  "linux_amd64_manifest_digest": "sha256:d39cd0f0f3522d152cacebb8c192c7cc67d021d598b2e4c650c52569b897e1ae",
+  "config_digest": "sha256:358da273b781fab9ab11e74b48c5b9a59568983d1f2a60ac1ed98473b5ed911b",
+  "compressed_layer_bytes": 5654052584,
+  "python_version": "3.12.14",
+  "torch_version": "2.13.0+cu130",
+  "torch_cuda_version": "13.0",
+  "platform": "linux/amd64",
+  "provenance": "mode=max",
+  "sbom": true,
+  "build": {
+    "workflow_commit": "72f791d74862f8e2ff44b2cc513d0e60969d3598",
+    "github_actions_run_id": 32364876203,
+    "url": "https://github.com/Malomalsky/code2hyp-artifacts/actions/runs/32364876203",
+    "started_utc": "2026-08-20T11:39:36Z",
+    "completed_utc": "2026-08-20T11:46:24Z",
+    "conclusion": "success"
+  },
+  "checks": {
+    "immutable_index_resolved_anonymously": true,
+    "oci_revision_label_matches_implementation_commit": true,
+    "cuda_enabled_torch_installed": true,
+    "provenance_attestation_present": true,
+    "sbom_attestation_present": true
+  }
+}
