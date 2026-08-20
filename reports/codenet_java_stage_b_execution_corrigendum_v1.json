@@ -1,0 +1,71 @@
+{
+  "schema_version": "code2hyp-codenet-java-stage-b-execution-corrigendum-v1",
+  "created_at_utc": "2026-08-20T12:42:49Z",
+  "scope": "execution_environment_only",
+  "registration": {
+    "doi": "10.5281/zenodo.22028886",
+    "design_sha256": "a8f5cc67344c2f0ac10ed67e975bba248e9d6e3b424c428bb645d92b92307fdf",
+    "implementation_commit": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "validation_runner_tag": "codenet-java-stage-b-validation-runner-v1",
+    "test_runner_tag": "codenet-java-stage-b-test-runner-v1"
+  },
+  "reason": {
+    "registered_base_image": "ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204",
+    "failure": "The fail-closed runner verifies the frozen Git commit and signed runner tag, but the registered base image did not contain the git executable.",
+    "probe_run": {
+      "id": 32369308166,
+      "url": "https://github.com/Malomalsky/code2hyp-artifacts/actions/runs/32369308166",
+      "python_version": "3.12.14",
+      "git_available": false
+    }
+  },
+  "correction": {
+    "containerfile": "Containerfile.stage-b-runtime-v2",
+    "containerfile_sha256": "cc266717611a543b438ff5686dc216ec6d957fa5f643cf06e6d764849319d802",
+    "definition_commit": "fd5683c6f3f6d7369ba3e91d1603a66d6882bc90",
+    "parent_digest": "sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204",
+    "runtime_image": "ghcr.io/malomalsky/code2hyp-stage-b@sha256:40135e658c4ec2c94f376f4cb95a4594c2440c3184d4cdc0d99e881146460af8",
+    "container_digest": "sha256:40135e658c4ec2c94f376f4cb95a4594c2440c3184d4cdc0d99e881146460af8",
+    "linux_amd64_manifest_digest": "sha256:af4226182ff8f0a13eac8ae03d88b6fab2ee56812fc1c2cb37ab3e1dbab9dafb",
+    "config_digest": "sha256:cd2a3368095525001a841a4b6f19778c4f1e7cf725def17fd8f664d2e0f9641a",
+    "change": "Install Debian git and its runtime dependencies on top of the immutable registered base image.",
+    "apt_summary": {
+      "upgraded_packages": 0,
+      "new_packages": 17,
+      "removed_packages": 0,
+      "git_version": "2.39.5"
+    },
+    "scientific_code_changed": false,
+    "python_environment_changed": false,
+    "design_changed": false,
+    "split_changed": false,
+    "runner_tags_changed": false
+  },
+  "build": {
+    "github_actions_run_id": 32369725187,
+    "job_id": 96427249428,
+    "url": "https://github.com/Malomalsky/code2hyp-artifacts/actions/runs/32369725187",
+    "started_utc": "2026-08-20T12:36:32Z",
+    "completed_utc": "2026-08-20T12:42:48Z",
+    "conclusion": "success",
+    "provenance": "mode=max",
+    "sbom": true
+  },
+  "checks": {
+    "immutable_parent_digest_used": true,
+    "no_existing_debian_package_upgraded": true,
+    "git_available": true,
+    "implementation_commit_verified": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "validation_runner_tag_verified": "codenet-java-stage-b-validation-runner-v1",
+    "tracked_worktree_clean": true
+  },
+  "data_state_before_correction_publication": {
+    "split_assignment_sha256": "43031390aac5052c5958ae5b1b47006ffa5f83a34b8d358a53d7a06dbe4800d9",
+    "validation_input_bundle_sha256": "c2b38980e54649973199db2fed461d0117cca283d976c662083b80979f701666",
+    "java_validation_metrics_opened": false,
+    "java_test_program_ids_materialized": false,
+    "java_test_relevance_labels_opened": false,
+    "java_test_retrieval_metrics_computed": false
+  },
+  "interpretation": "This corrigendum repairs an execution dependency needed by the preregistered fail-closed provenance check. It does not modify the registered estimand, hypotheses, data, split, model family, hyperparameters, selection rule, metrics, inference procedure, or scientific implementation."
+}

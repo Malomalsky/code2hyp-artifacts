@@ -360,16 +360,29 @@ uv run python scripts/check_codenet_java_stage_b_readiness.py
 
 The implementation is frozen at
 `c419f6418056b618ce373ebd6fafe6601ff51566`; both Stage B runner tags point to
-that commit. The protocol pins the public CUDA image by its registry digest:
+that commit. The preregistered CUDA base image is pinned by its registry digest:
 
 ```text
 ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204
 ```
 
-The image was built from the frozen commit in GitHub Actions with SBOM and
+The base image was built from the frozen commit in GitHub Actions with SBOM and
 maximum-mode provenance. Its build receipt is stored in
-`reports/codenet_java_stage_b_container_v1.json`. This protocol commit remains
-separate from the implementation commit to avoid a self-referential Git hash.
+`reports/codenet_java_stage_b_container_v1.json`. A pre-metric probe found that
+the image lacked the `git` executable required by the fail-closed provenance
+check. The executable runtime therefore adds only Debian Git and its runtime
+dependencies on top of that immutable base image; no existing Debian package
+was upgraded and no Python package, scientific code, design, split, runner tag,
+or statistical procedure was changed. The correction and public build receipt
+are recorded in `reports/codenet_java_stage_b_execution_corrigendum_v1.json`.
+The executable image is pinned as:
+
+```text
+ghcr.io/malomalsky/code2hyp-stage-b@sha256:40135e658c4ec2c94f376f4cb95a4594c2440c3184d4cdc0d99e881146460af8
+```
+
+The protocol commit remains separate from the implementation commit to avoid a
+self-referential Git hash.
 
 Build the frozen `linux/amd64` runtime from the implementation commit with:
 
@@ -383,7 +396,7 @@ docker buildx build --platform linux/amd64 \
 
 The Docker context excludes all local data and outputs; registered inputs are
 mounted read-only at execution time. The canonical experiment must use the
-digest above rather than a mutable image tag.
+corrected executable digest rather than a mutable image tag.
 
 For an official validation run, keep the runtime, source checkout, inputs, and
 outputs separate. The image supplies the pinned CUDA environment, while the
@@ -403,7 +416,7 @@ docker run --rm --gpus all \
   --mount type=bind,src="$PWD/code2hyp_stage_b_validation_inputs_v1",dst=/inputs,readonly \
   --mount type=bind,src="$PWD/stage-b-validation-output",dst=/outputs \
   --workdir /run/code2hyp \
-  ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204 \
+  ghcr.io/malomalsky/code2hyp-stage-b@sha256:40135e658c4ec2c94f376f4cb95a4594c2440c3184d4cdc0d99e881146460af8 \
   /workspace/code2hyp/.venv/bin/python scripts/run_codenet_java_stage_b_validation.py \
   --design /inputs/configs/codenet_java_stage_b_draft_v1.json \
   --registration /inputs/registrations/codenet_java_stage_b_registration_v1.json \
