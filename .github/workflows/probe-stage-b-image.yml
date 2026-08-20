@@ -1,0 +1,31 @@
+name: Probe registered Stage B image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  IMAGE: ghcr.io/malomalsky/code2hyp-stage-b@sha256:f58fec9b2a2a1f3d58f462596486f6dca1e1a29c5d303f083d145fb19bea4204
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inspect registered runtime
+        run: |
+          docker pull "$IMAGE"
+          docker run --rm "$IMAGE" sh -lc '
+            printf "python="; python --version
+            printf "git="; command -v git || true
+            test ! -x "$(command -v git 2>/dev/null)"
+          '
