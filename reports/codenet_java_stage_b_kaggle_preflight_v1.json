@@ -1,0 +1,78 @@
+{
+  "cuda_index_compatibility_shim": "resolve unindexed cuda device to torch.cuda.current_device before set_device",
+  "environment_freeze": [
+    "cuda-bindings==12.9.7",
+    "cuda-pathfinder==1.6.0",
+    "cuda-toolkit==12.6.3",
+    "datasketch==2.0.0",
+    "filelock==3.32.3",
+    "fsspec==2026.7.0",
+    "javalang==0.13.0",
+    "jinja2==3.1.6",
+    "markupsafe==3.0.3",
+    "mpmath==1.3.0",
+    "networkx==3.6.1",
+    "numpy==2.5.1",
+    "nvidia-cublas-cu12==12.6.4.1",
+    "nvidia-cuda-cupti-cu12==12.6.80",
+    "nvidia-cuda-nvrtc-cu12==12.6.85",
+    "nvidia-cuda-runtime-cu12==12.6.77",
+    "nvidia-cudnn-cu12==9.10.2.21",
+    "nvidia-cufft-cu12==11.3.0.4",
+    "nvidia-cufile-cu12==1.11.1.6",
+    "nvidia-curand-cu12==10.3.7.77",
+    "nvidia-cusolver-cu12==11.7.1.2",
+    "nvidia-cusparse-cu12==12.5.4.2",
+    "nvidia-cusparselt-cu12==0.7.1",
+    "nvidia-nccl-cu12==2.29.3",
+    "nvidia-nvjitlink-cu12==12.6.85",
+    "nvidia-nvshmem-cu12==3.4.5",
+    "nvidia-nvtx-cu12==12.6.77",
+    "scipy==1.18.0",
+    "setuptools==78.1.0",
+    "six==1.17.0",
+    "sympy==1.14.0",
+    "torch==2.13.0+cu126",
+    "triton==3.7.1",
+    "typing-extensions==4.16.0"
+  ],
+  "host": {
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+    "system_python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]"
+  },
+  "implementation_commit": "c419f6418056b618ce373ebd6fafe6601ff51566",
+  "input_manifest_entries": 7440,
+  "input_manifest_sha256": "e6b22b0d90106600287aecfdbd7fe05f04ca597deeb24933a2d1754eec8e91f7",
+  "kaggle_archive_extraction": true,
+  "kaggle_restored_executable_paths": [
+    "scripts/run_code2hyp_postreview_benchmark.sh",
+    "scripts/run_raw_ast_fgw_project_suite.sh"
+  ],
+  "nvidia_smi": "Fri Aug 21 08:23:58 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.159.04             Driver Version: 580.159.04     CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  Tesla P100-PCIE-16GB           Off |   00000000:00:04.0 Off |                    0 |\n| N/A   37C    P0             31W /  250W |       0MiB /  16384MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|  No running processes found                                                             |\n+-----------------------------------------------------------------------------------------+",
+  "probe": {
+    "device": {
+      "compute_device": "cuda",
+      "cublas_workspace_config": ":4096:8",
+      "cuda_compute_capability": [
+        6,
+        0
+      ],
+      "cuda_device_index": 0,
+      "cuda_device_name": "Tesla P100-PCIE-16GB",
+      "cuda_runtime_version": "12.6",
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "device_type": "cuda",
+      "tf32_enabled": false
+    },
+    "fp64_probe_sha256": "c64cce84e88824c158dd5095f5bcb528592ee89e47a0f405add85cd9250a0ca4"
+  },
+  "python": "Python 3.12.14",
+  "runner_tag": "codenet-java-stage-b-validation-runner-v1",
+  "schema_version": "code2hyp-codenet-java-stage-b-kaggle-preflight-v1",
+  "scientific_metrics_computed": false,
+  "status": "preflight_passed",
+  "test_artifacts_opened": false,
+  "uploaded_input_archive_sha256": "c2b38980e54649973199db2fed461d0117cca283d976c662083b80979f701666",
+  "uploaded_runner_archive_sha256": "d75c2319d25f8c5940e2722c4f281215d538c622fc457b64e8570d9a187e8df2"
+}

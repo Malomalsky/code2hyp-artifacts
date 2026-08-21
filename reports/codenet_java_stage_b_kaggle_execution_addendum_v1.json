@@ -1,0 +1,85 @@
+{
+  "schema_version": "code2hyp-codenet-java-stage-b-kaggle-execution-addendum-v1",
+  "created_at_utc": "2026-08-21T08:26:10Z",
+  "scope": "execution_platform_and_cuda_api_compatibility_only",
+  "registration": {
+    "doi": "10.5281/zenodo.22028886",
+    "design_sha256": "a8f5cc67344c2f0ac10ed67e975bba248e9d6e3b424c428bb645d92b92307fdf",
+    "implementation_commit": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "validation_runner_tag": "codenet-java-stage-b-validation-runner-v1",
+    "test_runner_tag": "codenet-java-stage-b-test-runner-v1"
+  },
+  "prior_runtime": {
+    "registered_execution_image": "ghcr.io/malomalsky/code2hyp-stage-b@sha256:40135e658c4ec2c94f376f4cb95a4594c2440c3184d4cdc0d99e881146460af8",
+    "python_version": "3.12.14",
+    "torch_version": "2.13.0+cu130",
+    "executed_for_java_stage_b_metrics": false
+  },
+  "kaggle_runtime": {
+    "platform": "Kaggle Notebooks",
+    "accelerator": "Tesla P100-PCIE-16GB",
+    "compute_capability": [6, 0],
+    "driver_version": "580.159.04",
+    "driver_cuda_version": "13.0",
+    "python_version": "3.12.14",
+    "torch_version": "2.13.0+cu126",
+    "torch_cuda_runtime": "12.6",
+    "cublas_workspace_config": ":4096:8",
+    "tf32_enabled": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "registered_image_executed": false
+  },
+  "transport_corrections": {
+    "input_archive_sha256": "c2b38980e54649973199db2fed461d0117cca283d976c662083b80979f701666",
+    "runner_archive_sha256": "d75c2319d25f8c5940e2722c4f281215d538c622fc457b64e8570d9a187e8df2",
+    "input_manifest_entries_verified": 7440,
+    "input_manifest_sha256": "e6b22b0d90106600287aecfdbd7fe05f04ca597deeb24933a2d1754eec8e91f7",
+    "kaggle_archive_expansion_removed_executable_bits": true,
+    "restored_executable_paths": [
+      "scripts/run_code2hyp_postreview_benchmark.sh",
+      "scripts/run_raw_ast_fgw_project_suite.sh"
+    ],
+    "tracked_worktree_clean_after_mode_restoration": true
+  },
+  "cuda_api_compatibility": {
+    "observed_failure": "torch.cuda.set_device(torch.device('cuda')) raises ValueError because the device has no explicit index in PyTorch 2.13.0.",
+    "launcher": "scripts/run_codenet_java_stage_b_cuda_compat.py",
+    "launcher_sha256": "68c3d319ea69a839f88f30adcb5b6c65966b1dc24d4a8884323b79f90067cc48",
+    "behavior": "Resolve an unindexed CUDA device to torch.cuda.current_device() before delegating to torch.cuda.set_device; leave indexed devices and integer indices unchanged.",
+    "scientific_source_checkout_modified": false,
+    "registered_compute_device_value_modified": false
+  },
+  "preflight": {
+    "kaggle_kernel": "ivankosyanenko/code2hyp-stage-b-kaggle-preflight",
+    "kernel_version": 8,
+    "receipt": "reports/codenet_java_stage_b_kaggle_preflight_v1.json",
+    "receipt_sha256": "57f20d61e4fa1553613eb284bb5e3f0e8166dc8ca6ec0fb943af20b901dcf9fd",
+    "status": "preflight_passed",
+    "fp64_probe_sha256": "c64cce84e88824c158dd5095f5bcb528592ee89e47a0f405add85cd9250a0ca4",
+    "implementation_commit_verified": "c419f6418056b618ce373ebd6fafe6601ff51566",
+    "validation_runner_tag_verified": "codenet-java-stage-b-validation-runner-v1",
+    "tracked_worktree_clean": true
+  },
+  "unchanged_scientific_contract": {
+    "estimands": true,
+    "hypotheses": true,
+    "data": true,
+    "split": true,
+    "model_family": true,
+    "hyperparameters": true,
+    "seeds": true,
+    "geometry_cells": true,
+    "selection_rule": true,
+    "metrics": true,
+    "inference": true,
+    "frozen_scientific_implementation": true
+  },
+  "data_state_before_addendum_publication": {
+    "java_validation_metrics_opened": false,
+    "java_test_program_ids_materialized": false,
+    "java_test_relevance_labels_opened": false,
+    "java_test_retrieval_metrics_computed": false
+  },
+  "interpretation": "This addendum records a pre-outcome execution-platform deviation and a CUDA API compatibility adapter. The adapter selects the current physical CUDA device for the registered logical value 'cuda' and does not change any scientific computation. Outputs from the Kaggle execution retain the registered container digest as a design reference; the actual runtime is the environment recorded in this addendum and its preflight receipt. Cross-GPU bitwise identity is not claimed."
+}

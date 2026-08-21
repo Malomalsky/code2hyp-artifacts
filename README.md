@@ -436,6 +436,23 @@ Before starting the container, verify the transferred archive against SHA-256
 After extraction, `shasum -a 256 -c MANIFEST.sha256` verifies every packaged
 input. Do not mount the full Java candidate source tree into validation.
 
+The Kaggle P100 fallback is documented before any Java validation metric in
+`reports/codenet_java_stage_b_kaggle_execution_addendum_v1.json`. Kaggle
+expands the frozen archives and uses PyTorch `2.13.0+cu126`; the public
+compatibility launcher resolves the registered unindexed `cuda` device to the
+current physical GPU without modifying the frozen checkout:
+
+```bash
+python scripts/run_codenet_java_stage_b_cuda_compat.py \
+  /path/to/frozen-runner/scripts/run_codenet_java_stage_b_validation.py \
+  [registered validation arguments]
+```
+
+The preflight receipt is
+`reports/codenet_java_stage_b_kaggle_preflight_v1.json`. It records the actual
+GPU/runtime, complete environment freeze, input hashes, Git provenance, and a
+deterministic FP64 probe; no Java retrieval metric or test artifact was opened.
+
 The earlier Python Stage A RunPod jobs used CPU computation even though their
 pods exposed an RTX 3090. This hardware-description correction is documented in
 `reports/codenet_python800_stage_a_compute_device_correction_2026-08-20.md` and
