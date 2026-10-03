@@ -1,0 +1,74 @@
+{
+  "earlier": {
+    "assets": [
+      {
+        "bytes": 1687635422,
+        "name": "lca-retrieval-materials-v1-part1.zip",
+        "sha256": "251ffbe239db1456152ce4c83aea221275a0d085452c690a918b799a8f8382ca",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-retrieval-materials-v1/lca-retrieval-materials-v1-part1.zip"
+      },
+      {
+        "bytes": 1684852180,
+        "name": "lca-retrieval-materials-v1-part2.zip",
+        "sha256": "3993f998b08521599101b0491b29072c1aaf8e7213668a73b239b16b2ceb4e3e",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-retrieval-materials-v1/lca-retrieval-materials-v1-part2.zip"
+      },
+      {
+        "bytes": 30900,
+        "name": "MANIFEST.json",
+        "sha256": "79ff90f1ab96dba20cfc5bc03bcf6c3b90571f98b8b83603156e5a3d4be12a08",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-retrieval-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 5060,
+        "name": "README.md",
+        "sha256": "2c7307e6beb804d20e26802a3b2404894faa17b6c15709c2ba646ac0087dcada",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-retrieval-materials-v1/README.md"
+      },
+      {
+        "bytes": 362,
+        "name": "SHA256SUMS.txt",
+        "sha256": "26c361a01a1b18d317668c9cbdc0e9fac28369cd70aaef7b08374638b6f22701",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-retrieval-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1",
+    "tag": "lca-retrieval-materials-v1"
+  },
+  "prospective": {
+    "assets": [
+      {
+        "bytes": 1038879830,
+        "name": "lca-fresh-fusion-materials-v1.zip",
+        "sha256": "ed51fd21b64fb4d7862850528f5a18fc602ccb0531783537b7ffa29d13ede34e",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-fresh-fusion-materials-v1/lca-fresh-fusion-materials-v1.zip"
+      },
+      {
+        "bytes": 5056,
+        "name": "README.md",
+        "sha256": "1a7f20e4e72ea90e319d8547bffe39cddbba6d1ef8597c7b25df192df551bf7f",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-fresh-fusion-materials-v1/README.md"
+      },
+      {
+        "bytes": 2494,
+        "name": "MANIFEST.json",
+        "sha256": "0b0907ca8a115c800c0a8d40fb245fd02a665c6892ab5873857deff0bde5de64",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-fresh-fusion-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 1212,
+        "name": "recovery_receipt_20261003.json",
+        "sha256": "65f0f9b8a12f6e63cff382ca449466fdf24aa258d4cd2026f9af5c8719177dc1",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-fresh-fusion-materials-v1/recovery_receipt_20261003.json"
+      },
+      {
+        "bytes": 353,
+        "name": "SHA256SUMS.txt",
+        "sha256": "7409a5a0e4b4d7cfd20d3b76c5de4e77127a3062406962a8548c41eddf0bcc23",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-fresh-fusion-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1",
+    "tag": "lca-fresh-fusion-materials-v1"
+  }
+}

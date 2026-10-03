@@ -1,0 +1,6 @@
+downloads/
+*.part
+*.npy
+*.zip
+.venv/
+__pycache__/

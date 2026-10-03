@@ -6,6 +6,17 @@ It intentionally does not include the manuscript text.
 Author: Ivan A. Kosyanenko  
 ORCID: <https://orcid.org/0009-0009-1804-9412>
 
+## Ancestor Retention Retrieval Materials
+
+Code, numerical data and reproduction instructions for *Ancestor Retention in
+Structural Code Retrieval: Effects of Path Context* are documented in
+[research_materials/lca_retrieval/](research_materials/lca_retrieval/README.md).
+The earlier analyses and the separate prospective 650-problem fusion evaluation
+have distinct downloadable releases. Large score matrices are release assets,
+not Git objects. Neither release contains the manuscript or third-party source
+programs. These retrieval studies are separate from the older experiments below
+and the ongoing Java Stage B study.
+
 ## Scope
 
 The current artifact package studies task-level source-code retrieval with abstract syntax tree (AST) path objects. The main representation is an LCA-anchored path object: a terminal-to-terminal AST path is represented by the product of its least common ancestor, source endpoint and target endpoint. Programs are compared either as finite path measures or through a validation-selected multiview kernel that combines a clean LCA-path view with lexical and AST-count views.
