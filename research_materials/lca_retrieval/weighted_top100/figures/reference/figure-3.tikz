@@ -1,0 +1,78 @@
+\begin{tikzpicture}[x=1cm,y=1cm,font=\footnotesize,
+  interval/.style={line width=0.7pt},
+  tick/.style={font=\scriptsize,inner sep=1pt}]
+  \node[anchor=west,font=\small\bfseries] at (0,8.8) {(a) MAP@8};
+  \node[text=figblue,font=\small\bfseries] at (4.5,8.8) {Initial 650};
+  \node[text=figorange,font=\small\bfseries] at (8.5,8.8) {New 650};
+  \foreach \row/\reference in {
+    8.1/{Retained fusion},7.5/{Masked fusion},6.9/{Node counts},
+    6.3/{Retained fragments},5.7/{Masked fragments},5.1/{AST transitions}}{
+      \node[anchor=west] at (0,\row) {\reference};
+  }
+  \foreach \origin in {3,7}{
+    \begin{scope}[shift={(\origin,0)},x=25cm]
+      \foreach \x/\label in {0/0,0.04/0.04,0.08/0.08,0.12/0.12}{
+        \draw[black!12,line width=0.35pt] (\x,4.65)--(\x,8.4);
+        \node[tick,anchor=north] at (\x,4.55) {\label};
+      }
+      \draw[black!50,line width=0.4pt] (0,4.65)--(0.12,4.65);
+    \end{scope}
+  }
+  % Absolute MAP@8 from saved results; initial fusion is exploratory.
+  \begin{scope}[shift={(3,0)},x=25cm]
+    \foreach \score/\row in {
+      0.10335385187728938/8.1,
+      0.09689374427655678/7.5,
+      0.0859842032967033/6.9,
+      0.0810806146978022/6.3,
+      0.07345149381868132/5.7,
+      0.06581936813186813/5.1}{
+        \filldraw[fill=figblue!65,draw=figblue,line width=0.35pt]
+          (0,{\row-0.12}) rectangle (\score,{\row+0.12});
+        \node[anchor=west,inner sep=2pt] at (\score,\row)
+          {\pgfmathprintnumber[fixed,precision=5,fixed zerofill]{\score}};
+    }
+  \end{scope}
+  \begin{scope}[shift={(7,0)},x=25cm]
+    \foreach \score/\row in {
+      0.09704012133699634/8.1,
+      0.09087468521062271/7.5,
+      0.07882815361721612/6.9,
+      0.07668546817765567/6.3,
+      0.06770509958791208/5.7}{
+        \filldraw[fill=figorange!60,draw=figorange,line width=0.35pt]
+          (0,{\row-0.12}) rectangle (\score,{\row+0.12});
+        \node[anchor=west,inner sep=2pt] at (\score,\row)
+          {\pgfmathprintnumber[fixed,precision=5,fixed zerofill]{\score}};
+    }
+    \node[anchor=west,text=black!65] at (0,5.1) {Not evaluated};
+  \end{scope}
+  \node[anchor=west,font=\footnotesize\bfseries] at (0,3.95)
+    {(b) Initial 650: retained fragments minus reference};
+  \node[anchor=west,font=\footnotesize\bfseries] at (0,2.0)
+    {(c) New 650: retained fusion minus reference};
+  \begin{scope}[shift={(6.3,0)},x=160cm]
+    \draw[black!50,dashed,line width=0.4pt] (0,2.45)--(0,3.7);
+    \draw[black!50,dashed,line width=0.4pt] (0,0.2)--(0,1.75);
+    % Estimates and adjusted intervals: Table_8 and prospective fusion contrasts.
+    \foreach \estimate/\lower/\upper/\y/\reference/\colour in {
+      0.007629120879120879/0.005734652586996337/0.00970322062919719/3.5/{Masked fragments}/figblue,
+      -0.004903588598901098/-0.011819315666971917/0.0019141900850885248/3.05/{Node counts}/figblue,
+      0.015261246565934066/0.008476176167582419/0.02218861058646215/2.6/{AST transitions}/figblue,
+      0.01821196771978022/0.01430038585546398/0.022157562814789377/1.55/{Node counts}/figorange,
+      0.020354653159340663/0.01643802274114774/0.024418686803647744/1.1/{Retained fragments}/figorange,
+      0.0061654361263736275/0.004856782518696582/0.007511199824481074/0.65/{Masked fusion}/figorange}{
+        \node[anchor=east] at (-0.015,\y) {\reference};
+        \draw[interval,\colour] (\lower,\y)--(\upper,\y);
+        \draw[interval,\colour] (\lower,{\y-0.07})--(\lower,{\y+0.07});
+        \draw[interval,\colour] (\upper,{\y-0.07})--(\upper,{\y+0.07});
+        \fill[\colour] (\estimate,\y) circle[radius=1.6pt];
+    }
+    \draw[black!50,line width=0.4pt] (-0.014,0.2)--(0.027,0.2);
+    \foreach \x/\label in {-0.01/{$-0.01$},0/{0},0.01/{0.01},0.02/{0.02}}{
+      \draw[black!50,line width=0.4pt] (\x,0.2)--(\x,0.13);
+      \node[tick,anchor=north] at (\x,0.05) {\label};
+    }
+    \node[anchor=north] at (0.0065,-0.32) {Difference in MAP@8};
+  \end{scope}
+\end{tikzpicture}

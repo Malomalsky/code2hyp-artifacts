@@ -8,12 +8,15 @@ ORCID: <https://orcid.org/0009-0009-1804-9412>
 
 ## Ancestor Retention Retrieval Materials
 
-Code, numerical data and reproduction instructions for *Ancestor Retention in
-Structural Code Retrieval: Effects of Path Context* are documented in
+Code, numerical data and reproduction instructions for local AST fragments,
+ancestor retention and candidate-limited reranking are documented in
 [research_materials/lca_retrieval/](research_materials/lca_retrieval/README.md).
-The earlier analyses and the separate prospective 650-problem fusion evaluation
-have distinct downloadable releases. Large score matrices are release assets,
-not Git objects. Neither release contains the manuscript or third-party source
+The latest [weighted/top-100 release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1)
+adds a 400-unused-problem validation, BM25 comparisons, candidate-budget
+measurements and reproducible vector diagrams. The earlier analyses and the
+prospective 650-problem fusion evaluation retain separate immutable releases.
+Large numerical data are release assets, not Git objects. No retrieval release
+contains the manuscript or third-party source
 programs. These retrieval studies are separate from the older experiments below
 and the ongoing Java Stage B study.
 

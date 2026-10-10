@@ -1,7 +1,7 @@
 # Ancestor Retention in Structural Code Retrieval
 
-Research code, numerical data and reproduction instructions for the study
-*Ancestor Retention in Structural Code Retrieval: Effects of Path Context*.
+Research code, numerical data and reproduction instructions for local AST
+fragments, ancestor retention and candidate-limited code reranking.
 
 Ivan Aleksandrovich Kosyanenko, Ph.D. (Engineering), MIREA Russian Technological
 University. ORCID: https://orcid.org/0009-0009-1804-9412. No external funding.
@@ -13,10 +13,20 @@ The manuscript and third-party source programs are not included.
 |---|---|---|
 | Earlier analyses, v1 | CodeNet comparison, categorical path comparisons, weighting/order controls and exploratory fusion; 103 score matrices | [lca-retrieval-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1) |
 | Prospective fusion, v1 | Fixed fusion on a separate 650-problem cohort; five score matrices, metadata and bootstrap indices | [lca-fresh-fusion-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1) |
+| Weighted and top-100, v1 | Weighted 650-problem comparison, BM25 development/comparators, candidate budgets, 400 unused problems, raw timing samples and three vector diagrams | [lca-weighted-top100-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1) |
+
+For the current neural/structural comparisons, start with the
+[weighted/top-100 instructions](weighted_top100/README.md). This compact,
+independent ZIP includes embeddings, dense scores, sparse features, outcomes
+and portable NumPy/SciPy code. It recomputes all packaged metrics and intervals
+and regenerates the three figure sources without the manuscript. Original
+corpus parsing and model inference are not rerun; these limits and the
+hardware dependence of runtime are documented explicitly. Older archives
+remain unchanged and are needed only to replay the older underlying scores.
 
 The earlier package has two independent ZIPs sharing one directory; extract both.
-The prospective package has one ZIP. The first release does not contain the
-prospective results. Do not pool scores across cohorts or treat the exploratory
+The prospective package has one ZIP. Neither of the two older releases
+contains the weighted/top-100 analyses. Do not pool scores across cohorts or treat the exploratory
 fusion as prospective evidence. Large matrices are hosted as ordinary GitHub
 Release assets, without Git LFS or paid storage.
 
@@ -62,7 +72,7 @@ python3 -m venv .venv
 .venv/bin/python verify_results.py
 ```
 
-## Result and Scope
+## Earlier Fusion Result
 
 The prospective cohort contains 650 previously unused Codeforces problems,
 5,200 queries and 5,200 gallery programs, with eight relevant items per query.
@@ -91,7 +101,7 @@ Python contest-code sample. It is not a new fusion algorithm, semantic-equivalen
 test, independent-team replication, or demonstrated superiority to learned
 retrieval systems. No learned baseline was evaluated on this gallery.
 
-## Provenance and Storage
+## Earlier Provenance
 
 The frozen implementation commit is `c419f6418056b618ce373ebd6fafe6601ff51566`.
 CodeContests revision: `802411c3010cb00d1b05bad57ca77365a3c699d6`.

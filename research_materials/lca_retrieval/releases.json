@@ -70,5 +70,41 @@
     ],
     "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1",
     "tag": "lca-fresh-fusion-materials-v1"
+  },
+  "weighted_top100": {
+    "assets": [
+      {
+        "bytes": 430718014,
+        "name": "lca-weighted-top100-materials-v1.zip",
+        "sha256": "f6286340070901387f7bc1e29b3c5b9848e373967a9ff4e663d94a0b5a4ee855",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-weighted-top100-materials-v1/lca-weighted-top100-materials-v1.zip"
+      },
+      {
+        "bytes": 9212,
+        "name": "README.md",
+        "sha256": "8095750e80ad1549106de2342152fba2118e2702c900f6ef04583bcdc97beb1a",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-weighted-top100-materials-v1/README.md"
+      },
+      {
+        "bytes": 17601,
+        "name": "MANIFEST.json",
+        "sha256": "5926f389ddb8fec9d83ac2bcbe4575308b573d5f78b45c98ca587f0a9c15495c",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-weighted-top100-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 659,
+        "name": "VERIFICATION.json",
+        "sha256": "f6c72e8b9c8abf846af5323e2a1ea40c3af17254234e0a88a0ca3d1dbb78b0ac",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-weighted-top100-materials-v1/VERIFICATION.json"
+      },
+      {
+        "bytes": 343,
+        "name": "SHA256SUMS.txt",
+        "sha256": "c4e6c29bf0b9d2e3c0b61f65a90564af82354b6dd01dfcd6f8f6f0175ef5a7ca",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-weighted-top100-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1",
+    "tag": "lca-weighted-top100-materials-v1"
   }
 }

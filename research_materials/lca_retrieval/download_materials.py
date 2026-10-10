@@ -35,7 +35,7 @@ def download(entry, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--package", choices=("earlier", "prospective", "all"), default="prospective")
+    parser.add_argument("--package", choices=("earlier", "prospective", "weighted_top100", "all"), default="weighted_top100")
     parser.add_argument("--output", type=Path, default=Path("downloads"))
     args = parser.parse_args()
     registry = json.loads(Path(__file__).with_name("releases.json").read_text())

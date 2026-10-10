@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+\pgfplotsset{cost axis/.style={
+  scale only axis,width=4.05cm,height=4.05cm,
+  font=\footnotesize,tick label style={font=\scriptsize},
+  label style={font=\footnotesize},
+  axis line style={black!55,line width=0.4pt},
+  tick align=outside,grid=major,grid style={black!10},
+  xmin=0.75,xmax=4.25,xtick={1,2,3,4},xticklabels={50,100,500,Full},
+  xlabel={Candidate budget},
+  title style={font=\footnotesize\bfseries,at={(0,1.07)},anchor=west},
+  legend style={font=\scriptsize,draw=none,fill=white,inner sep=2pt},
+  legend cell align=left}}
+\begin{axis}[cost axis,at={(0,0)},anchor=south west,
+  title={(a) Gain preserved},ymin=90,ymax=102,ytick={90,94,98,100},
+  ylabel={Full MAP@8 gain retained (\%)},
+  legend style={at={(0.03,0.03)},anchor=south west}]
+\addplot[figblue,mark=*,line width=0.7pt] coordinates {(1,95.970759987874) (2,99.013322200035) (3,99.909380127709) (4,100.000000000000)};
+\addplot[figorange,mark=square*,dashed,line width=0.7pt] coordinates {(1,94.138543516874) (2,98.059139604768) (3,99.929622306377) (4,100.000000000000)};
+\legend{Fragments,Fragments + IDF}
+\end{axis}
+\begin{axis}[cost axis,at={(5.3cm,0)},anchor=south west,
+  title={(b) Warm CPU ranking},ymin=0,ymax=6,ytick={0,2,4,6},
+  ylabel={Time per query (ms)},
+  legend style={at={(0.03,0.97)},anchor=north west}]
+\addplot[figblue,mark=*,line width=0.7pt] coordinates {(1,1.810126171875) (2,1.875521007813) (3,2.351477123047) (4,4.986262140625)};
+\addplot[figorange,mark=square*,dashed,line width=0.7pt] coordinates {(1,1.810279957031) (2,1.879640695312) (3,2.345975582031) (4,5.002519929688)};
+\addplot[black!65,densely dotted,line width=0.8pt] coordinates {(1,1.611544890625) (4,1.611544890625)};
+\legend{Fragments,Fragments + IDF,Dense alone}
+\end{axis}
+\end{tikzpicture}
