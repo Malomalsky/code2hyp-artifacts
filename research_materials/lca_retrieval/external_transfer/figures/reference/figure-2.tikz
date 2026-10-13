@@ -1,0 +1,31 @@
+\begin{tikzpicture}
+\pgfplotsset{cost axis/.style={
+  scale only axis,width=4.0cm,height=3.90cm,
+  font=\footnotesize,tick label style={font=\footnotesize},
+  label style={font=\footnotesize},
+  axis line style={black!55,line width=0.4pt},
+  tick align=outside,grid=major,grid style={black!10},
+  xmin=35,xmax=7400,
+  xtick={50,100,500,5200},xticklabels={50,100,500,{5,200}},
+  minor x tick num=0,xlabel={Candidate count (log scale)},
+  title style={font=\footnotesize\bfseries,at={(0,1.07)},anchor=west},
+  legend style={font=\footnotesize,draw=none,fill=white,inner sep=2pt},
+  legend cell align=left}}
+\begin{axis}[xmode=log,cost axis,at={(0,0)},anchor=south west,
+  title={(a) Retrieval gain retained},ymin=90,ymax=102,ytick={90,94,98,100},
+  ylabel={Full MAP@8 gain retained (\%)},
+  legend style={at={(0.03,0.03)},anchor=south west}]
+\addplot[figblue,mark=o,mark size=2.4pt,line width=0.8pt] coordinates {(50,95.970759987874) (100,99.013322200035) (500,99.909380127709) (5200,100.000000000000)};
+\addplot[figorange,mark=square*,mark size=1.5pt,dashed,line width=0.8pt] coordinates {(50,94.138543516874) (100,98.059139604768) (500,99.929622306377) (5200,100.000000000000)};
+\legend{Without IDF,With IDF}
+\end{axis}
+\begin{axis}[xmode=log,cost axis,at={(5.25cm,0)},anchor=south west,
+  title={(b) CPU ranking time},ymin=0,ymax=6,ytick={0,2,4,6},
+  ylabel={Time per query (ms)},
+  legend style={at={(0.03,0.97)},anchor=north west}]
+\addplot[figblue,mark=o,mark size=2.4pt,line width=0.8pt] coordinates {(50,1.810126171875) (100,1.875521007813) (500,2.351477123047) (5200,4.986262140625)};
+\addplot[figorange,mark=square*,mark size=1.5pt,dashed,line width=0.8pt] coordinates {(50,1.810279957031) (100,1.879640695312) (500,2.345975582031) (5200,5.002519929688)};
+\addplot[black!65,densely dotted,line width=0.8pt] coordinates {(35,1.611544890625) (7400,1.611544890625)};
+\legend{Without IDF,With IDF,Dense alone}
+\end{axis}
+\end{tikzpicture}

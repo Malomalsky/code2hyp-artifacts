@@ -35,6 +35,54 @@
     "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1",
     "tag": "lca-retrieval-materials-v1"
   },
+  "external_transfer": {
+    "assets": [
+      {
+        "bytes": 669965108,
+        "name": "lca-external-transfer-materials-v1.zip",
+        "sha256": "06d81561dd82ebb29df13a87f22681466e7c3975ee28ec6e4b1dc8212e654c44",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/lca-external-transfer-materials-v1.zip"
+      },
+      {
+        "bytes": 7238,
+        "name": "README.md",
+        "sha256": "bfdcc9fd4d1b4d8001016717e0facbfd6cf4b775b76a7a74bf67db9d84077636",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/README.md"
+      },
+      {
+        "bytes": 12482,
+        "name": "MANIFEST.json",
+        "sha256": "3d5936c2b0552f27bd64363a53b7da988ecf7cd060a464d62eaebb1c5ac806ef",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 9004,
+        "name": "VERIFICATION.json",
+        "sha256": "7c2665d7f39077ee6c9df8f58386b5ac730e0542c7c609e8191d5797c741c09a",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/VERIFICATION.json"
+      },
+      {
+        "bytes": 1822,
+        "name": "FIGURES.json",
+        "sha256": "c84619089e9ce4b614d1ec0ebce265e13250db0b5e9d6bd4655fd633ba3313f3",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/FIGURES.json"
+      },
+      {
+        "bytes": 659,
+        "name": "PRIOR_VERIFICATION.json",
+        "sha256": "f6c72e8b9c8abf846af5323e2a1ea40c3af17254234e0a88a0ca3d1dbb78b0ac",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/PRIOR_VERIFICATION.json"
+      },
+      {
+        "bytes": 514,
+        "name": "SHA256SUMS.txt",
+        "sha256": "07e53a2f47c5ba62a39d423dd3e60f2c9f6e1ef837a75b9168e21b78ac16edac",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-external-transfer-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1",
+    "tag": "lca-external-transfer-materials-v1"
+  },
   "prospective": {
     "assets": [
       {

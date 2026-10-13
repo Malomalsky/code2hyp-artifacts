@@ -11,9 +11,12 @@ ORCID: <https://orcid.org/0009-0009-1804-9412>
 Code, numerical data and reproduction instructions for local AST fragments,
 ancestor retention and candidate-limited reranking are documented in
 [research_materials/lca_retrieval/](research_materials/lca_retrieval/README.md).
-The latest [weighted/top-100 release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1)
-adds a 400-unused-problem validation, BM25 comparisons, candidate-budget
-measurements and reproducible vector diagrams. The earlier analyses and the
+The latest [external-transfer release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1)
+adds CodeContests/CPRet comparisons with two retrievers, Qwen development
+calibration, the independent APPS/Codewars test including negative results,
+and all three current vector diagrams. The preceding
+[weighted/top-100 release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1)
+provides the 400-problem validation and candidate-budget measurements. The earlier analyses and the
 prospective 650-problem fusion evaluation retain separate immutable releases.
 Large numerical data are release assets, not Git objects. No retrieval release
 contains the manuscript or third-party source

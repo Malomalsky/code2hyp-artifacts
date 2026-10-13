@@ -1,0 +1,32 @@
+\begin{tikzpicture}
+\begin{axis}[
+  scale only axis,width=6.6cm,height=3.90cm,
+  font=\footnotesize,tick label style={font=\footnotesize},
+  xmin=-0.026,xmax=0.044,ymin=0.5,ymax=4.5,
+  xtick={-0.02,0,0.02,0.04},scaled x ticks=false,
+  xticklabel style={/pgf/number format/fixed,/pgf/number format/precision=2},
+  ytick={1,2,3,4},
+  yticklabels={{CPRet\\Qwen3-Embedding-0.6B},{CPRet\\CodeRankEmbed},
+    {CodeContests\\Qwen3-Embedding-0.6B},{CodeContests\\CodeRankEmbed}},
+  yticklabel style={align=right,font=\footnotesize},
+  xlabel={Change in nDCG@10 (reranker minus dense)},
+  xmajorgrids,grid style={black!10},axis line style={black!50},
+  tick align=outside]
+\addplot[black!65,dashed,forget plot] coordinates {(0,0.5) (0,4.5)};
+\addplot[black!20,line width=0.4pt,forget plot] coordinates {(-0.026,2.5) (0.044,2.5)};
+\addplot[only marks,mark=*,mark size=2.2pt,figblue,
+  error bars/.cd,x dir=both,x explicit,error bar style={line width=0.8pt}]
+  table[x=mean,y=row,x error minus=minus,x error plus=plus] {
+mean row minus plus
+0.034913429236328 4 0.004934200337310 0.005021713465671
+0.013008562758154 2 0.013076326703753 0.013419248101140
+};
+\addplot[only marks,mark=square*,mark size=2.2pt,figorange,
+  error bars/.cd,x dir=both,x explicit,error bar style={line width=0.8pt}]
+  table[x=mean,y=row,x error minus=minus,x error plus=plus] {
+mean row minus plus
+0.004144410405158 3 0.003533496523518 0.003602667711442
+-0.011091861294803 1 0.011008332964434 0.010728395614715
+};
+\end{axis}
+\end{tikzpicture}

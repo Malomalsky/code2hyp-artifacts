@@ -14,8 +14,17 @@ The manuscript and third-party source programs are not included.
 | Earlier analyses, v1 | CodeNet comparison, categorical path comparisons, weighting/order controls and exploratory fusion; 103 score matrices | [lca-retrieval-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1) |
 | Prospective fusion, v1 | Fixed fusion on a separate 650-problem cohort; five score matrices, metadata and bootstrap indices | [lca-fresh-fusion-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1) |
 | Weighted and top-100, v1 | Weighted 650-problem comparison, BM25 development/comparators, candidate budgets, 400 unused problems, raw timing samples and three vector diagrams | [lca-weighted-top100-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1) |
+| External transfer, v1 | Four corpus/retriever cells, Qwen development calibration, independent APPS/Codewars test including negative results, and three current vector diagrams | [lca-external-transfer-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1) |
 
-For the current neural/structural comparisons, start with the
+For the external comparisons, start with the
+[external-transfer instructions](external_transfer/README.md). The latest
+archive replays 41,712 crossed rankings, all development weights/folds and
+4,800 APPS rankings from numerical inputs. It includes negative transfer and
+regenerates all three current diagrams. This is an offline numerical replay,
+not a repetition of corpus parsing, model inference or data collection.
+Use `download_materials.py --package external_transfer` (now the default).
+
+For the preceding neural/structural comparisons, use the
 [weighted/top-100 instructions](weighted_top100/README.md). This compact,
 independent ZIP includes embeddings, dense scores, sparse features, outcomes
 and portable NumPy/SciPy code. It recomputes all packaged metrics and intervals
