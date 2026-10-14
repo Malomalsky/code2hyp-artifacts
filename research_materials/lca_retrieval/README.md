@@ -15,10 +15,19 @@ The manuscript and third-party source programs are not included.
 | Prospective fusion, v1 | Fixed fusion on a separate 650-problem cohort; five score matrices, metadata and bootstrap indices | [lca-fresh-fusion-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1) |
 | Weighted and top-100, v1 | Weighted 650-problem comparison, BM25 development/comparators, candidate budgets, 400 unused problems, raw timing samples and three vector diagrams | [lca-weighted-top100-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1) |
 | External transfer, v1 | Four corpus/retriever cells, Qwen development calibration, independent APPS/Codewars test including negative results, and three current vector diagrams | [lca-external-transfer-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1) |
+| Matched masking and learned reranker, v1 | Same 400 problems and top-100 candidates; complete Qwen3-Reranker pair scores, two session records, ancestor ablation and all positive/negative contrasts | [lca-reranker-comparison-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-reranker-comparison-materials-v1) |
+
+For the additional fixed comparison, use the
+[reranker-comparison instructions](reranker_comparison/README.md) and
+`download_materials.py --package reranker_comparison`. Its small standalone
+archive recomputes 16,000 rankings, ancestor representations, all additional
+contrasts and the original primary interval. Qwen3-Reranker achieves MAP@8
+0.57796 versus 0.33308 for the structural method; this negative comparison
+is included, not filtered out. It reuses an inspected cohort and is exploratory.
 
 For the external comparisons, start with the
 [external-transfer instructions](external_transfer/README.md). The latest
-archive replays 41,712 crossed rankings, all development weights/folds and
+external archive replays 41,712 crossed rankings, all development weights/folds and
 4,800 APPS rankings from numerical inputs. It includes negative transfer and
 regenerates all three current diagrams. This is an offline numerical replay,
 not a repetition of corpus parsing, model inference or data collection.

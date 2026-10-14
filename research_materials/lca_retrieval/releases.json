@@ -119,6 +119,48 @@
     "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1",
     "tag": "lca-fresh-fusion-materials-v1"
   },
+  "reranker_comparison": {
+    "assets": [
+      {
+        "bytes": 29892515,
+        "name": "lca-reranker-comparison-materials-v1.zip",
+        "sha256": "0e76baf611b2dc5f511d90db9be9469df22b2324fed7fbf6201e3ca350831b97",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/lca-reranker-comparison-materials-v1.zip"
+      },
+      {
+        "bytes": 2946,
+        "name": "README.md",
+        "sha256": "7a5a4780db2e74460ac3d29653b0cc3424bf6d3282199c0202b61977c808797f",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/README.md"
+      },
+      {
+        "bytes": 3718,
+        "name": "MANIFEST.json",
+        "sha256": "8d238e7df383552e839b1cebc03bacc2dde104da138e105ba4042aa1e89c4344",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 73123,
+        "name": "VERIFICATION.json",
+        "sha256": "a07c207579e12c2a90abc7a92a2ac34be5bf8f9f5d7019d387ab3e88848ae794",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/VERIFICATION.json"
+      },
+      {
+        "bytes": 1822,
+        "name": "FIGURES.json",
+        "sha256": "c84619089e9ce4b614d1ec0ebce265e13250db0b5e9d6bd4655fd633ba3313f3",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/FIGURES.json"
+      },
+      {
+        "bytes": 426,
+        "name": "SHA256SUMS.txt",
+        "sha256": "c004d6571df1b13bbe3b377861c98713080824eb87e32810caa0e84e3a2d56fa",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-reranker-comparison-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-reranker-comparison-materials-v1",
+    "tag": "lca-reranker-comparison-materials-v1"
+  },
   "weighted_top100": {
     "assets": [
       {
