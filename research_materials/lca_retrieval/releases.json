@@ -35,6 +35,48 @@
     "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1",
     "tag": "lca-retrieval-materials-v1"
   },
+  "end_to_end_cost": {
+    "assets": [
+      {
+        "bytes": 158497104,
+        "name": "lca-end-to-end-cost-materials-v1.zip",
+        "sha256": "1933a3e388bc808e5eff2aa1623fc1fa7e1672feec250de6eb9debc2c340688b",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/lca-end-to-end-cost-materials-v1.zip"
+      },
+      {
+        "bytes": 7667,
+        "name": "README.md",
+        "sha256": "75aeee5a24c400edc3346e79cc98fc6e5349f8a10a95112d726d55929d380d18",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/README.md"
+      },
+      {
+        "bytes": 17843,
+        "name": "MANIFEST.json",
+        "sha256": "54cafea8b855b4106580702abda13af272b156f4d9a47683a8af96254d6a74cd",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/MANIFEST.json"
+      },
+      {
+        "bytes": 37580,
+        "name": "VERIFICATION.json",
+        "sha256": "faa0b162315442d2658804950a7dfa0967cc81d436a98a92a14c66a4188b6d88",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/VERIFICATION.json"
+      },
+      {
+        "bytes": 247,
+        "name": "FIGURES.json",
+        "sha256": "867509f830345abaa351a63ecb96e66cefe672c124d92c034c7f3739a27410ae",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/FIGURES.json"
+      },
+      {
+        "bytes": 422,
+        "name": "SHA256SUMS.txt",
+        "sha256": "3e629204ede465465fdc09745487bd6197c6900cf7bfc862a5f920069e20dea9",
+        "url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/download/lca-end-to-end-cost-materials-v1/SHA256SUMS.txt"
+      }
+    ],
+    "release_url": "https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-end-to-end-cost-materials-v1",
+    "tag": "lca-end-to-end-cost-materials-v1"
+  },
   "external_transfer": {
     "assets": [
       {

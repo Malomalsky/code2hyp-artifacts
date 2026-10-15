@@ -11,10 +11,17 @@ ORCID: <https://orcid.org/0009-0009-1804-9412>
 Code, numerical data and reproduction instructions for local AST fragments,
 ancestor retention and candidate-limited reranking are documented in
 [research_materials/lca_retrieval/](research_materials/lca_retrieval/README.md).
-The latest [external-transfer release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1)
+The latest [query-cost release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-end-to-end-cost-materials-v1)
+adds full query-processing latency, preparation, memory and numerical quality
+replay. Five systems were timed on one T4 VM; the missing dense-only control
+and AST hybrid were then measured together on another. The 8,400 timings
+remain session-specific, not pooled. The archive contains code, numerical
+data, current figure generators and exact source-reconstruction instructions,
+not the manuscript or original program bodies. The preceding
+[external-transfer release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1)
 adds CodeContests/CPRet comparisons with two retrievers, Qwen development
 calibration, the independent APPS/Codewars test including negative results,
-and all three current vector diagrams. The preceding
+and the earlier vector diagrams. The preceding
 [weighted/top-100 release](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1)
 provides the 400-problem validation and candidate-budget measurements. The earlier analyses and the
 prospective 650-problem fusion evaluation retain separate immutable releases.

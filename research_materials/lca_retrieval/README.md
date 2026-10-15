@@ -14,8 +14,18 @@ The manuscript and third-party source programs are not included.
 | Earlier analyses, v1 | CodeNet comparison, categorical path comparisons, weighting/order controls and exploratory fusion; 103 score matrices | [lca-retrieval-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-retrieval-materials-v1) |
 | Prospective fusion, v1 | Fixed fusion on a separate 650-problem cohort; five score matrices, metadata and bootstrap indices | [lca-fresh-fusion-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-fresh-fusion-materials-v1) |
 | Weighted and top-100, v1 | Weighted 650-problem comparison, BM25 development/comparators, candidate budgets, 400 unused problems, raw timing samples and three vector diagrams | [lca-weighted-top100-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-weighted-top100-materials-v1) |
-| External transfer, v1 | Four corpus/retriever cells, Qwen development calibration, independent APPS/Codewars test including negative results, and three current vector diagrams | [lca-external-transfer-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1) |
+| External transfer, v1 | Four corpus/retriever cells, Qwen development calibration, independent APPS/Codewars test including negative results, and three original vector diagrams | [lca-external-transfer-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-external-transfer-materials-v1) |
 | Matched masking and learned reranker, v1 | Same 400 problems and top-100 candidates; complete Qwen3-Reranker pair scores, two session records, ancestor ablation and all positive/negative contrasts | [lca-reranker-comparison-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-reranker-comparison-materials-v1) |
+| Full query-processing costs, v1 | Five systems on session A; paired CodeRankEmbed/AST continuation on B; 8,400 timings, complete numerical quality replay, memory, current diagrams and exact corpus reconstruction | [lca-end-to-end-cost-materials-v1](https://github.com/Malomalsky/code2hyp-artifacts/releases/tag/lca-end-to-end-cost-materials-v1) |
+
+For the current cost comparison, use the
+[end-to-end cost instructions](end_to_end_cost/README.md) and
+`download_materials.py --package end_to_end_cost` (now the default).
+Its verifier keeps the two VM sessions separate. It does not turn the
+interrupted six-method single-VM experiment into a completed one, or claim
+that the structural method is generally preferable to Qwen. The package
+replaces the old ranking-only cost diagram with actual raw-query serving
+measurements. Earlier releases and negative results remain unchanged.
 
 For the additional fixed comparison, use the
 [reranker-comparison instructions](reranker_comparison/README.md) and
@@ -29,9 +39,10 @@ For the external comparisons, start with the
 [external-transfer instructions](external_transfer/README.md). The latest
 external archive replays 41,712 crossed rankings, all development weights/folds and
 4,800 APPS rankings from numerical inputs. It includes negative transfer and
-regenerates all three current diagrams. This is an offline numerical replay,
+regenerates its three original diagrams. The current cost diagram is in the
+cost release above. This is an offline numerical replay,
 not a repetition of corpus parsing, model inference or data collection.
-Use `download_materials.py --package external_transfer` (now the default).
+Use `download_materials.py --package external_transfer`.
 
 For the preceding neural/structural comparisons, use the
 [weighted/top-100 instructions](weighted_top100/README.md). This compact,

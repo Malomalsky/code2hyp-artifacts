@@ -1,0 +1,39 @@
+{
+  "scope": "Code, numerical artifacts and instructions only; no manuscript, original program bodies, declaration, credentials or model weights.",
+  "original_input_manifest_sha256": "9d2834bf8f1a1ee1e552f769c3f4c0462a77077eceb70c7061c150612536e0e8",
+  "session_A_host": {
+    "host_id": "9ab3759d-1f05-4385-8a5c-b8201e0ffe9e",
+    "hostname": "b91c2566798d",
+    "cpu": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+    "logical_cpus": 4,
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "python": "3.13.15",
+    "gpu": "Tesla T4, 15360 MiB, 580.178.04\nTesla T4, 15360 MiB, 580.178.04",
+    "ram_bytes": 33658310656,
+    "cpu_threads": 1,
+    "created_utc": "2026-10-14T17:08:18.017196+00:00"
+  },
+  "original_session_A_launcher_sha256": "539214806551250d4afd7d8fcb2ee72b6f63d1647abf891eaf50512042b31e5d",
+  "continuation_launcher_sha256": "0d231485655e603f9f74c402c0109b6c56b44e96baa456863a8a514e0d380a14",
+  "approved_continuation_protocol_sha256": "a855489b34d79db1dbcaf4dda9f1b36087ff5feba9103180a286cbab99849ddf",
+  "original_method_implementation_sha256": "a0ec4a09086a4abb2371066fd6f36e8d15bd62df32a69ea0803535c6502cf7e1",
+  "original_model_settings_unchanged": true,
+  "raw_source_reconstruction_test": "passed: all original payload files, including exact programs.json, restored from six SHA-256-verified upstream shards",
+  "source_programs_redistributed": false,
+  "manuscript_included": false,
+  "original_single_session_six_method_design_complete": false,
+  "figure_sources": "Problem and cost generators extracted unchanged from the verified local figure builder; transfer plot copied from the previous public release.",
+  "session_B_host": {
+    "host_id": "ffd0bae1-6d56-4bca-a3b6-3428b62cdd47",
+    "hostname": "23f468593262",
+    "cpu": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+    "logical_cpus": 4,
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "python": "3.13.15",
+    "gpu": "Tesla T4, 15360 MiB, 580.178.04\nTesla T4, 15360 MiB, 580.178.04",
+    "ram_bytes": 33658318848,
+    "cpu_threads": 1,
+    "created_utc": "2026-10-15T12:20:30.606234+00:00"
+  },
+  "continuation_receipt_sha256": "c33d712caafece7f325d0dd9075b08736a4917d6f647d4be122a4f2799241a53"
+}
